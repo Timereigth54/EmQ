@@ -408,10 +408,17 @@
         }
 
         function showScripture(mood) {
-            currentMood = mood
-            const list = specialVerses[mood]
-            const random = Math.floor(Math.random() * list.length)
-            const verse = list[random]
+    currentMood = mood
+    const list = specialVerses[mood]
+
+    // Smart shuffle - no repeats until all verses shown
+    if (!window.shownVerses) window.shownVerses = {}
+    if (!window.shownVerses[mood] || window.shownVerses[mood].length === 0) {
+        window.shownVerses[mood] = [...Array(list.length).keys()]
+    }
+    const randomIndex = Math.floor(Math.random() * window.shownVerses[mood].length)
+    const verseIndex = window.shownVerses[mood].splice(randomIndex, 1)[0]
+    const verse = list[verseIndex]
 
             const reactionList = reactions[mood]
             const randomReaction = Math.floor(Math.random() * reactionList.length)
