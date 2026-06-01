@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Em_Q | Your Pocket Companion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+            padding: 20px;
+        }
+
+        /* SPLASH SCREEN */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            animation: none;
+        }
+
+        #splash-screen.hide {
+            animation: fadeOut 1s ease forwards;
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to   { opacity: 0; visibility: hidden; }
+        }
+
+        #splash-logo {
+            font-size: 100px;
+            filter: drop-shadow(0 0 30px #00d4ff);
+            animation: float 3s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        #splash-title {
+            font-size: 3rem;
+            color: #00d4ff;
+            text-shadow: 0 0 30px #00d4ff;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
+
+        #splash-tagline {
+            font-size: 1rem;
+            color: #a0c4d8;
+            letter-spacing: 3px;
+            margin-bottom: 40px;
+        }
+
+        #splash-btn {
+            background: transparent;
+            border: 2px solid #00d4ff;
+            color: #00d4ff;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        #splash-btn:hover {
+            background: #00d4ff;
+            color: #0a0a2e;
+            box-shadow: 0 0 30px #00d4ff;
+            transform: scale(1.05);
+        }
+
+        /* MAIN APP */
+        #main-app {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* LULO FACE */
+        #lulo-face {
+            font-size: 90px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 20px #00d4ff);
+            animation: float 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        #lulo-face.nod {
+            animation: nod 0.5s ease;
+        }
+
+        #lulo-face.shake {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes float {
+            0%   { transform: translateY(0px); }
+            50%  { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes nod {
+            0%   { transform: translateY(0px); }
+            25%  { transform: translateY(-20px); }
+            50%  { transform: translateY(0px); }
+            75%  { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes shake {
+            0%   { transform: translateX(0px); }
+            20%  { transform: translateX(-15px); }
+            40%  { transform: translateX(15px); }
+            60%  { transform: translateX(-15px); }
+            80%  { transform: translateX(15px); }
+            100% { transform: translateX(0px); }
+        }
+
+        #lulo-reaction {
+            font-size: 1rem;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            min-height: 24px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #00d4ff;
+            text-shadow: 0 0 20px #00d4ff;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            font-size: 1rem;
+            color: #a0c4d8;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* MOOD BUTTONS */
+        #mood-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid #00d4ff;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #00d4ff;
+            color: #0a0a2e;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #00d4ff;
+        }
+
+        /* SCRIPTURE BOX */
+        #scripture-box {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.8s ease;
+            margin-bottom: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        #scripture-text {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: #e0f4ff;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        #another-btn {
+            background: transparent;
+            border: 1px solid rgba(0, 212, 255, 0.5);
+            color: #00d4ff;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        #another-btn:hover {
+            background: rgba(0, 212, 255, 0.15);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+
+        /* EM_Q FOOTER */
+        #footer {
+            margin-top: 30px;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+        <div id="splash-logo">🤖</div>
+        <div id="splash-title">EM_Q</div>
+        <div id="splash-tagline">YOUR POCKET COMPANION</div>
+        <button id="splash-btn" onclick="enterApp()">MEET LULO →</button>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app">
+
+        <div id="lulo-face">🤖</div>
+        <div id="lulo-reaction"></div>
+
+        <h1>Hi, I'm Lulo!</h1>
+        <p class="subtitle">Your pocket companion. How are you feeling today?</p>
+
+        <div id="mood-buttons">
+            <button onclick="showScripture('happy')">😊 Happy</button>
+            <button onclick="showScripture('sad')">😢 Sad</button>
+            <button onclick="showScripture('afraid')">😨 Afraid</button>
+            <button onclick="showScripture('bored')">😴 Bored</button>
+        </div>
+
+        <div id="scripture-box">
+            <p id="scripture-text"></p>
+            <button id="another-btn" onclick="showAnother()">🔄 Show me another</button>
+        </div>
+
+        <div id="footer">EM_Q © 2025 | POWERED BY LULO</div>
+
+    </div>
+
+    <script>
+        // CURRENT MOOD (so "show another" knows what to fetch)
+        let currentMood = "";
+
+        // YOUR SCRIPTURES
+        const scriptures = {
+            happy: [
+                "Trusting that God has a handle on our lives is our only source of hope.\nYou should find comfort in the idea that He knows what He's doing.\n— Romans 15:13",
+                "For His anger is but for a moment, His favor is for life; weeping may endure for a night, but joy comes in the morning.\n— Psalm 30:5",
+                "God is the true source of happiness, strength, hope, and wisdom. Those who are in His favor will always have these things.\n— Psalm 144:15",
+                "Those who sow in tears shall reap in joy.\n— Psalms 126:5",
+                "God's happiness is your happiness — it's a mutual benefit between each other.\n— John 15:11",
+                "Those who look to him for help will be radiant with joy; no shadow of shame will darken their faces.\n— Psalm 34:5",
+            ],
+            sad: [
+                "The Lord himself goes before you and will be with you; he will never leave you nor forsake you. Do not be afraid; do not be discouraged.\n— Deuteronomy 31:8",
+                "Whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely — think about such things.\n— Philippians 4:8",
+                "In this world you will have trouble. But take heart! I have overcome the world.\n— John 16:33",
+                "Jesus is there, and He cares about you. You can turn to Him for help with whatever you may be feeling.\n— 1 Peter 5:7",
+                "The Lord is a stronghold for the oppressed, a stronghold in times of trouble.\n— Psalm 9:9",
+                "God will continue to be by your side. You are not alone.\n— Joshua 1:9",
+            ],
+            afraid: [
+                "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you.\n— Isaiah 41:10",
+                "I sought the Lord, and he answered me and delivered me from all my fears.\n— Psalm 34:4–5",
+                "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me.\n— Psalm 23:4",
+                "God is our refuge and strength, a very present help in trouble.\n— Psalm 46:1–3",
+                "He will cover you with his pinions, and under his wings you will find refuge.\n— Psalm 91:4–5",
+                "Do not fear; I will provide for you and your little ones.\n— Genesis 50:21",
+            ],
+            bored: [
+                "Here's a story 📖\nNicodemus came to Jesus by night and said he believed Jesus had come from God. Jesus told him that nobody would see the kingdom of God until they were born again. Confused, Nicodemus asked how a grown man can be born again — and Jesus explained that a person needs to be born of water and Spirit.\n— John 3",
+                "Here's a story 📖\nJesus and His disciples were in a boat when a harsh storm came. Jesus was asleep. Terrified, the disciples woke Him. 'Oh you of little faith,' He said — then rebuked the storm. The wind and waves went completely calm.\n— Matthew 8",
+                "Here's a story 📖\nThe Pharisees had a problem with Jesus eating with sinners. So Jesus told them: 'If you had 100 sheep and one was lost, would you not leave the rest and search for it? When you find it, you celebrate. In the same way, when a sinner repents, there is rejoicing in heaven.'\n— Luke 15",
+            ]
+        }
+
+        // LULO REACTIONS
+        const reactions = {
+            happy: ["That's wonderful! 🎉", "Happiness looks good on you! ✨", "Let's celebrate that! 🙌"],
+            sad: ["I'm here for you. 💙", "You're not alone in this. 🤗", "Let me share something with you..."],
+            afraid: ["It's okay to feel afraid. I've got you. 💙", "Let's find some courage together. 🕊️", "You are braver than you think. 💪"],
+            bored: ["Let me tell you something interesting! 📖", "I've got just the story for you! ✨", "Story time! 🌟"]
+        }
+
+        // LULO FACES
+        const faces = {
+            happy: "😊",
+            sad: "🥺",
+            afraid: "🤗",
+            bored: "🤩"
+        }
+
+        // SPLASH SCREEN → MAIN APP
+        function enterApp() {
+            const splash = document.getElementById('splash-screen')
+            const app = document.getElementById('main-app')
+            splash.classList.add('hide')
+            setTimeout(() => {
+                app.style.display = 'flex'
+            }, 800)
+        }
+
+        // SHOW SCRIPTURE
+        function showScripture(mood) {
+            currentMood = mood
+
+            // Random scripture
+            const list = scriptures[mood]
+            const random = Math.floor(Math.random() * list.length)
+            const scripture = list[random]
+
+            // Random reaction
+            const reactionList = reactions[mood]
+            const randomReaction = Math.floor(Math.random() * reactionList.length)
+
+            // Update Lulo
+            const luloFace = document.getElementById('lulo-face')
+            luloFace.innerText = faces[mood]
+            document.getElementById('lulo-reaction').innerText = reactionList[randomReaction]
+
+            // Nod animation
+            luloFace.classList.remove('nod', 'shake')
+            void luloFace.offsetWidth
+            luloFace.classList.add('nod')
+
+            // Show scripture
+            const box = document.getElementById('scripture-box')
+            const text = document.getElementById('scripture-text')
+            const anotherBtn = document.getElementById('another-btn')
+
+            text.innerText = scripture
+            box.style.display = 'block'
+            anotherBtn.style.display = 'inline-block'
+
+            // Reset animation
+            box.style.animation = 'none'
+            void box.offsetHeight
+            box.style.animation = 'fadeIn 0.8s ease'
+        }
+
+        // SHOW ANOTHER SCRIPTURE
+        function showAnother() {
+            const luloFace = document.getElementById('lulo-face')
+
+            // Shake then show new scripture
+            luloFace.classList.remove('nod', 'shake')
+            void luloFace.offsetWidth
+            luloFace.classList.add('shake')
+
+            setTimeout(() => {
+                showScripture(currentMood)
+            }, 300)
+        }
+    </script>
+
+</body>
+</html>
