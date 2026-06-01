@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Em_Q | Your Pocket Companion</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
@@ -23,7 +19,6 @@
             padding: 20px;
         }
 
-        /* SPLASH SCREEN */
         #splash-screen {
             position: fixed;
             top: 0; left: 0;
@@ -34,16 +29,13 @@
             align-items: center;
             justify-content: center;
             z-index: 999;
-            animation: none;
         }
 
-        #splash-screen.hide {
-            animation: fadeOut 1s ease forwards;
-        }
+        #splash-screen.hide { animation: fadeOut 1s ease forwards; }
 
         @keyframes fadeOut {
             from { opacity: 1; }
-            to   { opacity: 0; visibility: hidden; }
+            to { opacity: 0; visibility: hidden; }
         }
 
         #splash-logo {
@@ -87,7 +79,6 @@
             transform: scale(1.05);
         }
 
-        /* MAIN APP */
         #main-app {
             display: none;
             flex-direction: column;
@@ -96,7 +87,6 @@
             max-width: 600px;
         }
 
-        /* LULO FACE */
         #lulo-face {
             font-size: 90px;
             margin-bottom: 10px;
@@ -105,34 +95,29 @@
             display: inline-block;
         }
 
-        #lulo-face.nod {
-            animation: nod 0.5s ease;
-        }
-
-        #lulo-face.shake {
-            animation: shake 0.5s ease;
-        }
+        #lulo-face.nod { animation: nod 0.5s ease; }
+        #lulo-face.shake { animation: shake 0.5s ease; }
 
         @keyframes float {
-            0%   { transform: translateY(0px); }
-            50%  { transform: translateY(-15px); }
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
             100% { transform: translateY(0px); }
         }
 
         @keyframes nod {
-            0%   { transform: translateY(0px); }
-            25%  { transform: translateY(-20px); }
-            50%  { transform: translateY(0px); }
-            75%  { transform: translateY(-10px); }
+            0% { transform: translateY(0px); }
+            25% { transform: translateY(-20px); }
+            50% { transform: translateY(0px); }
+            75% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
         }
 
         @keyframes shake {
-            0%   { transform: translateX(0px); }
-            20%  { transform: translateX(-15px); }
-            40%  { transform: translateX(15px); }
-            60%  { transform: translateX(-15px); }
-            80%  { transform: translateX(15px); }
+            0% { transform: translateX(0px); }
+            20% { transform: translateX(-15px); }
+            40% { transform: translateX(15px); }
+            60% { transform: translateX(-15px); }
+            80% { transform: translateX(15px); }
             100% { transform: translateX(0px); }
         }
 
@@ -159,10 +144,9 @@
             text-align: center;
         }
 
-        /* MOOD BUTTONS */
         #mood-buttons {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
             justify-content: center;
             margin-bottom: 30px;
@@ -172,9 +156,9 @@
             background: rgba(0, 212, 255, 0.1);
             border: 2px solid #00d4ff;
             color: white;
-            padding: 12px 20px;
+            padding: 10px 18px;
             border-radius: 50px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -186,7 +170,6 @@
             box-shadow: 0 0 20px #00d4ff;
         }
 
-        /* SCRIPTURE BOX */
         #scripture-box {
             background: rgba(0, 212, 255, 0.05);
             border: 1px solid rgba(0, 212, 255, 0.3);
@@ -201,7 +184,7 @@
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         #scripture-text {
@@ -210,6 +193,13 @@
             color: #e0f4ff;
             margin-bottom: 20px;
             white-space: pre-line;
+        }
+
+        #loading-text {
+            font-size: 0.9rem;
+            color: #00d4ff;
+            display: none;
+            margin-bottom: 10px;
         }
 
         #another-btn {
@@ -229,7 +219,6 @@
             box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
         }
 
-        /* EM_Q FOOTER */
         #footer {
             margin-top: 30px;
             font-size: 0.75rem;
@@ -240,7 +229,6 @@
 </head>
 <body>
 
-    <!-- SPLASH SCREEN -->
     <div id="splash-screen">
         <div id="splash-logo">🤖</div>
         <div id="splash-title">EM_Q</div>
@@ -248,12 +236,9 @@
         <button id="splash-btn" onclick="enterApp()">MEET LULO →</button>
     </div>
 
-    <!-- MAIN APP -->
     <div id="main-app">
-
         <div id="lulo-face">🤖</div>
         <div id="lulo-reaction"></div>
-
         <h1>Hi, I'm Lulo!</h1>
         <p class="subtitle">Your pocket companion. How are you feeling today?</p>
 
@@ -261,131 +246,196 @@
             <button onclick="showScripture('happy')">😊 Happy</button>
             <button onclick="showScripture('sad')">😢 Sad</button>
             <button onclick="showScripture('afraid')">😨 Afraid</button>
+            <button onclick="showScripture('anxious')">😟 Anxious</button>
+            <button onclick="showScripture('depressed')">😞 Depressed</button>
+            <button onclick="showScripture('lonely')">😔 Lonely</button>
+            <button onclick="showScripture('angry')">😤 Angry</button>
+            <button onclick="showScripture('tired')">🥱 Tired</button>
+            <button onclick="showScripture('grateful')">🙏 Grateful</button>
+            <button onclick="showScripture('heartbroken')">💔 Heartbroken</button>
+            <button onclick="showScripture('overwhelmed')">😵 Overwhelmed</button>
+            <button onclick="showScripture('hopeful')">🌟 Hopeful</button>
+            <button onclick="showScripture('confused')">😕 Confused</button>
             <button onclick="showScripture('bored')">😴 Bored</button>
         </div>
 
         <div id="scripture-box">
+            <div id="loading-text">Lulo is finding the perfect scripture... ✨</div>
             <p id="scripture-text"></p>
             <button id="another-btn" onclick="showAnother()">🔄 Show me another</button>
         </div>
 
         <div id="footer">EM_Q © 2025 | POWERED BY LULO</div>
-
     </div>
 
     <script>
-        // CURRENT MOOD (so "show another" knows what to fetch)
         let currentMood = "";
 
-        // YOUR SCRIPTURES
-        const scriptures = {
-            happy: [
-                "Trusting that God has a handle on our lives is our only source of hope.\nYou should find comfort in the idea that He knows what He's doing.\n— Romans 15:13",
-                "For His anger is but for a moment, His favor is for life; weeping may endure for a night, but joy comes in the morning.\n— Psalm 30:5",
-                "God is the true source of happiness, strength, hope, and wisdom. Those who are in His favor will always have these things.\n— Psalm 144:15",
-                "Those who sow in tears shall reap in joy.\n— Psalms 126:5",
-                "God's happiness is your happiness — it's a mutual benefit between each other.\n— John 15:11",
-                "Those who look to him for help will be radiant with joy; no shadow of shame will darken their faces.\n— Psalm 34:5",
+        // YOUR SPECIAL VERSES - hardcoded in their perfect versions
+        const specialVerses = {
+            afraid: [
+                { text: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with My righteous right hand.", ref: "Isaiah 41:10" },
+                { text: "I will never [under any circumstances] desert you [nor give you up nor leave you without support, nor will I in any degree leave you helpless], nor will I forsake or let you down or relax My hold on you [assuredly not]! So we take comfort and are encouraged and confidently say, The Lord is my Helper [in time of need], I will not be afraid. What will man do to me?", ref: "Hebrews 13:5-6" },
+                { text: "For God has not given us a spirit of fear, but of power and of love and of a sound mind.", ref: "2 Timothy 1:7" },
+                { text: "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.", ref: "Joshua 1:9" },
+                { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
+                { text: "God is our refuge and strength, an ever-present help in trouble.", ref: "Psalm 46:1" },
+            ],
+            anxious: [
+                { text: "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.", ref: "Philippians 4:6" },
+                { text: "Cast all your anxiety on him because he cares for you.", ref: "1 Peter 5:7" },
+                { text: "Therefore do not worry about tomorrow, for tomorrow will worry about itself. Each day has enough trouble of its own.", ref: "Matthew 6:34" },
+                { text: "Be still, and know that I am God.", ref: "Psalm 46:10" },
+                { text: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.", ref: "Proverbs 3:5-6" },
             ],
             sad: [
-                "The Lord himself goes before you and will be with you; he will never leave you nor forsake you. Do not be afraid; do not be discouraged.\n— Deuteronomy 31:8",
-                "Whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely — think about such things.\n— Philippians 4:8",
-                "In this world you will have trouble. But take heart! I have overcome the world.\n— John 16:33",
-                "Jesus is there, and He cares about you. You can turn to Him for help with whatever you may be feeling.\n— 1 Peter 5:7",
-                "The Lord is a stronghold for the oppressed, a stronghold in times of trouble.\n— Psalm 9:9",
-                "God will continue to be by your side. You are not alone.\n— Joshua 1:9",
+                { text: "The Lord himself goes before you and will be with you; he will never leave you nor forsake you. Do not be afraid; do not be discouraged.", ref: "Deuteronomy 31:8" },
+                { text: "He heals the brokenhearted and binds up their wounds.", ref: "Psalm 147:3" },
+                { text: "In this world you will have trouble. But take heart! I have overcome the world.", ref: "John 16:33" },
+                { text: "Weeping may stay for the night, but rejoicing comes in the morning.", ref: "Psalm 30:5" },
             ],
-            afraid: [
-                "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you.\n— Isaiah 41:10",
-                "I sought the Lord, and he answered me and delivered me from all my fears.\n— Psalm 34:4–5",
-                "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me.\n— Psalm 23:4",
-                "God is our refuge and strength, a very present help in trouble.\n— Psalm 46:1–3",
-                "He will cover you with his pinions, and under his wings you will find refuge.\n— Psalm 91:4–5",
-                "Do not fear; I will provide for you and your little ones.\n— Genesis 50:21",
+            depressed: [
+                { text: "Why, my soul, are you downcast? Why so disturbed within me? Put your hope in God, for I will yet praise him, my Savior and my God.", ref: "Psalm 42:11" },
+                { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
+                { text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", ref: "Jeremiah 29:11" },
+                { text: "I will never [under any circumstances] desert you [nor give you up nor leave you without support, nor will I in any degree leave you helpless], nor will I forsake or let you down or relax My hold on you [assuredly not]!", ref: "Hebrews 13:5" },
+                { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Songs of Solomon 4:7" },
+            ],
+            lonely: [
+                { text: "The Lord himself goes before you and will be with you; he will never leave you nor forsake you.", ref: "Deuteronomy 31:8" },
+                { text: "Even though I walk through the darkest valley, I will fear no evil, for you are with me.", ref: "Psalm 23:4" },
+                { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Songs of Solomon 4:7" },
+                { text: "The eternal God is your refuge, and underneath are the everlasting arms.", ref: "Deuteronomy 33:27" },
+            ],
+            angry: [
+                { text: "A gentle answer turns away wrath, but a harsh word stirs up anger.", ref: "Proverbs 15:1" },
+                { text: "Be still, and know that I am God.", ref: "Psalm 46:10" },
+                { text: "In your anger do not sin: Do not let the sun go down while you are still angry.", ref: "Ephesians 4:26" },
+                { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
+            ],
+            tired: [
+                { text: "Come to me, all you who are weary and burdened, and I will give you rest.", ref: "Matthew 11:28" },
+                { text: "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.", ref: "Isaiah 40:31" },
+                { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
+                { text: "He gives strength to the weary and increases the power of the weak.", ref: "Isaiah 40:29" },
+            ],
+            grateful: [
+                { text: "Give thanks to the Lord, for he is good; his love endures forever.", ref: "Psalm 107:1" },
+                { text: "This is the day the Lord has made; let us rejoice and be glad in it.", ref: "Psalm 118:24" },
+                { text: "Every good and perfect gift is from above, coming down from the Father of the heavenly lights.", ref: "James 1:17" },
+            ],
+            heartbroken: [
+                { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
+                { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Songs of Solomon 4:7" },
+                { text: "He heals the brokenhearted and binds up their wounds.", ref: "Psalm 147:3" },
+                { text: "And we know that in all things God works for the good of those who love him.", ref: "Romans 8:28" },
+            ],
+            overwhelmed: [
+                { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
+                { text: "Cast all your anxiety on him because he cares for you.", ref: "1 Peter 5:7" },
+                { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
+                { text: "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.", ref: "Philippians 4:6" },
+                { text: "Be still, and know that I am God.", ref: "Psalm 46:10" },
+            ],
+            hopeful: [
+                { text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", ref: "Jeremiah 29:11" },
+                { text: "And we know that in all things God works for the good of those who love him.", ref: "Romans 8:28" },
+                { text: "Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us.", ref: "Ephesians 3:20" },
+                { text: "May the God of hope fill you with all joy and peace as you trust in him.", ref: "Romans 15:13" },
+                { text: "The path of the righteous is like the morning sun, shining ever brighter till the full light of day.", ref: "Proverbs 4:18" },
+            ],
+            confused: [
+                { text: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.", ref: "Proverbs 3:5-6" },
+                { text: "Your word is a lamp for my feet, a light on my path.", ref: "Psalm 119:105" },
+                { text: "If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault, and it will be given to you.", ref: "James 1:5" },
+                { text: "For God is not a God of confusion but of peace.", ref: "1 Corinthians 14:33" },
+            ],
+            happy: [
+                { text: "This is the day the Lord has made; let us rejoice and be glad in it.", ref: "Psalm 118:24" },
+                { text: "Those who look to him are radiant; their faces are never covered with shame.", ref: "Psalm 34:5" },
+                { text: "May the God of hope fill you with all joy and peace as you trust in him.", ref: "Romans 15:13" },
+                { text: "Rejoice in the Lord always. I will say it again: Rejoice!", ref: "Philippians 4:4" },
             ],
             bored: [
-                "Here's a story 📖\nNicodemus came to Jesus by night and said he believed Jesus had come from God. Jesus told him that nobody would see the kingdom of God until they were born again. Confused, Nicodemus asked how a grown man can be born again — and Jesus explained that a person needs to be born of water and Spirit.\n— John 3",
-                "Here's a story 📖\nJesus and His disciples were in a boat when a harsh storm came. Jesus was asleep. Terrified, the disciples woke Him. 'Oh you of little faith,' He said — then rebuked the storm. The wind and waves went completely calm.\n— Matthew 8",
-                "Here's a story 📖\nThe Pharisees had a problem with Jesus eating with sinners. So Jesus told them: 'If you had 100 sheep and one was lost, would you not leave the rest and search for it? When you find it, you celebrate. In the same way, when a sinner repents, there is rejoicing in heaven.'\n— Luke 15",
+                { type: "didyouknow", text: "Did you know... Shamgar killed 600 Philistines with just an ox goad — a simple farming stick! One man. 600 enemies. One stick. God can use the most ordinary things in extraordinary ways.", ref: "Judges 3:31" },
+                { type: "didyouknow", text: "Did you know... Water was divided TWICE in the Bible! Once for Moses at the Red Sea, and once for Joshua at the Jordan River. God literally parted waters for two different generations!", ref: "Exodus 14 & Joshua 3" },
+                { type: "didyouknow", text: "Did you know... Elijah outran a horse-drawn chariot for about 25 miles! This was right after he called down fire from heaven. Talk about a supernatural energy boost!", ref: "1 Kings 18:46" },
+                { type: "didyouknow", text: "Did you know... Methuselah lived to be 969 years old — the oldest person in the Bible. He died the same year as the great flood.", ref: "Genesis 5:27" },
+                { type: "trivia", text: "Bible Trivia! 🎯\n\nHow many days and nights did it rain during Noah's flood?\n\nAnswer: 40 days and 40 nights!\n\nThe number 40 appears throughout the Bible as a period of testing and transformation.", ref: "Genesis 7:12" },
+                { type: "trivia", text: "Bible Trivia! 🎯\n\nHow many books are in the Bible?\n\nAnswer: 66 books! (39 in the Old Testament, 27 in the New Testament)\n\nWritten by over 40 authors across 1,500 years — yet one consistent story of God's love!", ref: "The Holy Bible" },
+                { type: "joke", text: "😄 Bible Dad Joke!\n\nWhich car brand appears most in the Bible?\n\nHonda! — Because the disciples were all in One Accord!\n\n'When the Day of Pentecost had fully come, they were all with one accord in one place.'", ref: "Acts 2:1" },
+                { type: "joke", text: "😄 Bible Dad Joke!\n\nWho was the fastest runner in the Bible?\n\nAdam! — He was first in the human race!\n\n'So the Lord God formed a man from the dust of the ground.'", ref: "Genesis 2:7" },
+                { type: "joke", text: "😄 Bible Dad Joke!\n\nWhat kind of lights did Noah use on the ark?\n\nFloodlights! 🚢\n\n'The waters rose and increased greatly on the earth, and the ark floated on the surface of the water.'", ref: "Genesis 7:18" },
             ]
         }
 
-        // LULO REACTIONS
         const reactions = {
             happy: ["That's wonderful! 🎉", "Happiness looks good on you! ✨", "Let's celebrate that! 🙌"],
             sad: ["I'm here for you. 💙", "You're not alone in this. 🤗", "Let me share something with you..."],
             afraid: ["It's okay to feel afraid. I've got you. 💙", "Let's find some courage together. 🕊️", "You are braver than you think. 💪"],
-            bored: ["Let me tell you something interesting! 📖", "I've got just the story for you! ✨", "Story time! 🌟"]
+            anxious: ["Breathe. I'm right here with you. 💙", "Let's find some peace together. 🕊️", "One moment at a time. You've got this. 💪"],
+            depressed: ["I see you. I'm here. 💙", "You are not alone in this. 🤗", "Let me share something just for you..."],
+            lonely: ["You are never truly alone. 💙", "I'm here with you right now. 🤗", "Let Lulo keep you company. ✨"],
+            angry: ["It's okay to feel angry. Let's breathe. 💙", "I hear you. Let's find some peace. 🕊️"],
+            tired: ["Rest is sacred. You've been doing so much. 💙", "It's okay to be tired. Let me encourage you. ✨"],
+            grateful: ["Gratitude is beautiful! 🙏", "A thankful heart is a happy heart! ✨", "That's so wonderful! 🎉"],
+            heartbroken: ["I'm so sorry you're hurting. 💙", "Your heart matters. I'm here. 🤗", "Let me share something healing..."],
+            overwhelmed: ["One breath at a time. I've got you. 💙", "You don't have to carry this alone. 🤗"],
+            hopeful: ["Hope is powerful! 🌟", "Hold on to that hope! ✨", "Beautiful things are coming! 🎉"],
+            confused: ["It's okay not to have all the answers. 💙", "Let's find some clarity together. ✨"],
+            bored: ["Oh, I have something for you! 😄", "Story time with Lulo! 📖", "Let me entertain you! 🌟"]
         }
 
-        // LULO FACES
         const faces = {
-            happy: "😊",
-            sad: "🥺",
-            afraid: "🤗",
-            bored: "🤩"
+            happy: "😊", sad: "🥺", afraid: "🤗", anxious: "😟",
+            depressed: "🥺", lonely: "🤗", angry: "😤", tired: "🥱",
+            grateful: "🥰", heartbroken: "🥺", overwhelmed: "😵",
+            hopeful: "🌟", confused: "🤔", bored: "🤩"
         }
 
-        // SPLASH SCREEN → MAIN APP
         function enterApp() {
             const splash = document.getElementById('splash-screen')
             const app = document.getElementById('main-app')
             splash.classList.add('hide')
-            setTimeout(() => {
-                app.style.display = 'flex'
-            }, 800)
+            setTimeout(() => { app.style.display = 'flex' }, 800)
         }
 
-        // SHOW SCRIPTURE
+        function animateLulo(type) {
+            const luloFace = document.getElementById('lulo-face')
+            luloFace.classList.remove('nod', 'shake')
+            void luloFace.offsetWidth
+            luloFace.classList.add(type)
+        }
+
         function showScripture(mood) {
             currentMood = mood
-
-            // Random scripture
-            const list = scriptures[mood]
+            const list = specialVerses[mood]
             const random = Math.floor(Math.random() * list.length)
-            const scripture = list[random]
+            const verse = list[random]
 
-            // Random reaction
             const reactionList = reactions[mood]
             const randomReaction = Math.floor(Math.random() * reactionList.length)
 
-            // Update Lulo
-            const luloFace = document.getElementById('lulo-face')
-            luloFace.innerText = faces[mood]
+            document.getElementById('lulo-face').innerText = faces[mood]
             document.getElementById('lulo-reaction').innerText = reactionList[randomReaction]
+            animateLulo('nod')
 
-            // Nod animation
-            luloFace.classList.remove('nod', 'shake')
-            void luloFace.offsetWidth
-            luloFace.classList.add('nod')
-
-            // Show scripture
             const box = document.getElementById('scripture-box')
             const text = document.getElementById('scripture-text')
             const anotherBtn = document.getElementById('another-btn')
 
-            text.innerText = scripture
+            text.innerText = verse.text + "\n\n— " + verse.ref
             box.style.display = 'block'
             anotherBtn.style.display = 'inline-block'
 
-            // Reset animation
             box.style.animation = 'none'
             void box.offsetHeight
             box.style.animation = 'fadeIn 0.8s ease'
         }
 
-        // SHOW ANOTHER SCRIPTURE
         function showAnother() {
-            const luloFace = document.getElementById('lulo-face')
-
-            // Shake then show new scripture
-            luloFace.classList.remove('nod', 'shake')
-            void luloFace.offsetWidth
-            luloFace.classList.add('shake')
-
-            setTimeout(() => {
-                showScripture(currentMood)
-            }, 300)
+            animateLulo('shake')
+            setTimeout(() => { showScripture(currentMood) }, 300)
         }
     </script>
 
