@@ -290,6 +290,84 @@
         >LET'S GO! →</button>
     </div>
 
+    <!-- CRISIS SCREEN -->
+    <div id="crisis-screen" style="
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 30px;
+        text-align: center;
+        overflow-y: auto;
+    ">
+        <div style="font-size: 60px; margin-bottom: 20px;">🤗</div>
+        <h2 id="crisis-title" style="color: #00d4ff; font-size: 1.5rem; text-shadow: 0 0 20px #00d4ff; margin-bottom: 15px; max-width: 500px;"></h2>
+        <p id="crisis-message" style="color: #e0f4ff; font-size: 0.95rem; line-height: 1.8; max-width: 500px; margin-bottom: 25px;"></p>
+        <div id="crisis-scripture" style="
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 20px 25px;
+            max-width: 500px;
+            width: 100%;
+            margin-bottom: 25px;
+            display: none;
+        ">
+            <p id="crisis-verse-text" style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;"></p>
+            <p id="crisis-verse-ref" style="color: #00d4ff; font-size: 0.8rem;"></p>
+        </div>
+        <div id="crisis-resources" style="
+            background: rgba(255, 100, 100, 0.1);
+            border: 1px solid rgba(255, 100, 100, 0.3);
+            border-radius: 20px;
+            padding: 20px 25px;
+            max-width: 500px;
+            width: 100%;
+            margin-bottom: 25px;
+            display: none;
+        ">
+            <p style="color: #ff9999; font-size: 0.85rem; line-height: 1.8;" id="crisis-resources-text"></p>
+        </div>
+        <div id="crisis-followup" style="max-width: 500px; width: 100%; display: none; margin-bottom: 20px;">
+            <p id="crisis-question" style="color: #a0c4d8; font-size: 0.9rem; margin-bottom: 15px;"></p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button onclick="crisisFollowUp('yes')" style="
+                    background: rgba(0, 212, 255, 0.1);
+                    border: 2px solid #00d4ff;
+                    color: white;
+                    padding: 10px 25px;
+                    border-radius: 50px;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                ">Yes 💙</button>
+                <button onclick="crisisFollowUp('no')" style="
+                    background: rgba(0, 212, 255, 0.1);
+                    border: 2px solid #00d4ff;
+                    color: white;
+                    padding: 10px 25px;
+                    border-radius: 50px;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                ">No 💙</button>
+            </div>
+        </div>
+        <button onclick="closeCrisisScreen()" style="
+            background: transparent;
+            border: 1px solid rgba(0, 212, 255, 0.4);
+            color: #a0c4d8;
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-top: 10px;
+        ">I'm okay, take me back to Lulo 💙</button>
+    </div>
+
     <!-- WELCOME SCREEN -->
     <div id="welcome-screen" style="
         display: none;
@@ -351,6 +429,40 @@
             <button onclick="showScripture('bored')">😴 Bored</button>
         </div>
 
+        <!-- LULO LISTENS -->
+        <div id="lulo-input-area" style="width: 100%; margin-bottom: 20px; display: none;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input
+                    type="text"
+                    id="lulo-input"
+                    placeholder="Tell Lulo how you're feeling..."
+                    maxlength="200"
+                    style="
+                        flex: 1;
+                        background: rgba(0, 212, 255, 0.1);
+                        border: 2px solid #00d4ff;
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 50px;
+                        font-size: 0.9rem;
+                        outline: none;
+                        font-family: 'Segoe UI', sans-serif;
+                    "
+                    onkeypress="if(event.key === 'Enter') luloListen()"
+                />
+                <button onclick="luloListen()" style="
+                    background: rgba(0, 212, 255, 0.1);
+                    border: 2px solid #00d4ff;
+                    color: #00d4ff;
+                    padding: 12px 20px;
+                    border-radius: 50px;
+                    font-size: 0.85rem;
+                    cursor: pointer;
+                    white-space: nowrap;
+                ">Send 💙</button>
+            </div>
+        </div>
+
         <div id="scripture-box">
             <div id="loading-text">Lulo is finding the perfect scripture... ✨</div>
             <p id="scripture-text"></p>
@@ -362,6 +474,186 @@
 
     <script>
         let currentMood = "";
+
+        // CRISIS LEVEL - immediate danger
+        const crisisKeywords = [
+            'kill myself', 'end my life', 'want to die', 'suicide',
+            'hurt myself', 'harm myself', 'dont want to live',
+            "don't want to live", 'no reason to live', 'better off dead',
+            'want to disappear', 'cant go on', "can't go on",
+            'end it all', 'not worth living'
+        ]
+
+        // THERAPY LEVEL - needs professional support
+        const therapyKeywords = [
+            'been depressed for', 'depressed for months', 'depressed for weeks',
+            'depressed for years', 'hits me', 'beats me', 'abuses me',
+            'hurts me', 'been hurting', 'been struggling for',
+            'cant cope', "can't cope", 'falling apart', 'breaking down',
+            'trauma', 'abuse', 'abusive', 'been abused', 'assaulted',
+            'months of', 'years of', 'chronic', 'bullied', 'bullying',
+            'being bullied', 'bully', 'harassment', 'harassed',
+            'cant take it anymore', "can't take it anymore",
+            'i need help', 'please help me', 'no one cares'
+        ]
+
+        // SCRIPTURES FOR CRISIS/THERAPY RESPONSES
+        const boundaryVerses = {
+            crisis: [
+                { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
+                { text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", ref: "Jeremiah 29:11" },
+                { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
+                { text: "I will never desert you nor forsake you.", ref: "Hebrews 13:5" },
+            ],
+            therapy: [
+                { text: "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.", ref: "Joshua 1:9" },
+                { text: "God is our refuge and strength, an ever-present help in trouble.", ref: "Psalm 46:1" },
+                { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
+                { text: "No weapon forged against you will prevail.", ref: "Isaiah 54:17" },
+                { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
+            ]
+        }
+
+        let currentBoundaryLevel = ''
+        let crisisFollowUpStage = 0
+
+        function checkBoundaries(text) {
+            const lower = text.toLowerCase()
+            for (const keyword of crisisKeywords) {
+                if (lower.includes(keyword)) return 'crisis'
+            }
+            for (const keyword of therapyKeywords) {
+                if (lower.includes(keyword)) return 'therapy'
+            }
+            return null
+        }
+
+        function showCrisisScreen(level, userText) {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            currentBoundaryLevel = level
+            crisisFollowUpStage = 0
+
+            const screen = document.getElementById('crisis-screen')
+            const title = document.getElementById('crisis-title')
+            const message = document.getElementById('crisis-message')
+            const scriptureBox = document.getElementById('crisis-scripture')
+            const verseText = document.getElementById('crisis-verse-text')
+            const verseRef = document.getElementById('crisis-verse-ref')
+            const resources = document.getElementById('crisis-resources')
+            const resourcesText = document.getElementById('crisis-resources-text')
+            const followup = document.getElementById('crisis-followup')
+            const question = document.getElementById('crisis-question')
+
+            if (level === 'crisis') {
+                title.innerText = `${name}, I hear you. 💙`
+                message.innerText = `What you're sharing right now matters deeply to me. I care about you more than you know — but I have to be honest with you. What you're going through is beyond what I'm able to help with, and you deserve real, professional support right now.\n\nYour life has immeasurable value. Please reach out for help.`
+
+                // Random crisis verse
+                const verse = boundaryVerses.crisis[Math.floor(Math.random() * boundaryVerses.crisis.length)]
+                verseText.innerText = verse.text
+                verseRef.innerText = `— ${verse.ref}`
+                scriptureBox.style.display = 'block'
+
+                // Crisis resources
+                resourcesText.innerHTML = `🆘 <strong>Crisis Support Lines:</strong><br><br>
+                🇺🇸 USA: Call or text <strong>988</strong> (Suicide & Crisis Lifeline)<br>
+                🇬🇧 UK: Call <strong>116 123</strong> (Samaritans — free, 24/7)<br>
+                🇿🇦 South Africa: <strong>0800 567 567</strong> (SADAG)<br>
+                🇨🇦 Canada: Call or text <strong>988</strong><br>
+                🇦🇺 Australia: <strong>13 11 14</strong> (Lifeline)<br>
+                🌍 International: <strong>befrienders.org</strong><br><br>
+                You are not alone. Help is one call away. 💙`
+                resources.style.display = 'block'
+                followup.style.display = 'none'
+
+            } else if (level === 'therapy') {
+                title.innerText = `${name}... 💙`
+                message.innerText = `Thank you for trusting me with something this heavy. I want to make sure I understand what you're going through.`
+
+                scriptureBox.style.display = 'none'
+                resources.style.display = 'none'
+
+                // Ask gentle follow up question
+                question.innerText = `Do you have someone in your life — a trusted friend, family member, or counsellor — that you feel safe talking to about this?`
+                followup.style.display = 'block'
+            }
+
+            screen.style.display = 'flex'
+        }
+
+        function crisisFollowUp(answer) {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const message = document.getElementById('crisis-message')
+            const scriptureBox = document.getElementById('crisis-scripture')
+            const verseText = document.getElementById('crisis-verse-text')
+            const verseRef = document.getElementById('crisis-verse-ref')
+            const resources = document.getElementById('crisis-resources')
+            const resourcesText = document.getElementById('crisis-resources-text')
+            const followup = document.getElementById('crisis-followup')
+            const question = document.getElementById('crisis-question')
+
+            if (crisisFollowUpStage === 0) {
+                if (answer === 'yes') {
+                    message.innerText = `I'm really glad you have someone. 💙 Please reach out to them — today if you can. You don't have to carry this alone.\n\nAnd if what you're going through is serious, please also consider speaking with a professional counsellor. There is no weakness in asking for help. It takes incredible courage.`
+                } else {
+                    message.innerText = `${name}, I'm so sorry you've been carrying this without someone to lean on. That takes so much out of a person. 💙\n\nI want to gently encourage you to reach out to a professional counsellor — someone trained to walk through this with you. You deserve that kind of care and support.`
+
+                    resourcesText.innerHTML = `🌿 <strong>Finding Professional Support:</strong><br><br>
+                    Consider speaking with a licensed counsellor or therapist in your area. Many offer sliding scale fees or free sessions.<br><br>
+                    🌍 <strong>Psychology Today</strong> — psychologytoday.com/us/therapists<br>
+                    🌍 <strong>BetterHelp</strong> — betterhelp.com (online therapy)<br>
+                    🌍 <strong>Open Path</strong> — openpathcollective.org (affordable therapy)<br><br>
+                    Your church pastor or community leader may also be a wonderful first step. 💙`
+                    resources.style.display = 'block'
+                }
+
+                // Show a therapy verse
+                const verse = boundaryVerses.therapy[Math.floor(Math.random() * boundaryVerses.therapy.length)]
+                verseText.innerText = verse.text
+                verseRef.innerText = `— ${verse.ref}`
+                scriptureBox.style.display = 'block'
+
+                // Ask one more follow up
+                crisisFollowUpStage = 1
+                question.innerText = `Is there anything else on your heart you'd like to share with me right now?`
+
+            } else if (crisisFollowUpStage === 1) {
+                followup.style.display = 'none'
+                if (answer === 'yes') {
+                    message.innerText = message.innerText + `\n\nI'm here, ${name}. Take your time. There's no rush. 💙\n\nWhen you're ready — whether that's today, tomorrow or next week — come back and talk to me. I'll always be listening. I'm not going anywhere.`
+
+                    // Show one more encouraging verse
+                    const verse = boundaryVerses.therapy[Math.floor(Math.random() * boundaryVerses.therapy.length)]
+                    verseText.innerText = verse.text
+                    verseRef.innerText = `— ${verse.ref}`
+                    scriptureBox.style.display = 'block'
+
+                } else {
+                    message.innerText = message.innerText + `\n\nThat's okay, ${name}. I'm proud of you for even opening up this much — that takes courage. 💙\n\nRemember — I'm always here whenever you need me. And please do consider reaching out to someone who can truly walk alongside you.`
+                }
+            }
+        }
+
+        function closeCrisisScreen() {
+            document.getElementById('crisis-screen').style.display = 'none'
+            currentBoundaryLevel = ''
+            crisisFollowUpStage = 0
+        }
+
+        // GENERAL ADVICE BOUNDARY
+        const adviceKeywords = [
+            'what should i do', 'should i leave', 'should i stay',
+            'give me advice', 'what do you think i should',
+            'tell me what to do', 'help me decide', 'what would you do'
+        ]
+
+        function checkAdviceBoundary(text) {
+            const lower = text.toLowerCase()
+            for (const keyword of adviceKeywords) {
+                if (lower.includes(keyword)) return true
+            }
+            return false
+        }
 
         // YOUR SPECIAL VERSES - hardcoded in their perfect versions
         const specialVerses = {
@@ -782,7 +1074,15 @@
         else if (diffDays < 30) timeAgo = `${Math.floor(diffDays / 7)} weeks ago`
         else timeAgo = 'last month'
 
-        subtext = `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI've been thinking a lot about you.\nHow are you feeling today? 💙`
+        const returningSubtexts = [
+            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI've been thinking a lot about you.\nHow are you feeling today? 💙`,
+            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nYou've been on my mind. How is your heart today? 💙`,
+            `Last time we talked (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI'm so glad you're back. How are you doing today? 💙`,
+            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nWelcome back. I kept a light on for you. What's the state of your heart today? 💙`,
+            `We last spoke ${timeAgo},. You were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI missed you. How is your mental health today? 💙`,
+            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nHere whenever you need me. What's on your heart today? 💙`,
+        ]
+        subtext = returningSubtexts[Math.floor(Math.random() * returningSubtexts.length)]
     } else {
         subtext = `I'm so glad you're back.\nHow are you feeling today? 💙`
     }
@@ -802,6 +1102,65 @@
             if (name) {
                 document.querySelector('h1').innerText = `Hi ${name}, I'm Lulo!`
             }
+
+            // Show the input area
+            document.getElementById('lulo-input-area').style.display = 'block'
+        }
+
+        function luloListen() {
+            const input = document.getElementById('lulo-input')
+            const text = input.value.trim()
+            if (!text) return
+
+            // Check crisis level first
+            const boundaryLevel = checkBoundaries(text)
+            if (boundaryLevel) {
+                input.value = ''
+                showCrisisScreen(boundaryLevel, text)
+                return
+            }
+
+            // Check advice boundary
+            if (checkAdviceBoundary(text)) {
+                const name = localStorage.getItem('luloUserName') || 'friend'
+                document.getElementById('lulo-reaction').innerText = `${name}, that sounds really important. 💙 I'm not the best one to guide you through a decision this significant — but I can sit with you in it and share what God's word says. Try clicking how you're feeling right now.`
+                animateLulo('nod')
+                input.value = ''
+                return
+            }
+
+            // Simple emotion detection from text
+            const emotionMap = {
+                'happy': 'happy', 'joyful': 'joyful', 'excited': 'excited',
+                'peaceful': 'peaceful', 'loved': 'loved', 'encouraged': 'encouraged',
+                'grateful': 'grateful', 'thankful': 'grateful', 'hopeful': 'hopeful',
+                'sad': 'sad', 'afraid': 'afraid', 'scared': 'afraid', 'fearful': 'afraid',
+                'anxious': 'anxious', 'worried': 'anxious', 'stressed': 'anxious',
+                'depressed': 'depressed', 'lonely': 'lonely', 'alone': 'lonely',
+                'angry': 'angry', 'mad': 'angry', 'frustrated': 'angry',
+                'tired': 'tired', 'exhausted': 'tired', 'weary': 'tired',
+                'heartbroken': 'heartbroken', 'overwhelmed': 'overwhelmed',
+                'confused': 'confused', 'lost': 'confused', 'bored': 'bored'
+            }
+
+            const lower = text.toLowerCase()
+            let detectedMood = null
+            for (const [keyword, mood] of Object.entries(emotionMap)) {
+                if (lower.includes(keyword)) {
+                    detectedMood = mood
+                    break
+                }
+            }
+
+            if (detectedMood) {
+                showScripture(detectedMood)
+            } else {
+                const name = localStorage.getItem('luloUserName') || 'friend'
+                document.getElementById('lulo-reaction').innerText = `I hear you, ${name}. 💙 Can you tell me a little more about how you're feeling? Or try clicking one of the emotions below.`
+                animateLulo('nod')
+            }
+
+            input.value = ''
         }
 
         function animateLulo(type) {
