@@ -1185,6 +1185,21 @@
             // SPECIFIC SITUATION DETECTION
         // These give Lulo context-aware responses
         const situationResponses = {
+            expecting: {
+                keywords: ['pregnant', 'pregnancy', 'expecting a baby', 'we are expecting',
+                          'i am expecting', 'having a baby', 'baby is coming',
+                          'due date', 'trimester', 'ultrasound', 'weeks pregnant',
+                          'weeks today', '38 weeks', 'maternity', 'labor',
+                          'birth', 'womb', 'infertility', 'trying to conceive',
+                          'period pain', 'menstrual cramps', 'miscarriage'],
+                mood: 'expecting',
+                reaction: [
+                    `OH ${name}!!! 🎉 What WONDERFUL news! A baby is coming! God is so good! Let me share something beautiful for this season!`,
+                    `${name}, a new life! 🥰 What a precious gift from God! Let me share something just for this beautiful season you're in!`,
+                    `${name}! 🍼 Growing a life is one of God's greatest miracles! Let me share something sacred for this moment!`,
+                    `A baby! 🎉 ${name}, God is writing the most beautiful story! Let me share something for you and your little one!`
+                ]
+            },
             exam: {
                 keywords: ['exam', 'exams', 'test tomorrow', 'finals', 'studying', 
                           'revision', 'study', 'grades', 'results', 'failed exam',
@@ -1242,10 +1257,10 @@
                 ]
             },
             health: {
-                keywords: ['sick', 'unwell', 'diagnosis', 'hospital', 'doctor',
-                          'illness', 'disease', 'pain', 'surgery', 'treatment',
-                          'not feeling well', 'health scare', 'test results',
-                          'medical', 'healing', 'chronic pain', 'chronic illness'],
+                keywords: ['sick', 'unwell', 'diagnosis', 'hospital',
+                            'illness', 'disease', 'surgery', 'treatment',
+                            'not feeling well', 'health scare', 'test results',
+                            'chronic pain', 'chronic illness', 'i am in pain'],
                 mood: 'afraid',
                 reaction: [
                     `${name}, health scares are so frightening. 💙 Let me share what God says about healing and His presence in sickness.`,
