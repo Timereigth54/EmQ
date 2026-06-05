@@ -445,6 +445,16 @@
             <button onclick="showScripture('bored')">😴 Bored</button>
         </div>
 
+        <!-- SCROLL HINT -->
+        <div id="scroll-hint" style="
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(0, 212, 255, 0.5);
+            margin-bottom: 10px;
+            animation: fadeIn 1s ease 1s forwards;
+            opacity: 0;
+        ">← scroll to see more emotions →</div>
+
         <!-- LULO LISTENS -->
         <div id="lulo-input-area" style="width: 100%; margin-bottom: 20px; display: none;">
             <div style="display: flex; gap: 10px; align-items: center;">
@@ -1121,6 +1131,12 @@
 
             // Show the input area
             document.getElementById('lulo-input-area').style.display = 'block'
+
+            // Hide scroll hint after 4 seconds
+            setTimeout(() => {
+                const hint = document.getElementById('scroll-hint')
+                if (hint) hint.style.display = 'none'
+            }, 4000)
         }
 
         function luloListen() {
