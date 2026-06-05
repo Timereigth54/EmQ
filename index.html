@@ -88,8 +88,8 @@
         }
 
         #lulo-face {
-            font-size: 90px;
-            margin-bottom: 10px;
+            font-size: 70px;
+            margin-bottom: 5px;
             filter: drop-shadow(0 0 20px #00d4ff);
             animation: float 3s ease-in-out infinite;
             display: inline-block;
@@ -122,34 +122,49 @@
         }
 
         #lulo-reaction {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #00d4ff;
-            margin-bottom: 15px;
-            min-height: 24px;
+            margin-bottom: 10px;
+            min-height: 20px;
             text-align: center;
+            max-width: 500px;
+            line-height: 1.5;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 1.6rem;
             color: #00d4ff;
             text-shadow: 0 0 20px #00d4ff;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-align: center;
         }
 
         p.subtitle {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #a0c4d8;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             text-align: center;
         }
 
         #mood-buttons {
             display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 30px;
+            gap: 8px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            width: 100%;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        #mood-buttons::-webkit-scrollbar {
+            display: none;
+        }
+
+        #mood-buttons button {
+            flex-shrink: 0;
         }
 
         button {
@@ -180,6 +195,7 @@
             display: none;
             animation: fadeIn 0.8s ease;
             margin-bottom: 20px;
+            min-height: 150px;
         }
 
         @keyframes fadeIn {
@@ -1275,6 +1291,11 @@
     box.style.animation = 'none'
     void box.offsetHeight
     box.style.animation = 'fadeIn 0.8s ease'
+
+    // Auto scroll to scripture so user never misses it
+    setTimeout(() => {
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 100)
 }
 
         function showAnother() {
