@@ -430,6 +430,7 @@
             <button onclick="showScripture('peaceful')">😌 Peaceful</button>
             <button onclick="showScripture('loved')">🥰 Loved</button>
             <button onclick="showScripture('encouraged')">💪 Encouraged</button>
+            <button onclick="showScripture('expecting')">🤰 Expecting</button>
             <button onclick="showScripture('grateful')">🙏 Grateful</button>
             <button onclick="showScripture('hopeful')">🌟 Hopeful</button>
             <button onclick="showScripture('sad')">😢 Sad</button>
@@ -982,8 +983,26 @@
         { text: "But as for you, be strong and do not give up, for your work will be rewarded.", ref: "2 Chronicles 15:7" },
         { text: "The Lord your God is with you, the Mighty Warrior who saves.", ref: "Zephaniah 3:17" },
     ],
+    expecting: [
+        { text: "None will miscarry or be barren in your land. I will give you a full life span.", ref: "Exodus 23:26" },
+        { text: "And I will rebuke the devourer for your sakes, and he shall not destroy the fruits of your ground; neither shall your vine cast her fruit before the time in the field, saith the LORD of hosts.", ref: "Malachi 3:11" },
+        { text: "For He has looked upon the low station and humiliation of His handmaiden. For behold, from now on all generations [of all ages] will call me blessed and declare me happy and to be envied!", ref: "Luke 1:48" },
+        { text: "His descendants will be mighty in the land; the generation of the upright will be blessed.", ref: "Psalm 112:2" },
+        { text: "Don't you see that children are God's best gift? the fruit of the womb his generous legacy? Like a warrior's fistful of arrows are the children of a vigorous youth. Oh, how blessed are you parents, with your quivers full of children!", ref: "Psalm 127:3-5" },
+        { text: "Your wife will bear children as a vine bears grapes, your household lush as a vineyard, the children around your table as fresh and promising as young olive shoots. Stand in awe of God's Yes. Oh, how he blesses the one who fears God!", ref: "Psalm 128:3-4" },
+        { text: "Sing, O childless woman, you who have never given birth! Break into loud and joyful song, O Jerusalem, you who have never been in labor. For the desolate woman now has more children than the woman who lives with her husband, says the LORD.", ref: "Isaiah 54:1" },
+        { text: "Before the birth pains even begin, Jerusalem gives birth to a son.", ref: "Isaiah 66:7" },
+        { text: "Would I ever bring this nation to the point of birth and then not deliver it? No! I would never keep this nation from being born, says your God.", ref: "Isaiah 66:9" },
+        { text: "The Lord will keep you from all harm — he will watch over your life; the Lord will watch over your coming and going both now and forevermore.", ref: "Psalm 121:7-8" },
+        { text: "Before I formed you in the womb I knew you, before you were born I set you apart.", ref: "Jeremiah 1:5" },
+        { text: "For you created my inmost being; you knit me together in my mother's womb. I praise you because I am fearfully and wonderfully made.", ref: "Psalm 139:13-14" },
+        { text: "She is clothed with strength and dignity, and she laughs without fear of the future.", ref: "Proverbs 31:25" },
+        { text: "Children are a gift from the Lord; they are a reward from him.", ref: "Psalm 127:3" },
+        { text: "The Lord will guide you continually, giving you water when you are dry and restoring your strength.", ref: "Isaiah 58:11" },
+        { text: "I can do all things through Christ who strengthens me.", ref: "Philippians 4:13" },
+        { text: "The Lord your God is with you, the Mighty Warrior who saves. He will take great delight in you; in his love he will rejoice over you with singing.", ref: "Zephaniah 3:17" },
+    ],
 }
-
         const reactions = {
             happy: ["That's wonderful! 🎉", "Happiness looks good on you! ✨", "Let's celebrate that! 🙌"],
             joyful: ["That joy is contagious! 😄", "Let that joy overflow! 🎉", "God's joy looks beautiful on you! ✨"],
@@ -1003,11 +1022,12 @@
             heartbroken: ["I'm so sorry you're hurting. 💙", "Your heart matters. I'm here. 🤗", "Let me share something healing..."],
             overwhelmed: ["One breath at a time. I've got you. 💙", "You don't have to carry this alone. 🤗"],
             confused: ["It's okay not to have all the answers. 💙", "Let's find some clarity together. ✨"],
-            bored: ["Oh, I have something for you! 😄", "Story time with Lulo! 📖", "Let me entertain you! 🌟"]
+            bored: ["Oh, I have something for you! 😄", "Story time with Lulo! 📖", "Let me entertain you! 🌟"],
+            expecting: ["What a beautiful season you're in! 🥰", "God is already writing this little one's story! 💙", "Pregnancy is sacred ground. Let me share something just for you... 🌟", "A baby is coming! 🎉 God is so good!"]
         }
 
         const faces = {
-            happy: "😊", joyful: "😄", excited: "🤩", peaceful: "😌",
+            happy: "😊", joyful: "😄", excited: "🤩", expecting: "🤰", peaceful: "😌",
             loved: "🥰", encouraged: "💪", grateful: "🥰", hopeful: "🌟",
             sad: "🥺", afraid: "🤗", anxious: "😟", depressed: "🥺",
             lonely: "🤗", angry: "😤", tired: "🥱", heartbroken: "🥺",
@@ -1101,12 +1121,12 @@
         else timeAgo = 'last month'
 
         const returningSubtexts = [
-            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI've been thinking a lot about you.\nHow are you feeling today? 💙`,
-            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nYou've been on my mind. How is your heart today? 💙`,
-            `Last time we talked (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI'm so glad you're back. How are you doing today? 💙`,
-            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nWelcome back. I kept a light on for you. What's the state of your heart today? 💙`,
-            `We last spoke ${timeAgo},. You were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI missed you. How is your mental health today? 💙`,
-            `${lastDate} (${timeAgo}), you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nHere whenever you need me. What's on your heart today? 💙`,
+            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI've been thinking a lot about you.\nHow are you feeling today? 💙`,
+            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nYou've been on my mind. How is your heart today? 💙`,
+            `Last time we talked (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI'm so glad you're back. How are you doing today? 💙`,
+            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nWelcome back. I kept a light on for you. What's the state of your heart today? 💙`,
+            `We last spoke ${timeAgo},. You were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI missed you. How is your mental health today? 💙`,
+            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nHere whenever you need me. What's on your heart today? 💙`,
         ]
         subtext = returningSubtexts[Math.floor(Math.random() * returningSubtexts.length)]
     } else {
@@ -1143,6 +1163,7 @@
             const input = document.getElementById('lulo-input')
             const text = input.value.trim()
             if (!text) return
+            const name = localStorage.getItem('luloUserName') || 'friend'
 
             // Check crisis level first
             const boundaryLevel = checkBoundaries(text)
@@ -1161,6 +1182,142 @@
                 return
             }
 
+            // SPECIFIC SITUATION DETECTION
+        // These give Lulo context-aware responses
+        const situationResponses = {
+            exam: {
+                keywords: ['exam', 'exams', 'test tomorrow', 'finals', 'studying', 
+                          'revision', 'study', 'grades', 'results', 'failed exam',
+                          'failed my test', 'school stress', 'college stress'],
+                mood: 'anxious',
+                reaction: [
+                    `Exam season is tough, ${name}! 💙 Remember — you are more than your results. Let me share something to steady your heart.`,
+                    `${name}, I hear that exam pressure. 💙 Take a breath. God goes before you into that exam room too.`,
+                    `Studies can feel so heavy sometimes, ${name}. 💙 Let me share something to remind you who you are beyond those grades.`
+                ]
+            },
+            deadline: {
+                keywords: ['deadline', 'due tomorrow', 'due today', 'presentation tomorrow',
+                          'project due', 'assignment due', 'running out of time',
+                          'not enough time', 'so much to do', 'behind on'],
+                mood: 'overwhelmed',
+                reaction: [
+                    `Deadlines can feel like walls closing in, ${name}. 💙 Let's find something to help you breathe through this.`,
+                    `One thing at a time, ${name}. 💙 God is not the author of panic. Let me share something to calm your mind.`,
+                    `${name}, you've gotten through tight deadlines before. 💙 Let me remind you where your strength comes from.`
+                ]
+            },
+            work: {
+                keywords: ['work stress', 'boss', 'job stress', 'coworker', 'workplace',
+                          'fired', 'lost my job', 'lost my work', 'job interview',
+                          'promotion', 'work pressure', 'office', 'colleague'],
+                mood: 'overwhelmed',
+                reaction: [
+                    `Work stress is so real, ${name}. 💙 Let me share something to remind you that your value isn't in your job title.`,
+                    `${name}, I hear you. The workplace can be a heavy place sometimes. 💙 Here's something for your heart.`,
+                    `Whatever is happening at work, ${name} — God is your true employer. 💙 Let me share something just for this.`
+                ]
+            },
+            financial: {
+                keywords: ['money', 'broke', 'debt', 'bills', 'can\'t afford',
+                          'financial', 'rent', 'mortgage', 'struggling financially',
+                          'no money', 'poverty', 'provision', 'not enough money'],
+                mood: 'anxious',
+                reaction: [
+                    `Financial pressure is one of the heaviest burdens, ${name}. 💙 Let me share what God says about provision.`,
+                    `${name}, money worries can steal your peace. 💙 Let me remind you who your provider really is.`,
+                    `God has never let His children starve, ${name}. 💙 Let me share something to anchor your trust.`
+                ]
+            },
+            grief: {
+                keywords: ['lost someone', 'someone died', 'death', 'passed away',
+                          'grieving', 'grief', 'funeral', 'miss them', 'they\'re gone',
+                          'lost my mom', 'lost my dad', 'lost my friend', 'lost my baby',
+                          'bereavement', 'mourning'],
+                mood: 'heartbroken',
+                reaction: [
+                    `${name}... I'm so sorry for your loss. 💙 There are no words. But let me sit with you in this for a moment.`,
+                    `Grief is love with nowhere to go, ${name}. 💙 God sees every tear. Let me share something for this tender place.`,
+                    `${name}, losing someone changes everything. 💙 You don't have to be okay right now. Let me share something gentle.`
+                ]
+            },
+            health: {
+                keywords: ['sick', 'unwell', 'diagnosis', 'hospital', 'doctor',
+                          'illness', 'disease', 'pain', 'surgery', 'treatment',
+                          'not feeling well', 'health scare', 'test results',
+                          'medical', 'healing', 'chronic pain', 'chronic illness'],
+                mood: 'afraid',
+                reaction: [
+                    `${name}, health scares are so frightening. 💙 Let me share what God says about healing and His presence in sickness.`,
+                    `I'm sorry you're going through this physically, ${name}. 💙 God is the Great Physician. Let me share something healing.`,
+                    `Your body and your soul matter to God, ${name}. 💙 Let me share something for this difficult season.`
+                ]
+            },
+            relationship: {
+                keywords: ['relationship', 'breakup', 'broke up', 'divorce', 'separated',
+                          'marriage problems', 'husband', 'wife', 'boyfriend', 'girlfriend',
+                          'argument', 'fight with', 'conflict', 'trust issues',
+                          'cheating', 'betrayed', 'betrayal'],
+                mood: 'heartbroken',
+                reaction: [
+                    `Relationship pain cuts so deep, ${name}. 💙 Let me share something for your heart right now.`,
+                    `${name}, I hear you. Matters of the heart are never simple. 💙 Here's something to hold onto.`,
+                    `God sees what you're going through in your relationships, ${name}. 💙 Let me share something just for this.`
+                ]
+            },
+            family: {
+                keywords: ['family problems', 'family stress', 'parent', 'parents',
+                          'siblings', 'toxic family', 'family drama', 'difficult family',
+                          'estranged', 'falling out', 'family conflict'],
+                mood: 'overwhelmed',
+                reaction: [
+                    `Family dynamics can be the most complex of all, ${name}. 💙 Let me share something for this.`,
+                    `${name}, family pain is uniquely deep. 💙 God knows family — He placed us in them. Let me share something.`,
+                    `You can't choose family but you can choose peace, ${name}. 💙 Let me share something to help you find it.`
+                ]
+            },
+            burnout: {
+                keywords: ['burnout', 'burnt out', 'burned out', 'exhausted everything',
+                          'nothing left', 'empty inside', 'running on empty',
+                          'can\'t do this anymore', 'drained', 'depleted',
+                          'no motivation', 'lost my passion', 'lost passion'],
+                mood: 'tired',
+                reaction: [
+                    `Burnout is real and it's serious, ${name}. 💙 This is Lulo telling you — you need rest, not just a pep talk. But first, let me share something.`,
+                    `${name}, when the tank is empty God is still full. 💙 Let me share something for this deeply tired place.`,
+                    `Running on empty is unsustainable, ${name}. 💙 God never asked you to run on your own strength. Let me remind you.`
+                ]
+            },
+            purpose: {
+                keywords: ['purpose', 'lost my purpose', 'don\'t know why', 'what\'s the point',
+                          'no direction', 'lost my way', 'don\'t know what to do with my life',
+                          'feel stuck', 'going nowhere', 'no future', 'meaningless'],
+                mood: 'confused',
+                reaction: [
+                    `${name}, questions of purpose are some of the deepest a person can carry. 💙 Let me share what God says about your why.`,
+                    `Feeling lost is actually the beginning of being found, ${name}. 💙 Let me share something for this season.`,
+                    `${name}, God has not forgotten the plans He has for you. 💙 Let me remind you of that right now.`
+                ]
+            }
+        }
+
+        // Check situation detection FIRST before emotion map
+        const lowerInput = text.toLowerCase()
+        for (const [situation, data] of Object.entries(situationResponses)) {
+            for (const keyword of data.keywords) {
+                if (lowerInput.includes(keyword)) {
+                    // Found a situation match!
+                    const randomReaction = data.reaction[Math.floor(Math.random() * data.reaction.length)]
+                    document.getElementById('lulo-reaction').innerText = randomReaction
+                    document.getElementById('lulo-face').innerText = faces[data.mood]
+                    animateLulo('nod')
+                    showScripture(data.mood)
+                    input.value = ''
+                    return
+                }
+            }
+        }
+
             // Simple emotion detection from text
             const emotionMap = {
                 'happy': 'happy', 'joyful': 'joyful', 'excited': 'excited',
@@ -1172,7 +1329,15 @@
                 'angry': 'angry', 'mad': 'angry', 'frustrated': 'angry',
                 'tired': 'tired', 'exhausted': 'tired', 'weary': 'tired',
                 'heartbroken': 'heartbroken', 'overwhelmed': 'overwhelmed',
-                'confused': 'confused', 'lost': 'confused', 'bored': 'bored'
+                'confused': 'confused', 'lost': 'confused', 'bored': 'bored',
+                'pregnant': 'expecting', 'pregnancy': 'expecting',
+                'expecting': 'expecting', 'baby': 'expecting',
+                'trimester': 'expecting', 'due date': 'expecting',
+                'labor': 'expecting', 'birth': 'expecting',
+                'womb': 'expecting', 'maternity': 'expecting',
+                'infertility': 'expecting', 'miscarriage': 'expecting',
+                'trying to conceive': 'expecting', 'period pain': 'expecting',
+                'menstrual': 'expecting', 'cramps': 'expecting'
             }
 
             const lower = text.toLowerCase()
@@ -1202,6 +1367,32 @@
             luloFace.classList.add(type)
         }
 
+        function formatMood(mood) {
+            const moodPhrases = {
+                happy: 'happy',
+                joyful: 'joyful',
+                excited: 'excited',
+                peaceful: 'peaceful',
+                loved: 'loved',
+                encouraged: 'encouraged',
+                grateful: 'grateful',
+                hopeful: 'hopeful',
+                sad: 'sad',
+                afraid: 'afraid',
+                anxious: 'anxious',
+                depressed: 'depressed',
+                lonely: 'lonely',
+                angry: 'angry',
+                tired: 'tired',
+                heartbroken: 'heartbroken',
+                overwhelmed: 'overwhelmed',
+                confused: 'confused',
+                bored: 'bored',
+                expecting: 'in an expecting season'
+            }
+            return moodPhrases[mood] || mood
+        }
+
         function showScripture(mood) {
     currentMood = mood
     const list = specialVerses[mood]
@@ -1227,7 +1418,7 @@
     let reactionText = reactionList[randomReaction]
 
     if (lastMood && lastMood !== mood) {
-        const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content']
+        const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting']
         const lastWasNegative = !positiveEmotions.includes(lastMood)
         const newIsPositive = positiveEmotions.includes(mood)
         const lastWasPositive = positiveEmotions.includes(lastMood)
@@ -1236,49 +1427,49 @@
         if (lastWasNegative && newIsPositive) {
             // Improvement! Celebrate!
             const improvementReactions = [
-                `${name}, this makes my heart so happy! 🎉 Last time you came to me feeling ${lastMood} — and today you're feeling ${mood}. That's not a small thing. That's growth. God has been walking with you and it shows. Keep going! 💙`,
-                `Oh ${name}! 🌟 What a difference! From ${lastMood} to ${mood} — I am so proud of you. God is so faithful. Let's celebrate this together! 🎉`,
-                `${name}! I'm truly happy to see this positive change! 💙 You were carrying ${lastMood} last time — look at you today feeling ${mood}. Never forget how far you've come!`
+                `${name}, this makes my heart so happy! 🎉 Last time you came to me feeling ${formatMood(lastMood)} — and today you're feeling ${formatMood(mood)}. That's not a small thing. That's growth. God has been walking with you and it shows. Keep going! 💙`,
+                `Oh ${name}! 🌟 What a difference! From ${lastMood} to ${formatMood(mood)} — I am so proud of you. God is so faithful. Let's celebrate this together! 🎉`,
+                `${name}! I'm truly happy to see this positive change! 💙 You were carrying ${formatMood(lastMood)} last time — look at you today feeling ${formatMood(mood)}. Never forget how far you've come!`
             ]
             reactionText = improvementReactions[Math.floor(Math.random() * improvementReactions.length)]
         } else if (lastWasPositive && newIsNegative) {
             // Decline - be gentle
             const gentleReactions = [
-                `I'm sorry you're going through this, ${name}. 💙 Last time you were feeling ${lastMood} — today feels heavier. That's okay. Life has seasons. I'm still here with you.`,
-                `Oh ${name}... 💙 I'm sad to hear you're feeling ${mood} today. Last time we spoke you were feeling ${lastMood}. Whatever happened between then and now — you don't have to carry it alone.`,
-                `${name}, I see you. 💙 It's okay that today feels different from last time. Feeling ${mood} after feeling ${lastMood} — sometimes that's just life. Let's find something for your heart today.`
+                `I'm sorry you're going through this, ${name}. 💙 Last time you were feeling ${formatMood(lastMood)} — today feels heavier. That's okay. Life has seasons. I'm still here with you.`,
+                `Oh ${name}... 💙 I'm sad to hear you're feeling ${formatMood(mood)} today. Last time we spoke you were feeling ${formatMood(lastMood)}. Whatever happened between then and now — you don't have to carry it alone.`,
+                `${name}, I see you. 💙 It's okay that today feels different from last time. feeling ${formatMood(mood)} after feeling ${formatMood(lastMood)} — sometimes that's just life. Let's find something for your heart today.`
             ]
             reactionText = gentleReactions[Math.floor(Math.random() * gentleReactions.length)]
         } else if (lastWasNegative && newIsNegative) {
             // Different difficult emotion
             const layeredReactions = [
-                `Hmm, something feels different today, ${name}. Last time it was ${lastMood} — today it's ${mood}. Life can be so layered sometimes, can't it? Whatever you're carrying right now, I'm here. 💙`,
-                `${name}, I notice things feel different today. Last time was ${lastMood} and today is ${mood}. You're carrying a lot. Let's find something for this together. 💙`,
-                `Oh ${name}... 💙 From ${lastMood} to ${mood} — you've been through it lately haven't you? I see you. Let me find something just for this moment.`
+                `Hmm, something feels different today, ${name}. Last time it was ${formatMood(lastMood)} — today it's ${formatMood(mood)}. Life can be so layered sometimes, can't it? Whatever you're carrying right now, I'm here. 💙`,
+                `${name}, I notice things feel different today. Last time was ${lastMood} and today is ${formatMood(mood)}. You're carrying a lot. Let's find something for this together. 💙`,
+                `Oh ${name}... 💙 From ${lastMood} to ${formatMood(mood)} — you've been through it lately haven't you? I see you. Let me find something just for this moment.`
             ]
             reactionText = layeredReactions[Math.floor(Math.random() * layeredReactions.length)]
         } else if (lastWasPositive && newIsPositive) {
             // Both positive - celebrate continuity
             const continuityReactions = [
-                `Look at you, ${name}! 🌟 You came in feeling ${lastMood} last time and today you're feeling ${mood}. God is so good. Let's celebrate that together! 🎉`,
-                `${name}, you're glowing! 🌟 ${lastMood} last time, ${mood} today — keep walking in this light! 💙`,
-                `This makes me so happy, ${name}! 🎉 From ${lastMood} to ${mood} — God's goodness is all over your life!`
+                `Look at you, ${name}! 🌟 You came in feeling ${formatMood(lastMood)} last time and today you're feeling ${formatMood(mood)}. God is so good. Let's celebrate that together! 🎉`,
+                `${name}, you're glowing! 🌟 ${formatMood(lastMood)} last time, ${formatMood(mood)} today — keep walking in this light! 💙`,
+                `This makes me so happy, ${name}! 🎉 From ${lastMood} to ${formatMood(mood)} — God's goodness is all over your life!`
             ]
             reactionText = continuityReactions[Math.floor(Math.random() * continuityReactions.length)]
         }
     } else if (lastMood && lastMood === mood) {
         // Same emotion as last time
-        const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content']
+        const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting']
         if (positiveEmotions.includes(mood)) {
             const samePositiveReactions = [
-                `Still feeling ${mood}, ${name}? 🌟 I love that for you! Let's keep that going! 🎉`,
-                `${mood} again, ${name}! 🎉 God's goodness just keeps showing up doesn't it? 💙`,
+                `Still feeling ${formatMood(mood)}, ${name}? 🌟 I love that for you! Let's keep that going! 🎉`,
+                `${formatMood(mood)} again, ${name}! 🎉 God's goodness just keeps showing up doesn't it? 💙`,
             ]
             reactionText = samePositiveReactions[Math.floor(Math.random() * samePositiveReactions.length)]
         } else {
             const sameNegativeReactions = [
                 `I see you're still carrying this, ${name}. That's okay — healing isn't always a straight line, and I'm not going anywhere. 💙 You don't have to face this alone.`,
-                `Still feeling ${mood}, ${name}? 💙 I'm still here. We'll keep walking through this together until the light comes.`,
+                `Still feeling ${formatMood(mood)}, ${name}? 💙 I'm still here. We'll keep walking through this together until the light comes.`,
                 `${name}, I'm here. Still. 💙 Some seasons take time — but God's timing is perfect. Let's find something for today.`
             ]
             reactionText = sameNegativeReactions[Math.floor(Math.random() * sameNegativeReactions.length)]
