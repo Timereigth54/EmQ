@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Em_Q | Your Pocket Companion</title>
@@ -1159,11 +1160,29 @@
             }, 4000)
         }
 
-        function luloListen() {
+        async function luloListen() {
             const input = document.getElementById('lulo-input')
             const text = input.value.trim()
             if (!text) return
             const name = localStorage.getItem('luloUserName') || 'friend'
+
+            // PRAYER DETECTION - check first before anything else
+        const prayerKeywords = [
+            'pray with me', 'can you pray', 'please pray',
+            'say a prayer', 'prayer for me', 'pray for me',
+            'let\'s pray', 'lets pray', 'i need prayer',
+            'need a prayer', 'pray together'
+        ]
+
+        const isPrayerRequest = prayerKeywords.some(keyword => 
+            text.toLowerCase().includes(keyword)
+        )
+
+        if (isPrayerRequest) {
+            input.value = ''
+            await generatePrayer()
+            return
+        }
 
             // Check crisis level first
             const boundaryLevel = checkBoundaries(text)
@@ -1373,6 +1392,149 @@
             }
 
             input.value = ''
+        }
+
+        async function generatePrayer() {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const lastMood = localStorage.getItem('luloLastMood') || null
+            const currentMoodForPrayer = currentMood || lastMood || 'seeking comfort'
+            const lastRef = localStorage.getItem('luloLastRef') || null
+            const lastVisit = localStorage.getItem('luloLastVisitDate') || null
+            const timestamp = localStorage.getItem('luloLastVisitTimestamp')
+            
+            // Work out how long they've been using Em_Q
+            let duration = ''
+            if (timestamp) {
+                const days = Math.floor((new Date() - new Date(parseInt(timestamp))) / (1000 * 60 * 60 * 24))
+                if (days === 0) duration = 'today'
+                else if (days === 1) duration = 'since yesterday'
+                else if (days < 7) duration = `for the past ${days} days`
+                else if (days < 30) duration = `for the past ${Math.floor(days/7)} week${Math.floor(days/7) > 1 ? 's' : ''}`
+                else duration = `for a while now`
+            }
+
+            // Determine if positive or difficult emotion
+            const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 
+                                      'peaceful', 'loved', 'encouraged', 'joyful', 
+                                      'expecting', 'content', 'blessed']
+            const isPositive = positiveEmotions.includes(currentMoodForPrayer)
+
+            // Build context for Claude
+            let prayerContext = ''
+            if (isPositive) {
+                prayerContext = `The user named ${name} is feeling ${currentMoodForPrayer} and has asked Lulo to pray with them. This is a celebratory, thankful moment.`
+            } else {
+                prayerContext = `The user named ${name} is feeling ${currentMoodForPrayer}${duration ? ' ' + duration : ''}. ${lastRef ? `The last scripture shared with them was ${lastRef}.` : ''} They have asked Lulo to pray with them.`
+            }
+
+            // Show loading state
+            const box = document.getElementById('scripture-box')
+            const text_el = document.getElementById('scripture-text')
+            const loading = document.getElementById('loading-text')
+            const anotherBtn = document.getElementById('another-btn')
+
+            box.style.display = 'block'
+            loading.style.display = 'block'
+            loading.innerText = 'Lulo is praying with you... 🙏'
+            text_el.innerText = ''
+            anotherBtn.style.display = 'none'
+
+            // Update Lulo's face and reaction
+            document.getElementById('lulo-face').innerText = '🙏'
+            document.getElementById('lulo-reaction').innerText = `Of course, ${name}. Let me pray with you... 💙`
+            animateLulo('nod')
+
+            // Scroll to prayer box
+            setTimeout(() => {
+                box.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 100)
+
+            // Build the prompt for Claude
+            const prompt = `You are Lulo, a warm and caring AI companion in the Em_Q app. 
+            
+${name} has asked you to pray with them. Here is the context: ${prayerContext}
+
+Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this style:
+- Address God warmly as "Father" or "Our Father"
+- Mention ${name} by name
+- Reference their current emotional state naturally
+- If they've been struggling for a while, acknowledge that gently
+- Include ONE brief scripture reference (just book and verse, not the full text)
+- End with a faith declaration based on a prayer promise verse (like Mark 11:24, Matthew 7:7, John 16:24, or similar)
+- Close with "In Jesus' name, Amen."
+- Keep it friendly, warm and conversational — like a friend praying with them
+- If the emotion is positive, make it a prayer of thanksgiving and celebration
+- Do NOT be preachy or formal
+- Do NOT use flowery religious language
+- Maximum 5 sentences total
+- Do NOT use any dashes of any kind — no em dashes, no hyphens as pauses, no bullet points
+- Write as pure flowing natural prose only
+- Instead of dashes use commas or rewrite the sentence naturally
+- No formatting of any kind whatsoever`
+
+            try {
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': CLAUDE_CONFIG.apiKey,
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-dangerous-direct-browser-access': 'true'
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 300,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ]
+                    })
+                })
+
+                const data = await response.json()
+
+                if (data.content && data.content[0]) {
+                    const prayer = data.content[0].text
+                    loading.style.display = 'none'
+                    text_el.innerText = prayer
+
+                    // Update Lulo's reaction after prayer
+                    setTimeout(() => {
+                        document.getElementById('lulo-reaction').innerText = `I'm always here to pray with you, ${name}. 💙`
+                    }, 1000)
+
+                    // Reset animation
+                    box.style.animation = 'none'
+                    void box.offsetHeight
+                    box.style.animation = 'fadeIn 0.8s ease'
+
+                    // Save that we prayed together
+                    localStorage.setItem('luloLastPrayer', new Date().toLocaleDateString())
+
+                } else {
+                    throw new Error('No response from Claude')
+                }
+
+            } catch (error) {
+                loading.style.display = 'none'
+                console.error('Prayer error:', error)
+
+                // Fallback prayer if API fails
+                const fallbackPrayers = [
+                    `Father, I bring ${name} before you right now. You know exactly what they're carrying today and you care about every detail of their life. I pray that your peace — the kind that goes beyond all understanding — would guard their heart right now. You promised that when we ask, we receive, so we're asking with faith today. In Jesus' name, Amen.`,
+                    `Our Father, ${name} needs you right now and I'm so glad we can come to you together. You see them, you know them, and you love them completely. I pray that they feel your presence in a real and tangible way today. Thank you for being a God who answers prayer. In Jesus' name, Amen.`,
+                    `Father, thank you that ${name} came to pray today — that tells me their faith is alive and working. I pray that whatever they're facing, they would see your hand at work in it. You said in Matthew 7:7 to ask and we shall receive, so we're asking. In Jesus' name, Amen.`
+                ]
+                
+                const fallback = fallbackPrayers[Math.floor(Math.random() * fallbackPrayers.length)]
+                text_el.innerText = fallback
+
+                box.style.animation = 'none'
+                void box.offsetHeight
+                box.style.animation = 'fadeIn 0.8s ease'
+            }
         }
 
         function animateLulo(type) {
