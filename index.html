@@ -307,6 +307,166 @@
         >LET'S GO! →</button>
     </div>
 
+    <!-- JOURNAL SCREEN -->
+    <div id="journal-screen" style="
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
+        flex-direction: column;
+        align-items: center;
+        z-index: 1001;
+        padding: 20px;
+        overflow-y: auto;
+    ">
+        <div style="width: 100%; max-width: 500px; padding-bottom: 40px;">
+
+            <!-- HEADER -->
+            <div style="text-align: center; margin-bottom: 20px; padding-top: 20px;">
+                <div style="font-size: 50px; margin-bottom: 10px;">📔</div>
+                <h2 id="journal-name" style="color: #00d4ff; font-size: 1.5rem; text-shadow: 0 0 20px #00d4ff;"></h2>
+                <p style="color: #a0c4d8; font-size: 0.85rem; margin-top: 5px;">Your emotional journey with Lulo 💙</p>
+            </div>
+
+            <!-- LULO'S WEEKLY SUGGESTION -->
+            <div style="background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #00d4ff; font-size: 0.9rem; margin-bottom: 10px;">💙 Lulo's Weekly Reflection</h3>
+                <p id="journal-suggestion" style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.7;"></p>
+            </div>
+
+            <!-- WEEKLY SUMMARY -->
+            <h3 style="color: #00d4ff; font-size: 0.9rem; margin-bottom: 10px; letter-spacing: 1px;">THIS WEEK</h3>
+            <div id="journal-summary"></div>
+
+            <!-- RECENT ENTRIES -->
+            <h3 style="color: #00d4ff; font-size: 0.9rem; margin-bottom: 10px; margin-top: 20px; letter-spacing: 1px;">RECENT ENTRIES</h3>
+            <div id="journal-entries"></div>
+
+            <!-- CLOSE BUTTON -->
+            <button onclick="closeJournal()" style="
+                width: 100%;
+                background: transparent;
+                border: 2px solid #00d4ff;
+                color: #00d4ff;
+                padding: 15px;
+                border-radius: 50px;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                margin-top: 20px;
+            "
+            onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
+            onmouseout="this.style.background='transparent'; this.style.color='#00d4ff';"
+            >Back to Lulo 💙</button>
+
+        </div>
+    </div>
+
+    <!-- EMERGENCY KIT SCREEN -->
+    <div id="emergency-screen" style="
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
+        flex-direction: column;
+        align-items: center;
+        z-index: 1001;
+        padding: 20px;
+        overflow-y: auto;
+    ">
+        <div style="width: 100%; max-width: 500px; padding-bottom: 40px;">
+
+            <!-- HEADER -->
+            <div style="text-align: center; margin-bottom: 25px; padding-top: 20px;">
+                <div style="font-size: 50px; margin-bottom: 10px;">🆘</div>
+                <h2 style="color: #00d4ff; font-size: 1.5rem; text-shadow: 0 0 20px #00d4ff;">Emergency Kit</h2>
+                <p style="color: #a0c4d8; font-size: 0.85rem; margin-top: 5px;">This works without internet 💙</p>
+            </div>
+
+            <!-- BREATHING EXERCISE -->
+            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
+                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">🫁 Calm Your Breathing</h3>
+                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8;">
+                    <strong style="color: #00d4ff;">The 4-7-8 Technique:</strong><br>
+                    1. Breathe IN slowly for <strong style="color: #00d4ff;">4 seconds</strong><br>
+                    2. Hold your breath for <strong style="color: #00d4ff;">7 seconds</strong><br>
+                    3. Breathe OUT slowly for <strong style="color: #00d4ff;">8 seconds</strong><br>
+                    4. Repeat <strong style="color: #00d4ff;">4 times</strong><br><br>
+                    This activates your nervous system's calm response. Do it now. 💙
+                </p>
+            </div>
+
+            <!-- GROUNDING TECHNIQUE -->
+            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
+                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">🌱 Ground Yourself (5-4-3-2-1)</h3>
+                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8;">
+                    Look around you right now and name:<br><br>
+                    👀 <strong style="color: #00d4ff;">5 things</strong> you can SEE<br>
+                    ✋ <strong style="color: #00d4ff;">4 things</strong> you can TOUCH<br>
+                    👂 <strong style="color: #00d4ff;">3 things</strong> you can HEAR<br>
+                    👃 <strong style="color: #00d4ff;">2 things</strong> you can SMELL<br>
+                    👅 <strong style="color: #00d4ff;">1 thing</strong> you can TASTE<br><br>
+                    This brings you back to the present moment. You are safe right now. 💙
+                </p>
+            </div>
+
+            <!-- DON'T PANIC -->
+            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
+                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">💙 How Not To Panic</h3>
+                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8;">
+                    1. <strong style="color: #00d4ff;">Stop and breathe</strong> — panic feeds on speed. Slow down.<br>
+                    2. <strong style="color: #00d4ff;">Name what you feel</strong> — "I am feeling anxious right now." Naming it reduces it.<br>
+                    3. <strong style="color: #00d4ff;">Look for what's real</strong> — panic lies. Ask: "Am I actually in danger right now?"<br>
+                    4. <strong style="color: #00d4ff;">Move your body</strong> — stand up, walk, shake your hands.<br>
+                    5. <strong style="color: #00d4ff;">Call someone</strong> — panic shrinks in the presence of another voice. 💙
+                </p>
+            </div>
+
+            <!-- SCRIPTURE FOR CRISIS -->
+            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
+                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">📖 Hold On To This</h3>
+                <p style="color: #e0f4ff; font-size: 0.95rem; line-height: 1.8; font-style: italic;" id="emergency-verse"></p>
+            </div>
+
+            <!-- EMERGENCY NUMBERS -->
+            <div style="background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
+                <h3 style="color: #ff9999; font-size: 1rem; margin-bottom: 12px;">📞 Emergency Numbers</h3>
+                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 2;">
+                    🚨 <strong style="color: #ff9999;">Police / Ambulance / Fire:</strong><br>
+                    🇺🇸 USA: <strong>911</strong> &nbsp;|&nbsp; 🇬🇧 UK: <strong>999</strong><br>
+                    🇳🇬 Nigeria: <strong>112</strong> &nbsp;|&nbsp; 🇿🇦 South Africa: <strong>10111</strong><br>
+                    🇷🇺 Russia: <strong>112</strong> &nbsp;|&nbsp; 🇦🇺 Australia: <strong>000</strong><br>
+                    🌍 Most countries: <strong>112</strong> (works globally)<br><br>
+                    🧠 <strong style="color: #ff9999;">Mental Health Crisis:</strong><br>
+                    🇺🇸 USA: <strong>988</strong> (call or text)<br>
+                    🇬🇧 UK: <strong>116 123</strong> (Samaritans)<br>
+                    🇳🇬 Nigeria: <strong>0800 800 2000</strong> (NEEM)<br>
+                    🌍 International: <strong>befrienders.org</strong>
+                </p>
+            </div>
+
+            <!-- CLOSE BUTTON -->
+            <button onclick="closeEmergencyKit()" style="
+                width: 100%;
+                background: transparent;
+                border: 2px solid #00d4ff;
+                color: #00d4ff;
+                padding: 15px;
+                border-radius: 50px;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                margin-top: 10px;
+            "
+            onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
+            onmouseout="this.style.background='transparent'; this.style.color='#00d4ff';"
+            >I'm okay, take me back to Lulo 💙</button>
+
+        </div>
+    </div>
+
     <!-- CRISIS SCREEN -->
     <div id="crisis-screen" style="
         display: none;
@@ -504,6 +664,50 @@
         </div>
 
         <div id="footer">EM_Q © 2026 | POWERED BY LULO</div>
+
+        <!-- JOURNAL BUTTON -->
+        <div id="journal-btn" onclick="showJournal()" style="
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 500;
+            transition: all 0.3s ease;
+        "
+        onmouseover="this.style.background='rgba(0,212,255,0.25)'; this.style.transform='scale(1.1)';"
+        onmouseout="this.style.background='rgba(0,212,255,0.1)'; this.style.transform='scale(1)';"
+        title="My Journey">📔</div>
+        
+        <!-- EMERGENCY KIT BUTTON -->
+        <div id="emergency-btn" onclick="showEmergencyKit()" style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 100, 100, 0.15);
+            border: 2px solid rgba(255, 100, 100, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 500;
+            transition: all 0.3s ease;
+        "
+        onmouseover="this.style.background='rgba(255,100,100,0.3)'; this.style.transform='scale(1.1)';"
+        onmouseout="this.style.background='rgba(255,100,100,0.15)'; this.style.transform='scale(1)';"
+        title="Emergency Kit">🆘</div>
     </div>
 
     <script>
@@ -515,7 +719,8 @@
             'hurt myself', 'harm myself', 'dont want to live',
             "don't want to live", 'no reason to live', 'better off dead',
             'want to disappear', 'cant go on', "can't go on",
-            'end it all', 'not worth living'
+            'end it all', 'not worth living', 'pass out', 'passing out', 'can\'t breathe', 
+            'chest pain', 'chest is tight'
         ]
 
         // THERAPY LEVEL - needs professional support
@@ -668,6 +873,201 @@
             }
         }
 
+        // JOURNAL SYSTEM
+        function logJournalEntry(mood, ref, preview) {
+            const entries = getJournalEntries()
+            const entry = {
+                mood: mood,
+                ref: ref,
+                preview: preview,
+                date: new Date().toLocaleDateString('en-US', { 
+                    weekday: 'short', month: 'short', day: 'numeric' 
+                }),
+                time: new Date().toLocaleTimeString('en-US', { 
+                    hour: '2-digit', minute: '2-digit' 
+                }),
+                timestamp: new Date().getTime()
+            }
+            entries.unshift(entry)
+            // Keep last 90 entries (about 3 months)
+            const trimmed = entries.slice(0, 90)
+            localStorage.setItem('luloJournal', JSON.stringify(trimmed))
+        }
+
+        function getJournalEntries() {
+            try {
+                return JSON.parse(localStorage.getItem('luloJournal')) || []
+            } catch {
+                return []
+            }
+        }
+
+        function getWeeklySummary() {
+            const entries = getJournalEntries()
+            const oneWeekAgo = new Date().getTime() - (7 * 24 * 60 * 60 * 1000)
+            const weekEntries = entries.filter(e => e.timestamp > oneWeekAgo)
+
+            if (weekEntries.length === 0) return null
+
+            // Count emotions
+            const moodCount = {}
+            weekEntries.forEach(e => {
+                if (e.mood !== 'prayer') {
+                    moodCount[e.mood] = (moodCount[e.mood] || 0) + 1
+                }
+            })
+
+            // Find most frequent mood
+            const sortedMoods = Object.entries(moodCount).sort((a, b) => b[1] - a[1])
+            const topMood = sortedMoods[0]
+            const prayerCount = weekEntries.filter(e => e.mood === 'prayer').length
+
+            const positiveEmotionsList = ['happy', 'grateful', 'hopeful', 'excited', 
+                                          'peaceful', 'loved', 'encouraged', 'joyful', 
+                                          'expecting', 'content', 'blessed']
+            const positiveCount = weekEntries.filter(e => 
+                positiveEmotionsList.includes(e.mood)
+            ).length
+            const difficultCount = weekEntries.filter(e => 
+                !positiveEmotionsList.includes(e.mood) && e.mood !== 'prayer'
+            ).length
+
+            return {
+                total: weekEntries.length,
+                topMood: topMood ? topMood[0] : null,
+                topMoodCount: topMood ? topMood[1] : 0,
+                prayerCount,
+                positiveCount,
+                difficultCount,
+                moodCount,
+                entries: weekEntries
+            }
+        }
+
+        function getLuloWeeklySuggestion(summary) {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            if (!summary) return `${name}, start using Em_Q daily and I'll track your emotional journey here! 💙`
+
+            const { topMood, positiveCount, difficultCount, prayerCount } = summary
+            const positiveEmotionsList = ['happy', 'grateful', 'hopeful', 'excited', 
+                                          'peaceful', 'loved', 'encouraged', 'joyful']
+
+            if (positiveCount > difficultCount) {
+                return `${name}, this was a predominantly positive week! 🌟 You felt ${topMood} most often. Keep nurturing what's bringing you joy. ${prayerCount > 0 ? `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} this week — that matters! 🙏` : 'Try starting next week with a prayer! 💙'}`
+            } else if (difficultCount > positiveCount) {
+                return `${name}, this was a tough week and I see that. 💙 You felt ${topMood} most often. For next week — try opening Em_Q first thing in the morning before the day takes over. ${prayerCount === 0 ? 'And let\'s pray together more — it really helps. 🙏' : `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} — keep that going. 💙`}`
+            } else {
+                return `${name}, this week had its ups and downs — which is just life. 💙 You felt ${topMood} most often. For next week, try to notice the small moments of joy and bring them to Lulo. ${prayerCount > 0 ? `Your ${prayerCount} prayer${prayerCount > 1 ? 's' : ''} this week were heard. 🙏` : 'Let\'s pray together next week! 💙'}`
+            }
+        }
+
+        function getMoodEmoji(mood) {
+            const moodEmojis = {
+                happy: '😊', joyful: '😄', excited: '🤩', peaceful: '😌',
+                loved: '🥰', encouraged: '💪', grateful: '🙏', hopeful: '🌟',
+                sad: '😢', afraid: '🤗', anxious: '😟', depressed: '😞',
+                lonely: '😔', angry: '😤', tired: '🥱', heartbroken: '💔',
+                overwhelmed: '😵', confused: '😕', bored: '🤩',
+                expecting: '🤰', empty: '😶', invisible: '🫥',
+                rejected: '💔', unappreciated: '😔', unsettled: '🌀',
+                unmotivated: '😑', prayer: '🙏'
+            }
+            return moodEmojis[mood] || '💙'
+        }
+
+        function showJournal() {
+            const entries = getJournalEntries()
+            const summary = getWeeklySummary()
+            const suggestion = getLuloWeeklySuggestion(summary)
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const screen = document.getElementById('journal-screen')
+
+            // Build weekly summary HTML
+            let summaryHTML = ''
+            if (summary) {
+                const positiveEmotionsList = ['happy', 'grateful', 'hopeful', 'excited', 
+                                              'peaceful', 'loved', 'encouraged', 'joyful']
+                const percentage = Math.round((summary.positiveCount / (summary.total - summary.prayerCount)) * 100) || 0
+
+                summaryHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div style="background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 15px; padding: 15px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #00d4ff;">${summary.total}</div>
+                            <div style="font-size: 0.75rem; color: #a0c4d8;">Check-ins this week</div>
+                        </div>
+                        <div style="background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 15px; padding: 15px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #00d4ff;">${summary.prayerCount}</div>
+                            <div style="font-size: 0.75rem; color: #a0c4d8;">Prayers this week</div>
+                        </div>
+                        <div style="background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 15px; padding: 15px; text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #00d4ff;">${percentage}%</div>
+                            <div style="font-size: 0.75rem; color: #a0c4d8;">Positive moments</div>
+                        </div>
+                        <div style="background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); border-radius: 15px; padding: 15px; text-align: center;">
+                            <div style="font-size: 1.5rem;">${getMoodEmoji(summary.topMood)}</div>
+                            <div style="font-size: 0.75rem; color: #a0c4d8;">Most felt: ${summary.topMood || 'N/A'}</div>
+                        </div>
+                    </div>
+                `
+            }
+
+            // Build entries HTML
+            let entriesHTML = ''
+            if (entries.length === 0) {
+                entriesHTML = `<p style="color: #a0c4d8; text-align: center; font-size: 0.9rem; padding: 20px;">Your journey starts the moment you click your first emotion. 💙</p>`
+            } else {
+                entriesHTML = entries.slice(0, 30).map(entry => `
+                    <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15); border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px;">
+                        <div style="font-size: 1.8rem; flex-shrink: 0;">${getMoodEmoji(entry.mood)}</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="color: #00d4ff; font-size: 0.85rem; font-weight: 500; text-transform: capitalize;">${entry.mood === 'prayer' ? 'Prayer' : entry.mood}</span>
+                                <span style="color: #a0c4d8; font-size: 0.75rem;">${entry.date} · ${entry.time}</span>
+                            </div>
+                            <div style="color: #e0f4ff; font-size: 0.8rem; opacity: 0.8;">${entry.ref}</div>
+                        </div>
+                    </div>
+                `).join('')
+            }
+
+            // Update journal screen
+            document.getElementById('journal-name').innerText = `${name}'s Journey`
+            document.getElementById('journal-suggestion').innerText = suggestion
+            document.getElementById('journal-summary').innerHTML = summaryHTML
+            document.getElementById('journal-entries').innerHTML = entriesHTML
+
+            screen.style.display = 'flex'
+            screen.scrollTop = 0
+        }
+
+        function closeJournal() {
+            document.getElementById('journal-screen').style.display = 'none'
+        }
+        
+        const emergencyVerses = [
+            "God is our refuge and strength, an ever-present help in trouble. — Psalm 46:1",
+            "The Lord is my shepherd; I lack nothing. — Psalm 23:1",
+            "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you. — Isaiah 41:10",
+            "The Lord will fight for you; you need only to be still. — Exodus 14:14",
+            "Peace I leave with you; my peace I give you. Do not let your hearts be troubled and do not be afraid. — John 14:27",
+            "I can do all things through Christ who strengthens me. — Philippians 4:13",
+            "Cast all your anxiety on him because he cares for you. — 1 Peter 5:7",
+            "Be still, and know that I am God. — Psalm 46:10",
+        ]
+
+        function showEmergencyKit() {
+            const screen = document.getElementById('emergency-screen')
+            const verse = document.getElementById('emergency-verse')
+            const random = emergencyVerses[Math.floor(Math.random() * emergencyVerses.length)]
+            verse.innerText = `"${random}"`
+            screen.style.display = 'flex'
+            screen.scrollTop = 0
+        }
+
+        function closeEmergencyKit() {
+            document.getElementById('emergency-screen').style.display = 'none'
+        }
+        
         function closeCrisisScreen() {
             document.getElementById('crisis-screen').style.display = 'none'
             currentBoundaryLevel = ''
@@ -1353,6 +1753,12 @@
             },
             health: {
                 keywords: ['sick', 'unwell', 'diagnosis', 'hospital',
+                          'illness', 'disease', 'surgery', 'treatment',
+                          'not feeling well', 'health scare', 'test results',
+                          'chronic pain', 'chronic illness', 'i am in pain',
+                          'pass out', 'passing out', 'fainted', 'fainting',
+                          'can\'t breathe', 'chest pain', 'dizzy', 'dizziness',
+                          'throwing up', 'vomiting', 'seizure', 'unconscious',
                             'illness', 'disease', 'surgery', 'treatment',
                             'not feeling well', 'health scare', 'test results',
                             'chronic pain', 'chronic illness', 'i am in pain'],
@@ -1600,6 +2006,9 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                     // Save that we prayed together
                     localStorage.setItem('luloLastPrayer', new Date().toLocaleDateString())
 
+                    // Log prayer to journal
+                    logJournalEntry('prayer', 'Prayer', 'Prayed together with Lulo 🙏')
+
                 } else {
                     throw new Error('No response from Claude')
                 }
@@ -1754,6 +2163,9 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
     localStorage.setItem('luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
     localStorage.setItem('luloLastVisitTimestamp', new Date().getTime())
+
+    // Log to journal
+        logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
 
     const box = document.getElementById('scripture-box')
     const text = document.getElementById('scripture-text')
