@@ -1,716 +1,1147 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Em_Q | Your Pocket Companion</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
+            background: #080818;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Inter', sans-serif;
             color: white;
-            padding: 20px;
+            overflow-x: hidden;
         }
 
-        #splash-screen {
+        /* AMBIENT BACKGROUND GLOW */
+        body::before {
+            content: '';
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0,255,100,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(120,60,255,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* MAIN CONTAINER */
+        #app {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 0 20px 120px 20px;
+            margin: 0 auto;
+        }
+
+        /* TOP BAR */
+        #top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0 10px 0;
+        }
+
+        #app-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+        }
+
+        #top-icons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .top-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            z-index: 999;
-        }
-
-        #splash-screen.hide { animation: fadeOut 1s ease forwards; }
-
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; visibility: hidden; }
-        }
-
-        #splash-logo {
-            font-size: 100px;
-            filter: drop-shadow(0 0 30px #00d4ff);
-            animation: float 3s ease-in-out infinite;
-            margin-bottom: 20px;
-        }
-
-        #splash-title {
-            font-size: 3rem;
-            color: #00d4ff;
-            text-shadow: 0 0 30px #00d4ff;
-            letter-spacing: 8px;
-            margin-bottom: 10px;
-        }
-
-        #splash-tagline {
-            font-size: 1rem;
-            color: #a0c4d8;
-            letter-spacing: 3px;
-            margin-bottom: 40px;
-        }
-
-        #splash-btn {
-            background: transparent;
-            border: 2px solid #00d4ff;
-            color: #00d4ff;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
-            letter-spacing: 2px;
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
 
-        #splash-btn:hover {
-            background: #00d4ff;
-            color: #0a0a2e;
-            box-shadow: 0 0 30px #00d4ff;
+        .top-icon:hover {
+            background: rgba(0,212,255,0.15);
+            border-color: rgba(0,212,255,0.4);
             transform: scale(1.05);
         }
 
-        #main-app {
-            display: none;
+        /* LULO FACE */
+        #lulo-container {
+            margin-top: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            max-width: 600px;
+        }
+
+        #lulo-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(0,255,100,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
         }
 
         #lulo-face {
-            font-size: 70px;
-            margin-bottom: 5px;
-            filter: drop-shadow(0 0 20px #00d4ff);
+            font-size: 110px;
             animation: float 3s ease-in-out infinite;
-            display: inline-block;
+            position: relative;
+            z-index: 1;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        #lulo-face.nod { animation: nod 0.5s ease; }
-        #lulo-face.shake { animation: shake 0.5s ease; }
+        #lulo-face:hover { transform: scale(1.05); }
+
+        #lulo-face.nod { animation: nod 0.5s ease forwards; }
+        #lulo-face.shake { animation: shake 0.5s ease forwards; }
 
         @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-            100% { transform: translateY(0px); }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
         }
 
         @keyframes nod {
-            0% { transform: translateY(0px); }
-            25% { transform: translateY(-20px); }
-            50% { transform: translateY(0px); }
-            75% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+            0% { transform: translateY(0); }
+            25% { transform: translateY(-18px); }
+            50% { transform: translateY(0); }
+            75% { transform: translateY(-8px); }
+            100% { transform: translateY(0); }
         }
 
         @keyframes shake {
-            0% { transform: translateX(0px); }
-            20% { transform: translateX(-15px); }
-            40% { transform: translateX(15px); }
-            60% { transform: translateX(-15px); }
-            80% { transform: translateX(15px); }
-            100% { transform: translateX(0px); }
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-12px); }
+            40% { transform: translateX(12px); }
+            60% { transform: translateX(-12px); }
+            80% { transform: translateX(12px); }
+        }
+
+        /* GREETING */
+        #lulo-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: white;
+            margin-top: 12px;
+            letter-spacing: -0.3px;
         }
 
         #lulo-reaction {
-            font-size: 0.9rem;
-            color: #00d4ff;
-            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: rgba(0,212,255,0.9);
+            margin-top: 6px;
+            text-align: center;
             min-height: 20px;
-            text-align: center;
-            max-width: 500px;
+            max-width: 320px;
             line-height: 1.5;
-        }
-
-        h1 {
-            font-size: 1.6rem;
-            color: #00d4ff;
-            text-shadow: 0 0 20px #00d4ff;
-            margin-bottom: 5px;
-            text-align: center;
-        }
-
-        p.subtitle {
-            font-size: 0.9rem;
-            color: #a0c4d8;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        #mood-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            justify-content: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 8px;
-            width: 100%;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-
-        #mood-buttons::-webkit-scrollbar {
-            display: none;
-        }
-
-        #mood-buttons button {
-            flex-shrink: 0;
-        }
-
-        button {
-            background: rgba(0, 212, 255, 0.1);
-            border: 2px solid #00d4ff;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        button:hover {
-            background: #00d4ff;
-            color: #0a0a2e;
-            transform: scale(1.1);
-            box-shadow: 0 0 20px #00d4ff;
-        }
-
-        #scripture-box {
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 20px;
-            padding: 25px;
-            width: 100%;
+        #lulo-subtitle {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.35);
+            margin-top: 4px;
             text-align: center;
-            display: none;
-            animation: fadeIn 0.8s ease;
-            margin-bottom: 20px;
-            min-height: 150px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* EMOTION CAROUSEL */
+        #carousel-container {
+            width: 100%;
+            margin: 10px 0 20px 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #carousel-label {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: rgba(255,255,255,0.25);
+            text-align: center;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        /* WRAPPER */
+        #carousel-wrapper {
+            position: relative;
+            width: 100%;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* OUTER RING */
+        #ring-outer {
+            position: absolute;
+            width: 360px;
+            height: 90px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(0,255,100,0.2);
+            background: linear-gradient(180deg,
+                rgba(0,255,100,0.06) 0%,
+                rgba(0,255,100,0.02) 50%,
+                rgba(0,255,100,0.06) 100%);
+            box-shadow:
+                0 0 25px rgba(0,255,100,0.08),
+                inset 0 0 20px rgba(0,255,100,0.04),
+                0 1px 0 rgba(0,255,100,0.25),
+                0 -1px 0 rgba(0,255,100,0.1);
+            transform: rotateX(55deg);
+            transform-style: preserve-3d;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* INNER RING */
+        #ring-inner {
+            position: absolute;
+            top: 50%;
+            left: 8%;
+            right: 8%;
+            height: 1px;
+            transform: translateY(-50%);
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(0,255,100,0.3),
+                rgba(0,255,100,0.6),
+                rgba(0,255,100,0.3),
+                transparent);
+        }
+
+        /* RING SHINE */
+        #ring-shine {
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            right: 20%;
+            height: 30%;
+            background: linear-gradient(180deg,
+                rgba(255,255,255,0.08) 0%,
+                transparent 100%);
+            border-radius: 50%;
+            filter: blur(2px);
+        }
+
+        /* ACTIVE SLOT */
+        #ring-active-slot {
+            position: absolute;
+            width: 68px;
+            height: 68px;
+            border-radius: 18px;
+            border: 1.5px solid rgba(0,255,100,0.5);
+            background: rgba(0,255,100,0.06);
+            box-shadow:
+                0 0 20px rgba(0,255,100,0.2),
+                inset 0 0 15px rgba(0,255,100,0.04);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* FADE MASKS */
+        #ring-fade-left {
+            position: absolute;
+            top: 0; left: 0;
+            width: 25%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(8,8,24,1) 0%, transparent 100%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #ring-fade-right {
+            position: absolute;
+            top: 0; right: 0;
+            width: 25%;
+            height: 100%;
+            background: linear-gradient(270deg, rgba(8,8,24,1) 0%, transparent 100%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* EMOJI TRACK */
+        #mood-buttons {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 0 130px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            scroll-snap-type: x mandatory;
+            position: relative;
+            z-index: 5;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        #mood-buttons::-webkit-scrollbar { display: none; }
+
+        .emotion-btn {
+            flex-shrink: 0;
+            scroll-snap-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: none;
+            border-radius: 14px;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            min-width: 58px;
+            opacity: 0.4;
+            transform: scale(0.8);
+        }
+
+        .emotion-btn:hover {
+            opacity: 0.7;
+            transform: scale(0.9);
+        }
+
+        .emotion-btn.active {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 10px rgba(0,255,100,0.7));
+        }
+
+        .emotion-btn .emoji {
+            font-size: 1.7rem;
+            line-height: 1;
+        }
+
+        .emotion-btn .label {
+            font-size: 0.55rem;
+            color: rgba(255,255,255,0.35);
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .emotion-btn.active .label {
+            color: rgba(0,255,100,0.9);
+        }
+
+        /* SCRIPTURE CARD */
+        #scripture-card {
+            width: 100%;
+            display: none;
+            animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            margin-bottom: 15px;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        #scripture-inner {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 25px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #scripture-inner::before {
+            content: '\201C';
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            font-size: 8rem;
+            color: rgba(0,212,255,0.06);
+            font-family: Georgia, serif;
+            line-height: 1;
+            pointer-events: none;
         }
 
         #scripture-text {
             font-size: 0.95rem;
             line-height: 1.8;
-            color: #e0f4ff;
-            margin-bottom: 20px;
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 15px;
             white-space: pre-line;
+            position: relative;
+            z-index: 1;
         }
 
-        #loading-text {
-            font-size: 0.9rem;
-            color: #00d4ff;
-            display: none;
-            margin-bottom: 10px;
+        #scripture-ref {
+            font-size: 0.78rem;
+            color: rgba(0,212,255,0.7);
+            text-align: center;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
         }
 
         #another-btn {
+            display: none;
+            margin: 0 auto;
             background: transparent;
-            border: 1px solid rgba(0, 212, 255, 0.5);
-            color: #00d4ff;
-            padding: 10px 25px;
+            border: 1px solid rgba(0,212,255,0.3);
+            color: rgba(0,212,255,0.8);
+            padding: 8px 20px;
             border-radius: 50px;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: none;
+            font-family: 'Inter', sans-serif;
         }
 
         #another-btn:hover {
-            background: rgba(0, 212, 255, 0.15);
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+            background: rgba(0,212,255,0.1);
+            border-color: rgba(0,212,255,0.6);
         }
 
-        #footer {
-            margin-top: 30px;
+        /* LOADING */
+        #loading-text {
+            display: none;
+            text-align: center;
+            color: rgba(0,212,255,0.7);
+            font-size: 0.85rem;
+            padding: 10px 0;
+        }
+
+        /* BOTTOM INPUT BAR */
+        #bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 420px;
+            padding: 12px 20px 30px 20px;
+            background: linear-gradient(to top, #080818 60%, transparent);
+            z-index: 100;
+        }
+
+        #input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px;
+            padding: 10px 10px 10px 18px;
+            backdrop-filter: blur(20px);
+        }
+
+        #lulo-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 0.88rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #lulo-input::placeholder {
+            color: rgba(255,255,255,0.25);
+        }
+
+        #send-btn {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        #send-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 20px rgba(0,212,255,0.4);
+        }
+
+        /* SPARKLES */
+        .sparkle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.1; transform: scale(0.8); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* GLASS SCREENS (for journal, emergency etc) */
+        .glass-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(8,8,24,0.97);
+            flex-direction: column;
+            align-items: center;
+            z-index: 1001;
+            padding: 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(20px);
+        }
+
+        .glass-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 12px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
+        }
+
+        .glass-card h3 {
+            color: rgba(0,212,255,0.9);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .glass-card p, .glass-card li {
+            color: rgba(255,255,255,0.75);
+            font-size: 0.88rem;
+            line-height: 1.8;
+        }
+
+        .screen-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .screen-subtitle {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.35);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .back-btn {
+            width: 100%;
+            max-width: 500px;
+            background: transparent;
+            border: 1px solid rgba(0,212,255,0.3);
+            color: rgba(0,212,255,0.8);
+            padding: 14px;
+            border-radius: 50px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            margin-top: 10px;
+        }
+
+        .back-btn:hover {
+            background: rgba(0,212,255,0.1);
+        }
+
+        /* SPLASH */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(ellipse at 50% 35%, rgba(0,255,100,0.06) 0%, #080818 60%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.8s ease;
+        }
+
+        #splash-screen.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #splash-logo {
+            font-size: 90px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(0,255,100,0.3));
+            margin-bottom: -20px;
+        }
+
+        #splash-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 10px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #splash-tagline {
             font-size: 0.75rem;
-            color: rgba(255,255,255,0.2);
-            letter-spacing: 2px;
+            letter-spacing: 4px;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            margin-bottom: 50px;
+        }
+
+        #splash-btn {
+            background: transparent;
+            border: 1px solid rgba(0,212,255,0.5);
+            color: rgba(0,212,255,0.9);
+            padding: 14px 40px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            letter-spacing: 3px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        #splash-btn:hover {
+            background: rgba(0,212,255,0.1);
+            border-color: rgba(0,212,255,0.8);
+            box-shadow: 0 0 30px rgba(0,212,255,0.2);
+        }
+
+        /* NAME SCREEN */
+        #name-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #080818;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1999;
+            padding: 30px;
+        }
+
+        #name-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        #name-input:focus {
+            border-color: rgba(0,212,255,0.5);
+            background: rgba(0,212,255,0.05);
+        }
+
+        /* WELCOME SCREEN */
+        #welcome-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #080818;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1998;
+            padding: 30px;
+            text-align: center;
+        }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: rgba(0,212,255,0.9);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.35);
+            margin-top: 3px;
+        }
+
+        /* JOURNAL ENTRY */
+        .journal-entry {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .journal-emoji { font-size: 1.6rem; flex-shrink: 0; }
+
+        .journal-info { flex: 1; }
+
+        .journal-mood {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: rgba(0,212,255,0.8);
+            text-transform: capitalize;
+        }
+
+        .journal-ref {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.35);
+            margin-top: 2px;
+        }
+
+        .journal-time {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* CRISIS SCREEN */
+        #crisis-screen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(8,8,24,0.98);
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 1000;
+            padding: 30px 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(20px);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+
+        /* THEME SELECTOR */
+        #theme-btn {
+            position: relative;
+        }
+
+        #theme-picker {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: rgba(15,15,35,0.95);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
+            width: 180px;
+            backdrop-filter: blur(20px);
+            z-index: 200;
+        }
+
+        #theme-picker.show { display: flex; }
+
+        .theme-option {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .theme-option:hover, .theme-option.active {
+            border-color: white;
+            transform: scale(1.1);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 380px) {
+            #lulo-face { font-size: 70px; }
+            #lulo-name { font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
 
-    <!-- SPLASH SCREEN -->
-    <div id="splash-screen">
-        <div id="splash-logo">🤖</div>
-        <div id="splash-title">EM_Q</div>
-        <div id="splash-tagline">YOUR POCKET COMPANION</div>
-        <button id="splash-btn" onclick="enterNameScreen()">MEET LULO →</button>
+<!-- SPARKLES -->
+<div class="sparkle" style="top:10%;left:8%;font-size:0.6rem;animation-delay:0s;">✦</div>
+<div class="sparkle" style="top:15%;right:10%;font-size:0.5rem;animation-delay:1s;">✦</div>
+<div class="sparkle" style="top:35%;left:5%;font-size:0.4rem;animation-delay:2s;">✦</div>
+<div class="sparkle" style="top:60%;right:7%;font-size:0.6rem;animation-delay:0.5s;">✦</div>
+<div class="sparkle" style="top:80%;left:10%;font-size:0.5rem;animation-delay:1.5s;">✦</div>
+
+<!-- SPLASH SCREEN -->
+<div id="splash-screen">
+    <div id="splash-logo">
+        <img src="lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
     </div>
+    <div id="splash-title">EM_Q</div>
+    <div id="splash-tagline">Your Pocket Companion</div>
+    <button id="splash-btn" onclick="enterNameScreen()">Meet Lulo →</button>
+</div>
 
-    <!-- NAME ENTRY SCREEN -->
-    <div id="name-screen" style="
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 998;
-        padding: 20px;
-    ">
-        <div style="font-size: 70px; margin-bottom: 20px; filter: drop-shadow(0 0 20px #00d4ff); animation: float 3s ease-in-out infinite;">🤖</div>
-        <h2 style="color: #00d4ff; font-size: 1.5rem; text-align: center; margin-bottom: 15px; text-shadow: 0 0 20px #00d4ff;">Before we begin, I'd love to know your name!</h2>
-        <p style="color: #a0c4d8; font-size: 0.9rem; margin-bottom: 30px; text-align: center;">This helps me make our time together more personal 💙</p>
-        <input 
-            type="text" 
-            id="name-input"
-            placeholder="Enter your name..."
-            maxlength="30"
-            style="
-                background: rgba(0, 212, 255, 0.1);
-                border: 2px solid #00d4ff;
-                color: white;
-                padding: 15px 25px;
-                border-radius: 50px;
-                font-size: 1rem;
-                text-align: center;
-                outline: none;
-                width: 100%;
-                max-width: 300px;
-                margin-bottom: 20px;
-                font-family: 'Segoe UI', sans-serif;
-            "
-            onkeypress="if(event.key === 'Enter') saveName()"
-        />
-        <button onclick="saveName()" style="
-            background: transparent;
-            border: 2px solid #00d4ff;
-            color: #00d4ff;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1rem;
-            cursor: pointer;
-            letter-spacing: 2px;
-            transition: all 0.3s ease;
-        "
-        onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
-        onmouseout="this.style.background='transparent'; this.style.color='#00d4ff';"
-        >LET'S GO! →</button>
+<!-- NAME SCREEN -->
+<div id="name-screen">
+    <div style="margin-bottom:20px;animation:float 3s ease-in-out infinite;">
+        <img src="lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
     </div>
+    <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Before we begin...</h2>
+    <p style="font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:25px;text-align:center;">I'd love to know your name 💙</p>
+    <input type="text" id="name-input" placeholder="Your name..." maxlength="30" onkeypress="if(event.key==='Enter')saveName()"/>
+    <button onclick="saveName()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;"
+    onmouseover="this.style.background='rgba(0,212,255,0.2)';"
+    onmouseout="this.style.background='rgba(0,212,255,0.1)';">Let's go →</button>
+</div>
 
-    <!-- JOURNAL SCREEN -->
-    <div id="journal-screen" style="
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
-        flex-direction: column;
-        align-items: center;
-        z-index: 1001;
-        padding: 20px;
-        overflow-y: auto;
-    ">
-        <div style="width: 100%; max-width: 500px; padding-bottom: 40px;">
+<!-- WELCOME SCREEN -->
+<div id="welcome-screen">
+    <div id="welcome-lulo" style="margin-bottom:15px;animation:float 3s ease-in-out infinite;">
+        <img src="lulo.png" style="width:190px;height:190px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
+    </div>
+    <h2 id="welcome-message" style="font-size:1.4rem;font-weight:600;color:white;margin-bottom:12px;"></h2>
+    <p id="welcome-subtext" style="font-size:0.85rem;color:rgba(255,255,255,0.45);line-height:1.8;max-width:320px;margin-bottom:35px;white-space:pre-line;"></p>
+    <button id="welcome-btn" onclick="enterMainApp()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;"
+    onmouseover="this.style.background='rgba(0,212,255,0.2)';"
+    onmouseout="this.style.background='rgba(0,212,255,0.1)';"></button>
+</div>
 
-            <!-- HEADER -->
-            <div style="text-align: center; margin-bottom: 20px; padding-top: 20px;">
-                <div style="font-size: 50px; margin-bottom: 10px;">📔</div>
-                <h2 id="journal-name" style="color: #00d4ff; font-size: 1.5rem; text-shadow: 0 0 20px #00d4ff;"></h2>
-                <p style="color: #a0c4d8; font-size: 0.85rem; margin-top: 5px;">Your emotional journey with Lulo 💙</p>
+<!-- CRISIS SCREEN -->
+<div id="crisis-screen">
+    <div style="width:100%;max-width:500px;padding-bottom:40px;padding-top:20px;">
+        <div style="text-align:center;margin-bottom:25px;">
+            <div style="font-size:50px;margin-bottom:10px;">🤗</div>
+            <h2 id="crisis-title" style="color:white;font-size:1.3rem;font-weight:600;margin-bottom:10px;"></h2>
+        </div>
+        <div class="glass-card">
+            <p id="crisis-message" style="color:rgba(255,255,255,0.75);font-size:0.88rem;line-height:1.8;white-space:pre-line;"></p>
+        </div>
+        <div id="crisis-scripture" style="display:none;" class="glass-card">
+            <p id="crisis-verse-text" style="color:rgba(255,255,255,0.8);font-size:0.9rem;line-height:1.8;font-style:italic;margin-bottom:8px;"></p>
+            <p id="crisis-verse-ref" style="color:rgba(0,212,255,0.7);font-size:0.78rem;"></p>
+        </div>
+        <div id="crisis-resources" style="display:none;" class="glass-card" style="border-color:rgba(255,100,100,0.2);">
+            <p id="crisis-resources-text" style="color:rgba(255,200,200,0.8);font-size:0.85rem;line-height:1.9;"></p>
+        </div>
+        <div id="crisis-followup" style="display:none;width:100%;max-width:500px;margin-bottom:15px;">
+            <p id="crisis-question" style="color:rgba(255,255,255,0.6);font-size:0.88rem;margin-bottom:15px;text-align:center;"></p>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button onclick="crisisFollowUp('yes')" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);color:rgba(0,212,255,0.9);padding:10px 25px;border-radius:50px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif;">Yes 💙</button>
+                <button onclick="crisisFollowUp('no')" style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);color:rgba(0,212,255,0.9);padding:10px 25px;border-radius:50px;font-size:0.85rem;cursor:pointer;font-family:'Inter',sans-serif;">No 💙</button>
             </div>
+        </div>
+        <button onclick="closeCrisisScreen()" class="back-btn">I'm okay, take me back to Lulo 💙</button>
+    </div>
+</div>
 
-            <!-- LULO'S WEEKLY SUGGESTION -->
-            <div style="background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 20px;">
-                <h3 style="color: #00d4ff; font-size: 0.9rem; margin-bottom: 10px;">💙 Lulo's Weekly Reflection</h3>
-                <p id="journal-suggestion" style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.7;"></p>
+<!-- JOURNAL SCREEN -->
+<div id="journal-screen" class="glass-screen">
+    <div style="width:100%;max-width:500px;padding-bottom:40px;padding-top:20px;">
+        <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:40px;margin-bottom:10px;">📔</div>
+            <h2 id="journal-name" class="screen-title"></h2>
+            <p class="screen-subtitle">Your emotional journey with Lulo 💙</p>
+        </div>
+        <div class="glass-card">
+            <h3>💙 Lulo's Weekly Reflection</h3>
+            <p id="journal-suggestion" style="color:rgba(255,255,255,0.7);font-size:0.88rem;line-height:1.7;"></p>
+        </div>
+        <div class="stats-grid" id="journal-summary"></div>
+        <p style="font-size:0.7rem;letter-spacing:2px;color:rgba(255,255,255,0.2);margin-bottom:10px;text-transform:uppercase;">Recent Entries</p>
+        <div id="journal-entries"></div>
+        <button onclick="closeJournal()" class="back-btn">Back to Lulo 💙</button>
+    </div>
+</div>
+
+<!-- EMERGENCY SCREEN -->
+<div id="emergency-screen" class="glass-screen">
+    <div style="width:100%;max-width:500px;padding-bottom:40px;padding-top:20px;">
+        <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:40px;margin-bottom:10px;">🆘</div>
+            <h2 class="screen-title">Emergency Kit</h2>
+            <p class="screen-subtitle">Works without internet 💙</p>
+        </div>
+        <div class="glass-card">
+            <h3>🫁 Calm Your Breathing</h3>
+            <p><strong style="color:rgba(0,212,255,0.8);">The 4-7-8 Technique:</strong><br>
+            1. Breathe IN for <strong style="color:rgba(0,212,255,0.8);">4 seconds</strong><br>
+            2. Hold for <strong style="color:rgba(0,212,255,0.8);">7 seconds</strong><br>
+            3. Breathe OUT for <strong style="color:rgba(0,212,255,0.8);">8 seconds</strong><br>
+            4. Repeat <strong style="color:rgba(0,212,255,0.8);">4 times</strong><br><br>
+            Do it now. 💙</p>
+        </div>
+        <div class="glass-card">
+            <h3>🌱 Ground Yourself (5-4-3-2-1)</h3>
+            <p>👀 <strong style="color:rgba(0,212,255,0.8);">5</strong> things you can SEE<br>
+            ✋ <strong style="color:rgba(0,212,255,0.8);">4</strong> things you can TOUCH<br>
+            👂 <strong style="color:rgba(0,212,255,0.8);">3</strong> things you can HEAR<br>
+            👃 <strong style="color:rgba(0,212,255,0.8);">2</strong> things you can SMELL<br>
+            👅 <strong style="color:rgba(0,212,255,0.8);">1</strong> thing you can TASTE<br><br>
+            You are safe right now. 💙</p>
+        </div>
+        <div class="glass-card">
+            <h3>💙 How Not To Panic</h3>
+            <p>1. <strong style="color:rgba(0,212,255,0.8);">Stop and breathe</strong> — panic feeds on speed<br>
+            2. <strong style="color:rgba(0,212,255,0.8);">Name what you feel</strong> — saying it reduces it<br>
+            3. <strong style="color:rgba(0,212,255,0.8);">Look for what's real</strong> — am I actually in danger?<br>
+            4. <strong style="color:rgba(0,212,255,0.8);">Move your body</strong> — stand up, walk, shake your hands<br>
+            5. <strong style="color:rgba(0,212,255,0.8);">Call someone</strong> — panic shrinks with another voice</p>
+        </div>
+        <div class="glass-card">
+            <h3>📖 Hold On To This</h3>
+            <p id="emergency-verse" style="font-style:italic;color:rgba(255,255,255,0.8);"></p>
+        </div>
+        <div class="glass-card" style="border-color:rgba(255,100,100,0.15);">
+            <h3 style="color:rgba(255,150,150,0.9);">📞 Emergency Numbers</h3>
+            <p style="color:rgba(255,200,200,0.7);">
+            🚨 <strong>Police/Ambulance/Fire:</strong><br>
+            🇺🇸 USA: <strong>911</strong> &nbsp;|&nbsp; 🇬🇧 UK: <strong>999</strong><br>
+            🇳🇬 Nigeria: <strong>112</strong> &nbsp;|&nbsp; 🇷🇺 Russia: <strong>112</strong><br>
+            🌍 Most countries: <strong>112</strong><br><br>
+            🧠 <strong>Mental Health:</strong><br>
+            🇺🇸 USA: <strong>988</strong> &nbsp;|&nbsp; 🇬🇧 UK: <strong>116 123</strong><br>
+            🌍 International: <strong>befrienders.org</strong></p>
+        </div>
+        <button onclick="closeEmergencyKit()" class="back-btn">I'm okay, take me back to Lulo 💙</button>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none;width:100%;">
+<div id="app">
+
+    <!-- TOP BAR -->
+    <div id="top-bar">
+        <div id="app-name">EM_Q</div>
+        <div id="top-icons">
+            <div class="top-icon" onclick="showJournal()" title="My Journey">📔</div>
+            <div class="top-icon" id="theme-btn" onclick="toggleThemePicker()" title="Themes">🎨
+                <div id="theme-picker">
+                    <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="setTheme('dark')" title="Dark"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#fce4ec,#e3f2fd);" onclick="setTheme('light')" title="Light"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#0d0d0d,#1a0a2e);" onclick="setTheme('neon')" title="Neon"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#e8f5e9,#f3e5f5);" onclick="setTheme('nature')" title="Nature"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#1a1a2e,#16213e);" onclick="setTheme('space')" title="Space"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#fff8e1,#fce4ec);" onclick="setTheme('sunrise')" title="Sunrise"></div>
+                </div>
             </div>
-
-            <!-- WEEKLY SUMMARY -->
-            <h3 style="color: #00d4ff; font-size: 0.9rem; margin-bottom: 10px; letter-spacing: 1px;">THIS WEEK</h3>
-            <div id="journal-summary"></div>
-
-            <!-- RECENT ENTRIES -->
-            <h3 style="color: #00d4ff; font-size: 0.9rem; margin-bottom: 10px; margin-top: 20px; letter-spacing: 1px;">RECENT ENTRIES</h3>
-            <div id="journal-entries"></div>
-
-            <!-- CLOSE BUTTON -->
-            <button onclick="closeJournal()" style="
-                width: 100%;
-                background: transparent;
-                border: 2px solid #00d4ff;
-                color: #00d4ff;
-                padding: 15px;
-                border-radius: 50px;
-                font-size: 1rem;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                margin-top: 20px;
-            "
-            onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
-            onmouseout="this.style.background='transparent'; this.style.color='#00d4ff';"
-            >Back to Lulo 💙</button>
-
+            <div class="top-icon" onclick="showEmergencyKit()" title="Emergency">🆘</div>
         </div>
     </div>
 
-    <!-- EMERGENCY KIT SCREEN -->
-    <div id="emergency-screen" style="
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
-        flex-direction: column;
-        align-items: center;
-        z-index: 1001;
-        padding: 20px;
-        overflow-y: auto;
-    ">
-        <div style="width: 100%; max-width: 500px; padding-bottom: 40px;">
-
-            <!-- HEADER -->
-            <div style="text-align: center; margin-bottom: 25px; padding-top: 20px;">
-                <div style="font-size: 50px; margin-bottom: 10px;">🆘</div>
-                <h2 style="color: #00d4ff; font-size: 1.5rem; text-shadow: 0 0 20px #00d4ff;">Emergency Kit</h2>
-                <p style="color: #a0c4d8; font-size: 0.85rem; margin-top: 5px;">This works without internet 💙</p>
-            </div>
-
-            <!-- BREATHING EXERCISE -->
-            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
-                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">🫁 Calm Your Breathing</h3>
-                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8;">
-                    <strong style="color: #00d4ff;">The 4-7-8 Technique:</strong><br>
-                    1. Breathe IN slowly for <strong style="color: #00d4ff;">4 seconds</strong><br>
-                    2. Hold your breath for <strong style="color: #00d4ff;">7 seconds</strong><br>
-                    3. Breathe OUT slowly for <strong style="color: #00d4ff;">8 seconds</strong><br>
-                    4. Repeat <strong style="color: #00d4ff;">4 times</strong><br><br>
-                    This activates your nervous system's calm response. Do it now. 💙
-                </p>
-            </div>
-
-            <!-- GROUNDING TECHNIQUE -->
-            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
-                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">🌱 Ground Yourself (5-4-3-2-1)</h3>
-                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8;">
-                    Look around you right now and name:<br><br>
-                    👀 <strong style="color: #00d4ff;">5 things</strong> you can SEE<br>
-                    ✋ <strong style="color: #00d4ff;">4 things</strong> you can TOUCH<br>
-                    👂 <strong style="color: #00d4ff;">3 things</strong> you can HEAR<br>
-                    👃 <strong style="color: #00d4ff;">2 things</strong> you can SMELL<br>
-                    👅 <strong style="color: #00d4ff;">1 thing</strong> you can TASTE<br><br>
-                    This brings you back to the present moment. You are safe right now. 💙
-                </p>
-            </div>
-
-            <!-- DON'T PANIC -->
-            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
-                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">💙 How Not To Panic</h3>
-                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8;">
-                    1. <strong style="color: #00d4ff;">Stop and breathe</strong> — panic feeds on speed. Slow down.<br>
-                    2. <strong style="color: #00d4ff;">Name what you feel</strong> — "I am feeling anxious right now." Naming it reduces it.<br>
-                    3. <strong style="color: #00d4ff;">Look for what's real</strong> — panic lies. Ask: "Am I actually in danger right now?"<br>
-                    4. <strong style="color: #00d4ff;">Move your body</strong> — stand up, walk, shake your hands.<br>
-                    5. <strong style="color: #00d4ff;">Call someone</strong> — panic shrinks in the presence of another voice. 💙
-                </p>
-            </div>
-
-            <!-- SCRIPTURE FOR CRISIS -->
-            <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
-                <h3 style="color: #00d4ff; font-size: 1rem; margin-bottom: 12px;">📖 Hold On To This</h3>
-                <p style="color: #e0f4ff; font-size: 0.95rem; line-height: 1.8; font-style: italic;" id="emergency-verse"></p>
-            </div>
-
-            <!-- EMERGENCY NUMBERS -->
-            <div style="background: rgba(255,100,100,0.08); border: 1px solid rgba(255,100,100,0.3); border-radius: 20px; padding: 20px; margin-bottom: 15px;">
-                <h3 style="color: #ff9999; font-size: 1rem; margin-bottom: 12px;">📞 Emergency Numbers</h3>
-                <p style="color: #e0f4ff; font-size: 0.9rem; line-height: 2;">
-                    🚨 <strong style="color: #ff9999;">Police / Ambulance / Fire:</strong><br>
-                    🇺🇸 USA: <strong>911</strong> &nbsp;|&nbsp; 🇬🇧 UK: <strong>999</strong><br>
-                    🇳🇬 Nigeria: <strong>112</strong> &nbsp;|&nbsp; 🇿🇦 South Africa: <strong>10111</strong><br>
-                    🇷🇺 Russia: <strong>112</strong> &nbsp;|&nbsp; 🇦🇺 Australia: <strong>000</strong><br>
-                    🌍 Most countries: <strong>112</strong> (works globally)<br><br>
-                    🧠 <strong style="color: #ff9999;">Mental Health Crisis:</strong><br>
-                    🇺🇸 USA: <strong>988</strong> (call or text)<br>
-                    🇬🇧 UK: <strong>116 123</strong> (Samaritans)<br>
-                    🇳🇬 Nigeria: <strong>0800 800 2000</strong> (NEEM)<br>
-                    🌍 International: <strong>befrienders.org</strong>
-                </p>
-            </div>
-
-            <!-- CLOSE BUTTON -->
-            <button onclick="closeEmergencyKit()" style="
-                width: 100%;
-                background: transparent;
-                border: 2px solid #00d4ff;
-                color: #00d4ff;
-                padding: 15px;
-                border-radius: 50px;
-                font-size: 1rem;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                margin-top: 10px;
-            "
-            onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
-            onmouseout="this.style.background='transparent'; this.style.color='#00d4ff';"
-            >I'm okay, take me back to Lulo 💙</button>
-
+    <!-- LULO FACE -->
+    <div id="lulo-container">
+        <div id="lulo-glow"></div>
+        <div id="lulo-face">
+            <img id="lulo-img" src="lulo.png" alt="Lulo" style="
+                width: 200px;
+                height: 200px;
+                object-fit: contain;
+                mix-blend-mode: screen;
+                filter: drop-shadow(0 0 25px rgba(0,255,100,0.5));
+            "/>
         </div>
-    </div>
-
-    <!-- CRISIS SCREEN -->
-    <div id="crisis-screen" style="
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: 30px;
-        text-align: center;
-        overflow-y: auto;
-    ">
-        <div style="font-size: 60px; margin-bottom: 20px;">🤗</div>
-        <h2 id="crisis-title" style="color: #00d4ff; font-size: 1.5rem; text-shadow: 0 0 20px #00d4ff; margin-bottom: 15px; max-width: 500px;"></h2>
-        <p id="crisis-message" style="color: #e0f4ff; font-size: 0.95rem; line-height: 1.8; max-width: 500px; margin-bottom: 25px;"></p>
-        <div id="crisis-scripture" style="
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-radius: 20px;
-            padding: 20px 25px;
-            max-width: 500px;
-            width: 100%;
-            margin-bottom: 25px;
-            display: none;
-        ">
-            <p id="crisis-verse-text" style="color: #e0f4ff; font-size: 0.9rem; line-height: 1.8; margin-bottom: 8px;"></p>
-            <p id="crisis-verse-ref" style="color: #00d4ff; font-size: 0.8rem;"></p>
-        </div>
-        <div id="crisis-resources" style="
-            background: rgba(255, 100, 100, 0.1);
-            border: 1px solid rgba(255, 100, 100, 0.3);
-            border-radius: 20px;
-            padding: 20px 25px;
-            max-width: 500px;
-            width: 100%;
-            margin-bottom: 25px;
-            display: none;
-        ">
-            <p style="color: #ff9999; font-size: 0.85rem; line-height: 1.8;" id="crisis-resources-text"></p>
-        </div>
-        <div id="crisis-followup" style="max-width: 500px; width: 100%; display: none; margin-bottom: 20px;">
-            <p id="crisis-question" style="color: #a0c4d8; font-size: 0.9rem; margin-bottom: 15px;"></p>
-            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                <button onclick="crisisFollowUp('yes')" style="
-                    background: rgba(0, 212, 255, 0.1);
-                    border: 2px solid #00d4ff;
-                    color: white;
-                    padding: 10px 25px;
-                    border-radius: 50px;
-                    font-size: 0.9rem;
-                    cursor: pointer;
-                ">Yes 💙</button>
-                <button onclick="crisisFollowUp('no')" style="
-                    background: rgba(0, 212, 255, 0.1);
-                    border: 2px solid #00d4ff;
-                    color: white;
-                    padding: 10px 25px;
-                    border-radius: 50px;
-                    font-size: 0.9rem;
-                    cursor: pointer;
-                ">No 💙</button>
-            </div>
-        </div>
-        <button onclick="closeCrisisScreen()" style="
-            background: transparent;
-            border: 1px solid rgba(0, 212, 255, 0.4);
-            color: #a0c4d8;
-            padding: 10px 30px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            margin-top: 10px;
-        ">I'm okay, take me back to Lulo 💙</button>
-    </div>
-
-    <!-- WELCOME SCREEN -->
-    <div id="welcome-screen" style="
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(135deg, #0a0a2e, #0d1b4b, #0a2a4a);
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 997;
-        padding: 20px;
-        text-align: center;
-    ">
-        <div id="welcome-lulo" style="font-size: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 20px #00d4ff); animation: float 3s ease-in-out infinite;">🤖</div>
-        <h2 id="welcome-message" style="color: #00d4ff; font-size: 1.8rem; text-shadow: 0 0 20px #00d4ff; margin-bottom: 15px;"></h2>
-        <p id="welcome-subtext" style="color: #a0c4d8; font-size: 1rem; line-height: 1.8; max-width: 400px; margin-bottom: 40px;"></p>
-        <button onclick="enterMainApp()" style="
-            background: transparent;
-            border: 2px solid #00d4ff;
-            color: #00d4ff;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1rem;
-            cursor: pointer;
-            letter-spacing: 2px;
-            transition: all 0.3s ease;
-        "
-        onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
-        onmouseout="this.style.background='transparent'; this.style.color='#00d4ff';"
-        id="welcome-btn">I'M READY →</button>
-    </div>
-
-    <div id="main-app">
-        <div id="lulo-face">🤖</div>
+        <div id="lulo-name">Hi, I'm Lulo!</div>
         <div id="lulo-reaction"></div>
-        <h1>Hi, I'm Lulo!</h1>
-        <p class="subtitle">Your pocket companion. How are you feeling today?</p>
-
-        <div id="mood-buttons">
-            <button onclick="showScripture('happy')">😊 Happy</button>
-            <button onclick="showScripture('joyful')">😄 Joyful</button>
-            <button onclick="showScripture('excited')">🤩 Excited</button>
-            <button onclick="showScripture('peaceful')">😌 Peaceful</button>
-            <button onclick="showScripture('loved')">🥰 Loved</button>
-            <button onclick="showScripture('encouraged')">💪 Encouraged</button>
-            <button onclick="showScripture('expecting')">🤰 Expecting</button>
-            <button onclick="showScripture('grateful')">🙏 Grateful</button>
-            <button onclick="showScripture('hopeful')">🌟 Hopeful</button>
-            <button onclick="showScripture('sad')">😢 Sad</button>
-            <button onclick="showScripture('afraid')">😨 Afraid</button>
-            <button onclick="showScripture('anxious')">😟 Anxious</button>
-            <button onclick="showScripture('depressed')">😞 Depressed</button>
-            <button onclick="showScripture('lonely')">😔 Lonely</button>
-            <button onclick="showScripture('angry')">😤 Angry</button>
-            <button onclick="showScripture('tired')">🥱 Tired</button>
-            <button onclick="showScripture('heartbroken')">💔 Heartbroken</button>
-            <button onclick="showScripture('overwhelmed')">😵 Overwhelmed</button>
-            <button onclick="showScripture('confused')">😕 Confused</button>
-            <button onclick="showScripture('bored')">😴 Bored</button>
-            <button onclick="showScripture('empty')">😶 Feeling Empty</button>
-            <button onclick="showScripture('invisible')">🫥 Feeling Invisible</button>
-            <button onclick="showScripture('rejected')">💔 Feeling Rejected</button>
-            <button onclick="showScripture('unappreciated')">😔 Feeling Unappreciated</button>
-            <button onclick="showScripture('unsettled')">🌀 Feeling Unsettled</button>
-            <button onclick="showScripture('unmotivated')">😑 Feeling Unmotivated</button>
-        </div>
-
-        <!-- SCROLL HINT -->
-        <div id="scroll-hint" style="
-            text-align: center;
-            font-size: 0.75rem;
-            color: rgba(0, 212, 255, 0.5);
-            margin-bottom: 10px;
-            animation: fadeIn 1s ease 1s forwards;
-            opacity: 0;
-        ">← scroll to see more emotions →</div>
-
-        <!-- LULO LISTENS -->
-        <div id="lulo-input-area" style="width: 100%; margin-bottom: 20px; display: none;">
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input
-                    type="text"
-                    id="lulo-input"
-                    placeholder="Tell Lulo how you're feeling..."
-                    maxlength="200"
-                    style="
-                        flex: 1;
-                        background: rgba(0, 212, 255, 0.1);
-                        border: 2px solid #00d4ff;
-                        color: white;
-                        padding: 12px 20px;
-                        border-radius: 50px;
-                        font-size: 0.9rem;
-                        outline: none;
-                        font-family: 'Segoe UI', sans-serif;
-                    "
-                    onkeypress="if(event.key === 'Enter') luloListen()"
-                />
-                <button onclick="luloListen()" style="
-                    background: rgba(0, 212, 255, 0.1);
-                    border: 2px solid #00d4ff;
-                    color: #00d4ff;
-                    padding: 12px 20px;
-                    border-radius: 50px;
-                    font-size: 0.85rem;
-                    cursor: pointer;
-                    white-space: nowrap;
-                ">Send 💙</button>
-            </div>
-        </div>
-
-        <div id="scripture-box">
-            <div id="loading-text">Lulo is finding the perfect scripture... ✨</div>
-            <p id="scripture-text"></p>
-            <button id="another-btn" onclick="showAnother()">🔄 Show me another</button>
-        </div>
-
-        <div id="footer">EM_Q © 2026 | POWERED BY LULO</div>
-
-        <!-- JOURNAL BUTTON -->
-        <div id="journal-btn" onclick="showJournal()" style="
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 45px;
-            height: 45px;
-            background: rgba(0, 212, 255, 0.1);
-            border: 2px solid rgba(0, 212, 255, 0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            cursor: pointer;
-            z-index: 500;
-            transition: all 0.3s ease;
-        "
-        onmouseover="this.style.background='rgba(0,212,255,0.25)'; this.style.transform='scale(1.1)';"
-        onmouseout="this.style.background='rgba(0,212,255,0.1)'; this.style.transform='scale(1)';"
-        title="My Journey">📔</div>
-        
-        <!-- EMERGENCY KIT BUTTON -->
-        <div id="emergency-btn" onclick="showEmergencyKit()" style="
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 45px;
-            height: 45px;
-            background: rgba(255, 100, 100, 0.15);
-            border: 2px solid rgba(255, 100, 100, 0.5);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            cursor: pointer;
-            z-index: 500;
-            transition: all 0.3s ease;
-        "
-        onmouseover="this.style.background='rgba(255,100,100,0.3)'; this.style.transform='scale(1.1)';"
-        onmouseout="this.style.background='rgba(255,100,100,0.15)'; this.style.transform='scale(1)';"
-        title="Emergency Kit">🆘</div>
+        <div id="lulo-subtitle">Your pocket companion 💙</div>
     </div>
 
-    <script>
+    <!-- EMOTION CAROUSEL -->
+    <div id="carousel-container">
+        <div id="carousel-label">How are you feeling?</div>
+        <div id="carousel-wrapper">
+            <!-- THE RING -->
+            <div id="ring-outer">
+                <div id="ring-inner"></div>
+                <div id="ring-shine"></div>
+            </div>
+            <!-- ACTIVE SLOT -->
+            <div id="ring-active-slot"></div>
+            <!-- EMOJI TRACK -->
+            <div id="mood-buttons"></div>
+            <!-- FADE MASKS -->
+            <div id="ring-fade-left"></div>
+            <div id="ring-fade-right"></div>
+        </div>
+    </div>
+
+    <!-- SCRIPTURE CARD -->
+    <div id="scripture-card">
+        <div id="scripture-inner">
+            <div id="loading-text">Lulo is finding something for you... ✨</div>
+            <p id="scripture-text"></p>
+            <p id="scripture-ref"></p>
+            <button id="another-btn" onclick="showAnother()">✦ Show me another</button>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div id="bottom-bar" style="display:none;">
+    <div id="input-row">
+        <span style="font-size:1rem;opacity:0.4;">✦</span>
+        <input type="text" id="lulo-input" placeholder="Tell Lulo how you're feeling..." autocomplete="off" onkeypress="if(event.key==='Enter')luloListen()"/>
+        <button id="send-btn" onclick="luloListen()">→</button>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+    // BUILD EMOTION BUTTONS DYNAMICALLY
+        const emotionList = [
+            { mood: 'happy', emoji: '😊', label: 'Happy' },
+            { mood: 'joyful', emoji: '😄', label: 'Joyful' },
+            { mood: 'excited', emoji: '🤩', label: 'Excited' },
+            { mood: 'peaceful', emoji: '😌', label: 'Peaceful' },
+            { mood: 'loved', emoji: '🥰', label: 'Loved' },
+            { mood: 'encouraged', emoji: '💪', label: 'Encouraged' },
+            { mood: 'grateful', emoji: '🙏', label: 'Grateful' },
+            { mood: 'hopeful', emoji: '🌟', label: 'Hopeful' },
+            { mood: 'expecting', emoji: '🤰', label: 'Expecting' },
+            { mood: 'sad', emoji: '😢', label: 'Sad' },
+            { mood: 'afraid', emoji: '😨', label: 'Afraid' },
+            { mood: 'anxious', emoji: '😟', label: 'Anxious' },
+            { mood: 'depressed', emoji: '😞', label: 'Depressed' },
+            { mood: 'lonely', emoji: '😔', label: 'Lonely' },
+            { mood: 'angry', emoji: '😤', label: 'Angry' },
+            { mood: 'tired', emoji: '🥱', label: 'Tired' },
+            { mood: 'heartbroken', emoji: '💔', label: 'Heartbroken' },
+            { mood: 'overwhelmed', emoji: '😵', label: 'Overwhelmed' },
+            { mood: 'confused', emoji: '😕', label: 'Confused' },
+            { mood: 'empty', emoji: '😶', label: 'Empty' },
+            { mood: 'invisible', emoji: '🫥', label: 'Invisible' },
+            { mood: 'rejected', emoji: '💔', label: 'Rejected' },
+            { mood: 'unappreciated', emoji: '😔', label: 'Unappreciated' },
+            { mood: 'unsettled', emoji: '🌀', label: 'Unsettled' },
+            { mood: 'unmotivated', emoji: '😑', label: 'Unmotivated' },
+            { mood: 'bored', emoji: '😴', label: 'Bored' },
+        ]
+
+        function buildEmotionButtons() {
+            const container = document.getElementById('mood-buttons')
+            if (!container) return
+            container.innerHTML = ''
+            emotionList.forEach((item, index) => {
+                const btn = document.createElement('div')
+                btn.className = 'emotion-btn'
+                btn.id = `emotion-btn-${index}`
+                btn.innerHTML = `
+                    <span class="emoji">${item.emoji}</span>
+                    <span class="label">${item.label}</span>
+                `
+                btn.onclick = () => {
+                    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('active'))
+                    btn.classList.add('active')
+                    // Scroll this button to center
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                    showScripture(item.mood)
+                }
+                container.appendChild(btn)
+            })
+        }
         let currentMood = "";
 
         // CRISIS LEVEL - immediate danger
@@ -1752,20 +2183,20 @@
 }
 
         function enterMainApp() {
+            buildEmotionButtons()
             document.getElementById('welcome-screen').style.display = 'none'
             const app = document.getElementById('main-app')
             app.style.display = 'flex'
+            document.getElementById('bottom-bar').style.display = 'block'
 
-            // Update greeting in main app with user's name
+            // Update Lulo's greeting with user's name
             const name = localStorage.getItem('luloUserName')
             if (name) {
-                document.querySelector('h1').innerText = `Hi ${name}, I'm Lulo!`
+                const luloName = document.getElementById('lulo-name')
+                if (luloName) luloName.innerText = `Hi ${name}, I'm Lulo!`
             }
 
-            // Show the input area
-            document.getElementById('lulo-input-area').style.display = 'block'
-
-            // Check if user speaks in tongues and hasn't been asked today
+            // Tongues check
             const speaksInTongues = localStorage.getItem('luloSpeaksInTongues')
             const lastTonguesCheck = localStorage.getItem('luloLastTonguesCheck')
             const todayDate = new Date().toDateString()
@@ -1787,7 +2218,7 @@
                 }, 1500)
             }
 
-            // Hide scroll hint after 4 seconds
+            // Show scroll hint briefly
             setTimeout(() => {
                 const hint = document.getElementById('scroll-hint')
                 if (hint) hint.style.display = 'none'
@@ -2053,6 +2484,21 @@
                 'unsettled': 'unsettled', 'restless': 'unsettled',
                 'unmotivated': 'unmotivated', 'no motivation': 'unmotivated',
                 'lazy': 'unmotivated', 'can\'t be bothered': 'unmotivated',
+                'i feel good': 'happy',
+                'i feel great': 'happy',
+                'i feel wonderful': 'happy',
+                'i feel amazing': 'happy',
+                'i feel fantastic': 'happy',
+                'i feel blessed': 'grateful',
+                'i feel grateful': 'grateful',
+                'i feel at peace': 'peaceful',
+                'i feel excited': 'excited',
+                'i feel loved': 'loved',
+                'i feel joy': 'joyful',
+                'feeling good': 'happy',
+                'feeling great': 'happy',
+                'feeling wonderful': 'happy',
+                'feeling amazing': 'happy',
             }
 
             const lower = text.toLowerCase()
@@ -2228,6 +2674,49 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
             luloFace.classList.add(type)
         }
 
+        function updateLuloMood(mood) {
+            const img = document.getElementById('lulo-img')
+            if (!img) return
+            // Tint Lulo's glow based on mood
+            const moodGlows = {
+                happy: 'rgba(255,220,0,0.6)',
+                joyful: 'rgba(255,200,0,0.6)',
+                excited: 'rgba(255,150,0,0.6)',
+                peaceful: 'rgba(0,200,255,0.6)',
+                loved: 'rgba(255,100,150,0.6)',
+                encouraged: 'rgba(100,255,100,0.6)',
+                grateful: 'rgba(255,180,0,0.6)',
+                hopeful: 'rgba(150,255,200,0.6)',
+                expecting: 'rgba(255,150,200,0.6)',
+                sad: 'rgba(100,150,255,0.6)',
+                afraid: 'rgba(200,100,255,0.6)',
+                anxious: 'rgba(255,200,100,0.6)',
+                depressed: 'rgba(100,100,200,0.6)',
+                lonely: 'rgba(150,150,255,0.6)',
+                angry: 'rgba(255,80,80,0.6)',
+                tired: 'rgba(150,150,150,0.6)',
+                heartbroken: 'rgba(255,50,100,0.6)',
+                overwhelmed: 'rgba(200,50,255,0.6)',
+                confused: 'rgba(200,200,100,0.6)',
+                empty: 'rgba(150,150,180,0.6)',
+                invisible: 'rgba(180,180,220,0.6)',
+                rejected: 'rgba(255,100,100,0.6)',
+                unappreciated: 'rgba(180,130,100,0.6)',
+                unsettled: 'rgba(180,180,100,0.6)',
+                unmotivated: 'rgba(150,150,150,0.6)',
+                bored: 'rgba(100,200,200,0.6)',
+                prayer: 'rgba(255,220,100,0.6)',
+            }
+            const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
+            img.style.filter = `drop-shadow(0 0 25px ${glow})`
+
+            // Update the background glow
+            const luloGlow = document.getElementById('lulo-glow')
+            if (luloGlow) {
+                luloGlow.style.background = `radial-gradient(circle, ${glow.replace('0.6', '0.15')} 0%, transparent 70%)`
+            }
+        }
+
         function formatMood(mood) {
             const moodPhrases = {
                 happy: 'happy',
@@ -2276,7 +2765,8 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     const reactionList = reactions[mood]
     const randomReaction = Math.floor(Math.random() * reactionList.length)
 
-    document.getElementById('lulo-face').innerText = faces[mood]
+    // Update Lulo's glow colour based on mood
+    updateLuloMood(mood)
     animateLulo('nod')
 
     // Check last emotion and craft Lulo's reaction
@@ -2292,40 +2782,35 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
         const newIsNegative = !positiveEmotions.includes(mood)
 
         if (lastWasNegative && newIsPositive) {
-            // Improvement! Celebrate!
             const improvementReactions = [
                 `${name}, this makes my heart so happy! 🎉 Last time you came to me feeling ${formatMood(lastMood)} — and today you're feeling ${formatMood(mood)}. That's not a small thing. That's growth. God has been walking with you and it shows. Keep going! 💙`,
-                `Oh ${name}! 🌟 What a difference! From ${lastMood} to ${formatMood(mood)} — I am so proud of you. God is so faithful. Let's celebrate this together! 🎉`,
+                `Oh ${name}! 🌟 What a difference! From ${formatMood(lastMood)} to ${formatMood(mood)} — I am so proud of you. God is so faithful. Let's celebrate this together! 🎉`,
                 `${name}! I'm truly happy to see this positive change! 💙 You were carrying ${formatMood(lastMood)} last time — look at you today feeling ${formatMood(mood)}. Never forget how far you've come!`
             ]
             reactionText = improvementReactions[Math.floor(Math.random() * improvementReactions.length)]
         } else if (lastWasPositive && newIsNegative) {
-            // Decline - be gentle
             const gentleReactions = [
                 `I'm sorry you're going through this, ${name}. 💙 Last time you were feeling ${formatMood(lastMood)} — today feels heavier. That's okay. Life has seasons. I'm still here with you.`,
                 `Oh ${name}... 💙 I'm sad to hear you're feeling ${formatMood(mood)} today. Last time we spoke you were feeling ${formatMood(lastMood)}. Whatever happened between then and now — you don't have to carry it alone.`,
-                `${name}, I see you. 💙 It's okay that today feels different from last time. feeling ${formatMood(mood)} after feeling ${formatMood(lastMood)} — sometimes that's just life. Let's find something for your heart today.`
+                `${name}, I see you. 💙 It's okay that today feels different from last time. Feeling ${formatMood(mood)} after feeling ${formatMood(lastMood)} — sometimes that's just life. Let's find something for your heart today.`
             ]
             reactionText = gentleReactions[Math.floor(Math.random() * gentleReactions.length)]
         } else if (lastWasNegative && newIsNegative) {
-            // Different difficult emotion
             const layeredReactions = [
                 `Hmm, something feels different today, ${name}. Last time it was ${formatMood(lastMood)} — today it's ${formatMood(mood)}. Life can be so layered sometimes, can't it? Whatever you're carrying right now, I'm here. 💙`,
-                `${name}, I notice things feel different today. Last time was ${lastMood} and today is ${formatMood(mood)}. You're carrying a lot. Let's find something for this together. 💙`,
-                `Oh ${name}... 💙 From ${lastMood} to ${formatMood(mood)} — you've been through it lately haven't you? I see you. Let me find something just for this moment.`
+                `${name}, I notice things feel different today. Last time was ${formatMood(lastMood)} and today is ${formatMood(mood)}. You're carrying a lot. Let's find something for this together. 💙`,
+                `Oh ${name}... 💙 From ${formatMood(lastMood)} to ${formatMood(mood)} — you've been through it lately haven't you? I see you. Let me find something just for this moment.`
             ]
             reactionText = layeredReactions[Math.floor(Math.random() * layeredReactions.length)]
         } else if (lastWasPositive && newIsPositive) {
-            // Both positive - celebrate continuity
             const continuityReactions = [
                 `Look at you, ${name}! 🌟 You came in feeling ${formatMood(lastMood)} last time and today you're feeling ${formatMood(mood)}. God is so good. Let's celebrate that together! 🎉`,
                 `${name}, you're glowing! 🌟 ${formatMood(lastMood)} last time, ${formatMood(mood)} today — keep walking in this light! 💙`,
-                `This makes me so happy, ${name}! 🎉 From ${lastMood} to ${formatMood(mood)} — God's goodness is all over your life!`
+                `This makes me so happy, ${name}! 🎉 From ${formatMood(lastMood)} to ${formatMood(mood)} — God's goodness is all over your life!`
             ]
             reactionText = continuityReactions[Math.floor(Math.random() * continuityReactions.length)]
         }
     } else if (lastMood && lastMood === mood) {
-        // Same emotion as last time
         const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting']
         if (positiveEmotions.includes(mood)) {
             const samePositiveReactions = [
@@ -2353,23 +2838,22 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     localStorage.setItem('luloLastVisitTimestamp', new Date().getTime())
 
     // Log to journal
-        logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
+    logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
 
-    const box = document.getElementById('scripture-box')
-    const text = document.getElementById('scripture-text')
-    const anotherBtn = document.getElementById('another-btn')
+    // Show scripture in new UI card
+    const box = document.getElementById('scripture-card')
     const loading = document.getElementById('loading-text')
 
-    loading.style.display = 'none'
-    text.innerText = verse.text + "\n\n— " + verse.ref
+    if (loading) loading.style.display = 'none'
+    document.getElementById('scripture-text').innerText = verse.text
+    document.getElementById('scripture-ref').innerText = '— ' + verse.ref
+    document.getElementById('another-btn').style.display = 'block'
     box.style.display = 'block'
-    anotherBtn.style.display = 'inline-block'
 
     box.style.animation = 'none'
     void box.offsetHeight
-    box.style.animation = 'fadeIn 0.8s ease'
+    box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
 
-    // Auto scroll to scripture so user never misses it
     setTimeout(() => {
         box.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 100)
