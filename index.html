@@ -913,7 +913,7 @@
 
 <!-- NAME SCREEN -->
 <div id="name-screen">
-    <div style="margin-bottom:20px;animation:float 3s ease-in-out infinite;">
+    <div style="margin-bottom:20px;margin-top:60px;animation:float 3s ease-in-out infinite;">
         <img src="lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
     </div>
     <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Before we begin...</h2>
@@ -929,8 +929,8 @@
     <div style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;padding:0 20px;">
 
         <!-- LULO -->
-        <div id="welcome-lulo" style="margin-bottom:25px;animation:float 3s ease-in-out infinite;">
-            <img src="lulo.png" style="width:120px;height:120px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
+        <div id="welcome-lulo" style="margin-bottom:25px;margin-top:60px;animation:float 3s ease-in-out infinite;">
+            <img src="lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
         </div>
 
         <!-- WELCOME MESSAGE -->
@@ -1446,9 +1446,9 @@
                     const active = container.querySelector('.emotion-btn.active')
                     if (active) {
                         const index = parseInt(active.dataset.index)
-                        const mood = active.dataset.mood
                         scrollToEmotion(index)
-                        if (mood) showScripture(mood)
+                        // DON'T trigger scripture on scroll stop
+                        // Only visual centering — user must TAP
                     }
                 }, 150)
             })
