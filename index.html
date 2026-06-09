@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Em_Q | Your Pocket Companion</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -106,8 +106,8 @@
 
         /* LULO FACE */
         #lulo-container {
-            margin-top: 20px;
-            margin-bottom: 15px;
+            margin-top: 5px;
+            margin-bottom: -10px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -141,6 +141,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 200px;
+            height: 200px;
+            margin-bottom: -25px;
         }
 
         #lulo-face:hover { transform: scale(1.05); }
@@ -199,95 +202,55 @@
         /* EMOTION CAROUSEL */
         #carousel-container {
             width: 100%;
-            margin: 10px 0 20px 0;
+            margin: 0px 0 25px 0;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        #carousel-label {
-            font-size: 0.7rem;
-            letter-spacing: 3px;
-            color: rgba(255,255,255,0.25);
-            text-align: center;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-        }
-
-        /* WRAPPER */
+        /* GLASS RAIL */
         #carousel-wrapper {
             position: relative;
             width: 100%;
-            height: 130px;
+            height: 110px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* OUTER RING */
+        /* THE RAIL BODY */
         #ring-outer {
             position: absolute;
-            width: 360px;
-            height: 90px;
-            border-radius: 50%;
-            border: 1.5px solid rgba(0,255,100,0.2);
+            width: 100%;
+            height: 88px;
+            border-radius: 24px;
             background: linear-gradient(180deg,
-                rgba(0,255,100,0.06) 0%,
-                rgba(0,255,100,0.02) 50%,
-                rgba(0,255,100,0.06) 100%);
+                rgba(255,255,255,0.06) 0%,
+                rgba(255,255,255,0.03) 50%,
+                rgba(255,255,255,0.06) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
             box-shadow:
-                0 0 25px rgba(0,255,100,0.08),
-                inset 0 0 20px rgba(0,255,100,0.04),
-                0 1px 0 rgba(0,255,100,0.25),
-                0 -1px 0 rgba(0,255,100,0.1);
-            transform: rotateX(55deg);
-            transform-style: preserve-3d;
+                0 0 30px rgba(0,255,100,0.06),
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+            backdrop-filter: blur(20px);
             pointer-events: none;
             z-index: 1;
         }
 
-        /* INNER RING */
-        #ring-inner {
-            position: absolute;
-            top: 50%;
-            left: 8%;
-            right: 8%;
-            height: 1px;
-            transform: translateY(-50%);
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(0,255,100,0.3),
-                rgba(0,255,100,0.6),
-                rgba(0,255,100,0.3),
-                transparent);
-        }
-
-        /* RING SHINE */
-        #ring-shine {
-            position: absolute;
-            top: 15%;
-            left: 20%;
-            right: 20%;
-            height: 30%;
-            background: linear-gradient(180deg,
-                rgba(255,255,255,0.08) 0%,
-                transparent 100%);
-            border-radius: 50%;
-            filter: blur(2px);
-        }
-
-        /* ACTIVE SLOT */
+        /* CRYSTAL CENTER WINDOW */
         #ring-active-slot {
             position: absolute;
-            width: 68px;
-            height: 68px;
-            border-radius: 18px;
-            border: 1.5px solid rgba(0,255,100,0.5);
-            background: rgba(0,255,100,0.06);
+            width: 75px;
+            height: 88px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.04);
+            border-left: 1px solid rgba(0,255,100,0.2);
+            border-right: 1px solid rgba(0,255,100,0.2);
             box-shadow:
-                0 0 20px rgba(0,255,100,0.2),
-                inset 0 0 15px rgba(0,255,100,0.04);
+                0 0 20px rgba(0,255,100,0.12),
+                inset 0 0 20px rgba(0,255,100,0.04);
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -295,89 +258,133 @@
             pointer-events: none;
         }
 
+        /* TOP AND BOTTOM CRYSTAL LINES */
+        #ring-active-slot::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(0,255,100,0.5),
+                transparent);
+        }
+
+        #ring-active-slot::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 10%; right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(0,255,100,0.5),
+                transparent);
+        }
+
         /* FADE MASKS */
         #ring-fade-left {
             position: absolute;
             top: 0; left: 0;
-            width: 25%;
+            width: 20%;
             height: 100%;
-            background: linear-gradient(90deg, rgba(8,8,24,1) 0%, transparent 100%);
+            background: linear-gradient(90deg,
+                rgba(8,8,24,0.95) 0%,
+                transparent 100%);
             z-index: 10;
             pointer-events: none;
+            border-radius: 24px 0 0 24px;
         }
 
         #ring-fade-right {
             position: absolute;
             top: 0; right: 0;
-            width: 25%;
+            width: 20%;
             height: 100%;
-            background: linear-gradient(270deg, rgba(8,8,24,1) 0%, transparent 100%);
+            background: linear-gradient(270deg,
+                rgba(8,8,24,0.95) 0%,
+                transparent 100%);
             z-index: 10;
             pointer-events: none;
+            border-radius: 0 24px 24px 0;
         }
 
         /* EMOJI TRACK */
         #mood-buttons {
             display: flex;
-            gap: 6px;
+            gap: 0px;
             overflow-x: auto;
-            padding: 0 130px;
+            padding: 0;
             scrollbar-width: none;
             -ms-overflow-style: none;
-            scroll-snap-type: x mandatory;
             position: relative;
             z-index: 5;
             align-items: center;
             width: 100%;
             height: 100%;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
         }
 
         #mood-buttons::-webkit-scrollbar { display: none; }
 
+        /* EMOTION BUTTON */
         .emotion-btn {
             flex-shrink: 0;
             scroll-snap-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 4px;
             background: transparent;
             border: none;
-            border-radius: 14px;
-            padding: 6px;
+            padding: 8px 0;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            min-width: 58px;
-            opacity: 0.65;
-            transform: scale(0.8);
-        }
-
-        .emotion-btn:hover {
-            opacity: 0.7;
-            transform: scale(0.9);
-        }
-
-        .emotion-btn.active {
-            opacity: 1;
-            transform: scale(1.2);
-            filter: drop-shadow(0 0 10px rgba(0,255,100,0.7));
+            width: 75px;
+            height: 88px;
+            opacity: 0.2;
+            transform: scale(0.82);
+            transition: opacity 0.3s ease, transform 0.3s ease,
+                        filter 0.3s ease;
+            filter: blur(0.5px);
         }
 
         .emotion-btn .emoji {
-            font-size: 1.7rem;
+            font-size: 1.6rem;
             line-height: 1;
+            transition: all 0.3s ease;
         }
 
         .emotion-btn .label {
-            font-size: 0.55rem;
-            color: rgba(255,255,255,0.35);
+            font-size: 0.58rem;
+            color: rgba(255,255,255,0.6);
             font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.3px;
             text-align: center;
             white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        /* NEAR CENTER */
+        .emotion-btn.near {
+            opacity: 0.55;
+            transform: scale(0.91);
+            filter: blur(0px);
+        }
+
+        /* ACTIVE CENTER */
+        .emotion-btn.active {
+            opacity: 1;
+            transform: scale(1.08);
+            filter: none;
+            filter: drop-shadow(0 0 8px rgba(0,255,100,0.5));
         }
 
         .emotion-btn.active .label {
             color: rgba(0,255,100,0.9);
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         /* SCRIPTURE CARD */
@@ -397,10 +404,32 @@
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 24px;
-            padding: 25px;
+            padding: 20px 22px;
             backdrop-filter: blur(20px);
             position: relative;
             overflow: hidden;
+        }
+
+        #scripture-text {
+            font-size: 1.05rem;
+            line-height: 1.9;
+            color: rgba(255,255,255,0.95);
+            text-align: center;
+            margin-bottom: 10px;
+            white-space: pre-line;
+            position: relative;
+            z-index: 1;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
+
+        #scripture-ref {
+            font-size: 0.78rem;
+            color: rgba(0,255,100,0.7);
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
         }
 
         #scripture-inner::before {
@@ -897,14 +926,119 @@
 
 <!-- WELCOME SCREEN -->
 <div id="welcome-screen">
-    <div id="welcome-lulo" style="margin-bottom:15px;animation:float 3s ease-in-out infinite;">
-        <img src="lulo.png" style="width:190px;height:190px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
+    <div style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;padding:0 20px;">
+
+        <!-- LULO -->
+        <div id="welcome-lulo" style="margin-bottom:25px;animation:float 3s ease-in-out infinite;">
+            <img src="lulo.png" style="width:120px;height:120px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
+        </div>
+
+        <!-- WELCOME MESSAGE -->
+        <h1 id="welcome-message" style="
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            text-align: center;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+            line-height: 1.2;
+            font-family: 'Inter', sans-serif;
+        "></h1>
+
+        <!-- SUBTEXT -->
+        <p id="welcome-subtext" style="
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.8;
+            text-align: center;
+            margin-bottom: 25px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+        "></p>
+
+        <!-- PREVIOUS SESSION CARD -->
+        <div id="welcome-history-card" style="
+            display: none;
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            cursor: pointer;
+        " onclick="toggleHistoryCard()">
+
+            <!-- COLLAPSED VIEW -->
+            <div id="history-collapsed" style="
+                padding: 14px 18px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            ">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="
+                        width: 32px;
+                        height: 32px;
+                        background: rgba(0,255,100,0.1);
+                        border: 1px solid rgba(0,255,100,0.2);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.9rem;
+                    ">📖</div>
+                    <span style="
+                        font-size: 0.78rem;
+                        color: rgba(255,255,255,0.4);
+                        font-family: 'Inter', sans-serif;
+                        font-weight: 400;
+                    ">Our last conversation</span>
+                </div>
+                <span id="history-arrow" style="
+                    color: rgba(255,255,255,0.25);
+                    font-size: 0.75rem;
+                    transition: transform 0.3s ease;
+                ">▼</span>
+            </div>
+
+            <!-- EXPANDED VIEW -->
+            <div id="history-expanded" style="
+                display: none;
+                padding: 0 18px 16px 18px;
+                border-top: 1px solid rgba(255,255,255,0.05);
+            ">
+                <p id="history-detail" style="
+                    font-size: 0.82rem;
+                    color: rgba(255,255,255,0.5);
+                    line-height: 1.8;
+                    margin-top: 14px;
+                    font-family: 'Inter', sans-serif;
+                    font-weight: 300;
+                    white-space: pre-line;
+                "></p>
+            </div>
+        </div>
+
+        <!-- TALK TO LULO BUTTON -->
+        <button id="welcome-btn" onclick="enterMainApp()" style="
+            width: 100%;
+            background: rgba(0,212,255,0.08);
+            border: 1px solid rgba(0,212,255,0.25);
+            color: rgba(0,212,255,0.9);
+            padding: 16px 35px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            letter-spacing: 3px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        "
+        onmouseover="this.style.background='rgba(0,212,255,0.15)';"
+        onmouseout="this.style.background='rgba(0,212,255,0.08)';"></button>
+
     </div>
-    <h2 id="welcome-message" style="font-size:1.4rem;font-weight:600;color:white;margin-bottom:12px;"></h2>
-    <p id="welcome-subtext" style="font-size:0.85rem;color:rgba(255,255,255,0.45);line-height:1.8;max-width:320px;margin-bottom:35px;white-space:pre-line;"></p>
-    <button id="welcome-btn" onclick="enterMainApp()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;"
-    onmouseover="this.style.background='rgba(0,212,255,0.2)';"
-    onmouseout="this.style.background='rgba(0,212,255,0.1)';"></button>
 </div>
 
 <!-- CRISIS SCREEN -->
@@ -1041,15 +1175,23 @@
                 mix-blend-mode: screen;
                 filter: drop-shadow(0 0 25px rgba(0,255,100,0.5));
             "/>
+            <div id="lulo-emoji-overlay" style="
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                font-size: 2.5rem;
+                opacity: 0;
+                transition: all 0.3s ease;
+                filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+                z-index: 10;
+            "></div>
         </div>
-        <div id="lulo-name">Hi, I'm Lulo!</div>
         <div id="lulo-reaction"></div>
-        <div id="lulo-subtitle">Your pocket companion 💙</div>
     </div>
 
     <!-- EMOTION CAROUSEL -->
     <div id="carousel-container">
-        <div id="carousel-label">How are you feeling?</div>
+        <div id="carousel-label"></div>
         <div id="carousel-wrapper">
             <!-- THE RING -->
             <div id="ring-outer">
@@ -1066,9 +1208,61 @@
         </div>
     </div>
 
-    <!-- SCRIPTURE CARD -->
+    <!-- UNIFIED RESPONSE CARD -->
     <div id="scripture-card">
         <div id="scripture-inner">
+            <!-- LULO'S MESSAGE SECTION -->
+            <div id="lulo-message-section" style="display:none;">
+                <div id="lulo-message-avatar" style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 10px;
+                ">
+                    <div style="
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        background: rgba(0,255,100,0.15);
+                        border: 1px solid rgba(0,255,100,0.3);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.8rem;
+                        flex-shrink: 0;
+                    ">🌱</div>
+                    <span style="
+                        font-size: 0.7rem;
+                        color: rgba(0,255,100,0.7);
+                        font-weight: 600;
+                        letter-spacing: 1px;
+                        text-transform: uppercase;
+                    ">Lulo</span>
+                </div>
+                <p id="lulo-message-text" style="
+                    font-size: 0.82rem;
+                    color: rgba(0,255,100,0.8);
+                    line-height: 1.6;
+                    font-style: normal;
+                    font-weight: 400;
+                    letter-spacing: 0.2px;
+                    margin-bottom: 0;
+                    font-family: 'Inter', sans-serif;
+                "></p>
+            </div>
+
+            <!-- DIVIDER -->
+            <div id="card-divider" style="
+                display: none;
+                height: 1px;
+                background: linear-gradient(90deg,
+                    transparent,
+                    rgba(255,255,255,0.08),
+                    transparent);
+                margin: 15px 0;
+            "></div>
+
+            <!-- SCRIPTURE SECTION -->
             <div id="loading-text">Lulo is finding something for you... ✨</div>
             <p id="scripture-text"></p>
             <p id="scripture-ref"></p>
@@ -1124,22 +1318,139 @@
             const container = document.getElementById('mood-buttons')
             if (!container) return
             container.innerHTML = ''
+
+            // Add spacers so first and last emoji can center
+            const spacer1 = document.createElement('div')
+            spacer1.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
+            container.appendChild(spacer1)
+
             emotionList.forEach((item, index) => {
                 const btn = document.createElement('div')
                 btn.className = 'emotion-btn'
                 btn.id = `emotion-btn-${index}`
+                btn.dataset.index = index
+                btn.dataset.mood = item.mood
                 btn.innerHTML = `
                     <span class="emoji">${item.emoji}</span>
                     <span class="label">${item.label}</span>
                 `
                 btn.onclick = () => {
-                    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('active'))
-                    btn.classList.add('active')
-                    // Scroll this button to center
-                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-                    showScripture(item.mood)
+                    scrollToEmotion(index)
+                    setTimeout(() => {
+                        showScripture(item.mood)
+                    }, 300)
                 }
                 container.appendChild(btn)
+            })
+
+            // Add end spacer
+            const spacer2 = document.createElement('div')
+            spacer2.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
+            container.appendChild(spacer2)
+
+            // Listen for scroll to update active state
+            container.addEventListener('scroll', onRailScroll)
+
+            // Set first emotion as default active
+            setTimeout(() => {
+                scrollToEmotion(0)
+            }, 100)
+        }
+
+        function toggleHistoryCard() {
+            const expanded = document.getElementById('history-expanded')
+            const arrow = document.getElementById('history-arrow')
+            if (!expanded) return
+
+            if (expanded.style.display === 'none') {
+                expanded.style.display = 'block'
+                if (arrow) arrow.style.transform = 'rotate(180deg)'
+            } else {
+                expanded.style.display = 'none'
+                if (arrow) arrow.style.transform = 'rotate(0deg)'
+            }
+        }
+
+        function scrollToEmotion(index) {
+            const container = document.getElementById('mood-buttons')
+            const btn = document.getElementById(`emotion-btn-${index}`)
+            if (!btn || !container) return
+
+            const btnLeft = btn.offsetLeft
+            const btnWidth = btn.offsetWidth
+            const containerWidth = container.offsetWidth
+            const scrollTo = btnLeft - (containerWidth / 2) + (btnWidth / 2)
+
+            container.scrollTo({ left: scrollTo, behavior: 'smooth' })
+        }
+
+        function onRailScroll() {
+            const container = document.getElementById('mood-buttons')
+            if (!container) return
+
+            const containerCenter = container.scrollLeft + container.offsetWidth / 2
+            const buttons = container.querySelectorAll('.emotion-btn')
+
+            let closestBtn = null
+            let closestDist = Infinity
+            let closestIndex = 0
+
+            buttons.forEach((btn, i) => {
+                const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
+                const dist = Math.abs(containerCenter - btnCenter)
+
+                // Update opacity based on distance
+                const maxDist = container.offsetWidth / 2
+                const ratio = Math.max(0, 1 - (dist / maxDist))
+
+                btn.classList.remove('active', 'near')
+
+                if (dist < closestDist) {
+                    closestDist = dist
+                    closestBtn = btn
+                    closestIndex = i
+                }
+            })
+
+            // Apply classes
+            buttons.forEach((btn, i) => {
+                const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
+                const dist = Math.abs(containerCenter - btnCenter)
+                btn.classList.remove('active', 'near')
+
+                if (btn === closestBtn) {
+                    btn.classList.add('active')
+                } else if (dist < 120) {
+                    btn.classList.add('near')
+                }
+            })
+
+            // Update Lulo as user scrolls
+            if (closestBtn && closestBtn.dataset.mood !== window.lastScrollMood) {
+                window.lastScrollMood = closestBtn.dataset.mood
+                const mood = closestBtn.dataset.mood
+                updateLuloMood(mood)
+                animateLulo('nod')
+            }
+        }
+
+        // Snap to center on scroll end
+        function setupRailSnap() {
+            const container = document.getElementById('mood-buttons')
+            if (!container) return
+
+            let scrollTimer = null
+            container.addEventListener('scroll', () => {
+                clearTimeout(scrollTimer)
+                scrollTimer = setTimeout(() => {
+                    const active = container.querySelector('.emotion-btn.active')
+                    if (active) {
+                        const index = parseInt(active.dataset.index)
+                        const mood = active.dataset.mood
+                        scrollToEmotion(index)
+                        if (mood) showScripture(mood)
+                    }
+                }, 150)
             })
         }
         let currentMood = "";
@@ -2039,6 +2350,24 @@
         { text: "No weapon forged against you will prevail.", ref: "Isaiah 54:17" },
         { text: "The Lord is my strength and my shield; my heart trusts in him, and he helps me.", ref: "Psalm 28:7" },
     ],
+    praise: [
+        { text: "Praise the Lord! Praise God in his sanctuary; praise him in his mighty heavens!", ref: "Psalm 150:1" },
+        { text: "I will praise you, Lord, with all my heart; I will tell of all the wonderful things you have done.", ref: "Psalm 9:1" },
+        { text: "Shout for joy to the Lord, all the earth. Worship the Lord with gladness; come before him with joyful songs.", ref: "Psalm 100:1-2" },
+        { text: "Great is the Lord and most worthy of praise; his greatness no one can fathom.", ref: "Psalm 145:3" },
+        { text: "Sing to the Lord a new song; sing to the Lord, all the earth.", ref: "Psalm 96:1" },
+        { text: "Bless the Lord, O my soul, and all that is within me, bless his holy name!", ref: "Psalm 103:1" },
+        { text: "This is the day the Lord has made; let us rejoice and be glad in it.", ref: "Psalm 118:24" },
+        { text: "Enter his gates with thanksgiving and his courts with praise; give thanks to him and praise his name.", ref: "Psalm 100:4" },
+        { text: "Let everything that has breath praise the Lord. Praise the Lord!", ref: "Psalm 150:6" },
+        { text: "How majestic is your name in all the earth!", ref: "Psalm 8:1" },
+        { text: "The Lord is my strength and my song.", ref: "Exodus 15:2" },
+        { text: "Rejoice in the Lord always. I will say it again: Rejoice!", ref: "Philippians 4:4" },
+        { text: "Oh, that men would give thanks to the Lord for his goodness, and for his wonderful works!", ref: "Psalm 107:8" },
+        { text: "I will sing of the mercies of the Lord forever.", ref: "Psalm 89:1" },
+        { text: "Make a joyful noise unto the Lord, all ye lands!", ref: "Psalm 100:1" },
+        { text: "Worthy is the Lamb who was slain to receive power and riches and wisdom and strength and honor and glory and blessing!", ref: "Revelation 5:12" },
+    ],
 }
         const reactions = {
             happy: ["That's wonderful! 🎉", "Happiness looks good on you! ✨", "Let's celebrate that! 🙌"],
@@ -2066,7 +2395,8 @@
             rejected: ["Rejection hurts like nothing else. I'm so sorry. 💙", "The world's rejection cannot undo God's acceptance. 💙", "You are loved beyond measure, even now. 💙"],
             unappreciated: ["Your work matters, even when no one says so. 💙", "God sees every sacrifice you make. Not one is forgotten. 💙", "You are more valued than you know. 💙"],
             unsettled: ["That restless feeling is real. Let's find some peace together. 💙", "God's peace is available even in the most unsettled seasons. 💙", "Let me share something to quiet that storm inside. 🕊️"],
-            unmotivated: ["It's okay to be in a slow season. God is still working. 💙", "Even rest is productive when God is in it. 💙", "Let me share something to reignite that spark. 🌟"]
+            unmotivated: ["It's okay to be in a slow season. God is still working. 💙", "Even rest is productive when God is in it. 💙", "Let me share something to reignite that spark. 🌟"],
+            praise: ["YESSS!!! 🎉 The heavens are rejoicing with you right now!", "That's the sound of breakthrough! 🔥 Praise Him!", "Now THAT'S what I love to hear! 🎉", "The enemy HATES that! Keep going! 🔥💙", "Something shifts in the atmosphere when you praise! 🌟"],
         }
 
         const faces = {
@@ -2075,7 +2405,7 @@
             sad: "🥺", afraid: "🤗", anxious: "😟", depressed: "🥺",
             lonely: "🤗", angry: "😤", tired: "🥱", heartbroken: "🥺",
             overwhelmed: "😵", confused: "🤔", bored: "🤩", empty: "😶", invisible: "🫥", rejected: "💔",
-            unappreciated: "😔", unsettled: "🌀", unmotivated: "😑"
+            unappreciated: "😔", unsettled: "🌀", unmotivated: "😑", praise: "🙌",
         }
 
         // Check if user already has a saved name
@@ -2125,65 +2455,87 @@
             const welcomeMessage = document.getElementById('welcome-message')
             const welcomeSubtext = document.getElementById('welcome-subtext')
             const welcomeBtn = document.getElementById('welcome-btn')
+            const historyCard = document.getElementById('welcome-history-card')
 
-            welcomeMessage.innerText = `It's so lovely to meet you, ${name}! 🎉`
-            welcomeSubtext.innerText = `I'm Lulo, your pocket companion.\nI'm here whenever you need me — day or night.\nYou never have to face anything alone. 💙`
-            welcomeBtn.innerText = `I'M READY, LULO →`
+            welcomeMessage.innerText = `Hi ${name}, I'm Lulo! 🌱`
+            welcomeSubtext.innerText = `Your pocket companion.\nI'm here whenever you need me.`
+            welcomeBtn.innerText = `MEET LULO →`
+            if (historyCard) historyCard.style.display = 'none'
 
             welcomeScreen.style.display = 'flex'
         }
 
         function showReturningWelcome(name) {
-    const welcomeScreen = document.getElementById('welcome-screen')
-    const welcomeMessage = document.getElementById('welcome-message')
-    const welcomeSubtext = document.getElementById('welcome-subtext')
-    const welcomeBtn = document.getElementById('welcome-btn')
+            const welcomeScreen = document.getElementById('welcome-screen')
+            const welcomeMessage = document.getElementById('welcome-message')
+            const welcomeSubtext = document.getElementById('welcome-subtext')
+            const welcomeBtn = document.getElementById('welcome-btn')
+            const historyCard = document.getElementById('welcome-history-card')
+            const historyDetail = document.getElementById('history-detail')
 
-    // Get everything Lulo remembers
-    const lastMood = localStorage.getItem('luloLastMood')
-    const lastRef = localStorage.getItem('luloLastRef')
-    const lastVerseText = localStorage.getItem('luloLastVerseText')
-    const lastDate = localStorage.getItem('luloLastVisitDate')
+            // Get remembered data
+            const lastMood = localStorage.getItem('luloLastMood')
+            const lastRef = localStorage.getItem('luloLastRef')
+            const lastVerseText = localStorage.getItem('luloLastVerseText')
+            const lastTimestamp = localStorage.getItem('luloLastVisitTimestamp')
 
-    welcomeMessage.innerText = `Welcome back, ${name}! 💙`
+            // Natural time ago
+            let timeAgo = ''
+            if (lastTimestamp) {
+                const days = Math.floor((new Date() - new Date(parseInt(lastTimestamp))) / (1000 * 60 * 60 * 24))
+                if (days === 0) timeAgo = 'earlier today'
+                else if (days === 1) timeAgo = 'yesterday'
+                else if (days < 7) timeAgo = `${days} days ago`
+                else if (days < 14) timeAgo = 'last week'
+                else if (days < 30) timeAgo = `${Math.floor(days/7)} weeks ago`
+                else timeAgo = 'last month'
+            }
 
-    // Build the personalised memory message
-    let subtext = ''
+            // Rotating welcome messages
+            const welcomeMessages = [
+                `Welcome back,\n${name}. 🌱`,
+                `There you are,\n${name}. ✨`,
+                `${name}.\nI've been thinking about you. 💙`,
+                `Good to see you,\n${name}. 🌱`,
+            ]
+            const randomMsg = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
 
-    if (lastMood && lastRef && lastDate) {
-        // Format the date naturally
-        const today = new Date()
-        const lastTimestamp = localStorage.getItem('luloLastVisitTimestamp')
-        const diffDays = lastTimestamp ? Math.floor((today - new Date(parseInt(lastTimestamp))) / (1000 * 60 * 60 * 24)) : 0
+            welcomeMessage.innerText = randomMsg
+            welcomeSubtext.innerText = `How are you feeling today?`
+            welcomeBtn.innerText = `TALK TO LULO →`
 
-        let timeAgo = ''
-        if (diffDays === 0) timeAgo = 'earlier today'
-        else if (diffDays === 1) timeAgo = 'yesterday'
-        else if (diffDays < 7) timeAgo = `${diffDays} days ago`
-        else if (diffDays < 14) timeAgo = 'last week'
-        else if (diffDays < 30) timeAgo = `${Math.floor(diffDays / 7)} weeks ago`
-        else timeAgo = 'last month'
+            // Show history card if we have data
+            if (lastMood && lastRef && historyCard) {
+                historyCard.style.display = 'block'
+                if (historyDetail) {
+                    historyDetail.innerText = `${timeAgo ? timeAgo.charAt(0).toUpperCase() + timeAgo.slice(1) : 'Last time'}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.`
+                }
+            }
 
-        const returningSubtexts = [
-            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI've been thinking a lot about you.\nHow are you feeling today? 💙`,
-            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nYou've been on my mind. How is your heart today? 💙`,
-            `Last time we talked (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI'm so glad you're back. How are you doing today? 💙`,
-            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nWelcome back. I kept a light on for you. What's the state of your heart today? 💙`,
-            `We last spoke ${timeAgo},. You were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nI missed you. How is your mental health today? 💙`,
-            `${lastDate} (${timeAgo}), you were feeling ${formatMood(lastMood)}.\n\nWe read "${lastVerseText}" — ${lastRef} together.\n\nHere whenever you need me. What's on your heart today? 💙`,
-        ]
-        subtext = returningSubtexts[Math.floor(Math.random() * returningSubtexts.length)]
-    } else {
-        subtext = `I'm so glad you're back.\nHow are you feeling today? 💙`
-    }
-
-    welcomeSubtext.innerText = subtext
-    welcomeBtn.innerText = `TALK TO LULO →`
-    welcomeScreen.style.display = 'flex'
-}
+            welcomeScreen.style.display = 'flex'
+        }
 
         function enterMainApp() {
             buildEmotionButtons()
+            const label = document.getElementById('carousel-label')
+            if (label) label.innerText = ''
+
+            // Show label after 15 seconds of inactivity
+            let inactivityTimer = setTimeout(() => {
+                if (label && !currentMood) {
+                    label.style.transition = 'opacity 1s ease'
+                    label.style.opacity = '0'
+                    label.innerText = 'HOW ARE YOU FEELING?'
+                    setTimeout(() => { label.style.opacity = '1' }, 100)
+                }
+            }, 15000)
+
+            // Reset timer on any interaction
+            document.addEventListener('click', () => {
+                clearTimeout(inactivityTimer)
+                if (label && !currentMood) label.innerText = ''
+            }, { once: true })
+            setTimeout(() => setupRailSnap(), 300)
             document.getElementById('welcome-screen').style.display = 'none'
             const app = document.getElementById('main-app')
             app.style.display = 'flex'
@@ -2242,6 +2594,31 @@
         const isPrayerRequest = prayerKeywords.some(keyword => 
             text.toLowerCase().includes(keyword)
         )
+
+        // PRAISE DETECTION
+        const praiseKeywords = [
+            'hallelujah', 'halleluiah', 'hallelu',
+            'praise the lord', 'praise god', 'praise jesus',
+            'glory to god', 'glory to jesus', 'glory!',
+            'hosanna', 'blessed be', 'worthy is',
+            'thank you jesus', 'thank you lord', 'thank you god',
+            'god is good', 'he is good', 'god is faithful',
+            'he is faithful', 'god came through', 'god showed up',
+            'to god be the glory', 'all glory to god'
+        ]
+
+        // Handle repeated letters like "hallelujahhhh" or "gloryyyyy"
+        const normalizedText = text.toLowerCase().replace(/(.)\1+/g, '$1')
+        const isPraise = praiseKeywords.some(keyword =>
+            text.toLowerCase().includes(keyword) ||
+            normalizedText.includes(keyword)
+        )
+
+        if (isPraise) {
+            input.value = ''
+            showScripture('praise')
+            return
+        }
 
         if (isPrayerRequest) {
             input.value = ''
@@ -2314,9 +2691,20 @@
                     `A baby! 🎉 ${name}, God is writing the most beautiful story! Let me share something for you and your little one!`
                 ]
             },
+            examwin: {
+                keywords: ['passed my exam', 'passed my test', 'aced my exam',
+                          'passed my finals', 'got my results', 'exam results',
+                          'i passed', 'we passed', 'passed!'],
+                mood: 'excited',
+                reaction: [
+                    `${name} YOU PASSED!!! 🎉🎉🎉 That is AMAZING! God was with you in that exam room! Let's celebrate!`,
+                    `YESSS ${name}! 🎉 All that hard work paid off! God is so faithful! This deserves a celebration!`,
+                    `${name}, I am SO proud of you! 🌟 You did it! Let me share something to mark this moment!`
+                ]
+            },
             exam: {
-                keywords: ['exam', 'exams', 'test tomorrow', 'finals', 'studying', 
-                          'revision', 'study', 'grades', 'results', 'failed exam',
+                keywords: ['exam', 'exams', 'test tomorrow', 'finals', 'studying',
+                          'revision', 'study', 'grades', 'failed exam',
                           'failed my test', 'school stress', 'college stress'],
                 mood: 'anxious',
                 reaction: [
@@ -2362,12 +2750,21 @@
                 keywords: ['lost someone', 'someone died', 'death', 'passed away',
                           'grieving', 'grief', 'funeral', 'miss them', 'they\'re gone',
                           'lost my mom', 'lost my dad', 'lost my friend', 'lost my baby',
-                          'bereavement', 'mourning'],
+                          'bereavement', 'mourning', 'my dog died', 'my cat died',
+                          'my pet died', 'lost my dog', 'lost my cat', 'lost my pet',
+                          'my dog passed', 'my cat passed', 'put down my dog',
+                          'put down my cat', 'lost a loved one', 'someone close died',
+                          'my grandma died', 'my grandpa died', 'my grandma passed',
+                          'my grandpa passed', 'lost my grandma', 'lost my grandpa',
+                          'lost my sister', 'lost my brother', 'lost my child',
+                          'my husband died', 'my wife died', 'he died', 'she died',
+                          'they died', 'he passed', 'she passed', 'they passed'],
                 mood: 'heartbroken',
                 reaction: [
                     `${name}... I'm so sorry for your loss. 💙 There are no words. But let me sit with you in this for a moment.`,
                     `Grief is love with nowhere to go, ${name}. 💙 God sees every tear. Let me share something for this tender place.`,
-                    `${name}, losing someone changes everything. 💙 You don't have to be okay right now. Let me share something gentle.`
+                    `${name}, losing someone changes everything. 💙 You don't have to be okay right now. Let me share something gentle.`,
+                    `${name}, the loss of a pet is a real and deep grief. 💙 They loved you unconditionally — and God sees that love. Let me share something for your heart.`,
                 ]
             },
             health: {
@@ -2433,7 +2830,124 @@
                     `Feeling lost is actually the beginning of being found, ${name}. 💙 Let me share something for this season.`,
                     `${name}, God has not forgotten the plans He has for you. 💙 Let me remind you of that right now.`
                 ]
-            }
+            },
+            world: {
+                keywords: [
+                    'why is the world', 'world so wicked', 'world so evil',
+                    'world so cruel', 'world so unfair', 'why is life so hard',
+                    'why is life so unfair', 'life is unfair', 'life is hard',
+                    'life is cruel', 'why does bad things happen', 'why do bad things happen',
+                    'why would god allow', 'where is god', 'does god care',
+                    'why is there suffering', 'why is there evil', 'world is falling apart',
+                    'everything is falling apart', 'nothing makes sense',
+                    'world makes no sense', 'i don\'t understand life',
+                    'why is everything so hard', 'it\'s not fair', 'its not fair',
+                    'life isn\'t fair', 'why me', 'why us', 'why does this happen to me'
+                ],
+                mood: 'confused',
+                reaction: [
+                    `${name}, that's one of the deepest questions a heart can ask. 💙 The world can feel so heavy sometimes. Let me share something that might bring a little light.`,
+                    `${name}... I hear you. The world can look so dark from where we're standing. 💙 But God hasn't left the building. Let me share something for this moment.`,
+                    `That's a big question, ${name}. 💙 And it's okay to ask it. God can handle our hardest questions. Let me share something that speaks to this.`,
+                    `${name}, even the Psalms are full of that same cry — "why, God?" 💙 You're in good company. Let me share something honest and real.`
+                ]
+            },
+            failure: {
+                keywords: [
+                    'i feel like a failure', 'i am a failure', 'i failed',
+                    'not good enough', 'i\'m not good enough', 'i hate myself',
+                    'i don\'t like myself', 'i\'m worthless', 'i feel worthless',
+                    'nobody loves me', 'no one loves me', 'nobody cares about me',
+                    'no one cares', 'i\'m ashamed', 'i feel ashamed', 'i feel guilty',
+                    'so much guilt', 'i feel so guilty', 'i keep failing',
+                    'i always mess up', 'i can\'t do anything right'
+                ],
+                mood: 'depressed',
+                reaction: [
+                    `${name}, those words break my heart to hear. 💙 But they are not the truth about you. Let me share what God says about who you are.`,
+                    `${name}... I need you to hear this — you are not a failure. 💙 You are loved beyond measure. Let me share something just for this moment.`,
+                    `${name}, shame is a liar. 💙 God has never once looked at you and seen what shame tells you he sees. Let me share the truth.`,
+                    `${name}, even the greatest people in the Bible felt exactly this way. 💙 You are in good company. Let me share something healing.`
+                ]
+            },
+            lostfaith: {
+                keywords: [
+                    'lost my faith', 'losing my faith', 'i\'ve lost my faith',
+                    'feel far from god', 'far from god', 'distant from god',
+                    'god is silent', 'god doesn\'t hear me', 'god isn\'t listening',
+                    'where is god', 'does god exist', 'i\'m doubting',
+                    'doubting my faith', 'don\'t believe anymore', 'struggling with faith',
+                    'god abandoned me', 'god left me', 'i don\'t feel god anymore'
+                ],
+                mood: 'confused',
+                reaction: [
+                    `${name}, doubt isn't the opposite of faith — it's part of it. 💙 Even the disciples doubted. Let me share something honest for this season.`,
+                    `${name}, God hasn't moved. 💙 Sometimes the silence feels deafening but He is still there. Let me share something for this.`,
+                    `${name}, it's okay to tell God exactly how you feel right now. 💙 He can handle it. Let me share something real.`,
+                    `${name}, seasons of distance are real. 💙 But so is the God who goes looking for the one lost sheep. He's looking for you. Let me share something.`
+                ]
+            },
+            goodlife: {
+                keywords: [
+                    'i got promoted', 'got a promotion', 'i got the job',
+                    'i got married', 'we got married', 'just got married',
+                    'i had a baby', 'we had a baby', 'baby was born',
+                    'i graduated', 'we graduated', 'just graduated',
+                    'good news', 'great news', 'amazing news',
+                    'i bought a house', 'we bought a house', 'passed my driving test',
+                    'got accepted', 'i got in', 'we won', 'i won',
+                    'dream came true', 'prayers answered', 'god came through'
+                ],
+                mood: 'excited',
+                reaction: [
+                    `${name}!!! 🎉 That is INCREDIBLE news! God is so faithful! Let's celebrate this together!`,
+                    `${name}, YES!!! 🌟 This is what answered prayer looks like! Let me share something to mark this beautiful moment!`,
+                    `${name}, I am SO happy for you! 🎉 God has been working on this. Let's give Him thanks together!`,
+                    `YESSS ${name}! 🎉 Moments like this are worth celebrating loudly! Let me share something for this victory!`
+                ]
+            },
+            addiction: {
+                keywords: [
+                    'struggling with addiction', 'addicted', 'i\'m an addict',
+                    'can\'t stop drinking', 'drinking too much', 'alcohol problem',
+                    'drug problem', 'struggling with drugs', 'can\'t stop',
+                    'i keep going back', 'i relapsed', 'pornography',
+                    'porn addiction', 'gambling problem', 'i can\'t control myself'
+                ],
+                mood: 'overwhelmed',
+                reaction: [
+                    `${name}, thank you for trusting me with something this vulnerable. 💙 You are not defined by this struggle. Let me share something and then gently suggest some support.`,
+                    `${name}, coming to terms with this takes real courage. 💙 God's grace is bigger than any struggle. Let me share something for this.`,
+                    `${name}, you reached out — and that matters. 💙 You don't have to fight this alone. Let me share something and point you somewhere helpful.`
+                ]
+            },
+            prayer: {
+                keywords: [
+                    'i don\'t know how to pray', 'don\'t know how to pray',
+                    'never prayed before', 'can\'t pray', 'i can\'t pray',
+                    'how do i pray', 'teach me to pray', 'want to pray',
+                    'i want to start praying', 'never know what to say to god'
+                ],
+                mood: 'confused',
+                reaction: [
+                    `${name}, asking that question IS prayer. 💙 There's no perfect formula — God just wants to hear your voice. Let me share something and then pray with you if you'd like.`,
+                    `${name}, prayer is just talking to God like you'd talk to a friend. 💙 He already knows your heart. Let me share something beautiful about this.`,
+                    `${name}, the fact that you want to pray is already God drawing you. 💙 Just start with "God, I don't know what to say" — He'll take it from there. Let me share something.`
+                ]
+            },
+            homeless: {
+                keywords: [
+                    'i\'m homeless', 'i am homeless', 'lost my home',
+                    'lost everything', 'i lost everything', 'we lost everything',
+                    'have nowhere to go', 'nowhere to sleep', 'living on the street',
+                    'can\'t afford rent', 'about to lose my home', 'being evicted'
+                ],
+                mood: 'overwhelmed',
+                reaction: [
+                    `${name}... 💙 I hear you. This is one of the hardest places a person can find themselves. You are seen and you are not forgotten. Let me share something and point you to some help.`,
+                    `${name}, God sees exactly where you are right now. 💙 He has never once forgotten someone in need. Let me share something for this moment.`,
+                ]
+            },
         }
 
         // Check situation detection FIRST before emotion map
@@ -2478,6 +2992,15 @@
                 'empty inside': 'empty', 'hollow': 'empty',
                 'invisible': 'invisible', 'unseen': 'invisible',
                 'nobody sees': 'invisible', 'nobody notices': 'invisible',
+                'i don\'t feel seen': 'invisible', 'don\'t feel seen': 'invisible',
+                'i feel unseen': 'invisible', 'feel unseen': 'invisible',
+                'i feel invisible': 'invisible', 'feel invisible': 'invisible',
+                'nobody sees me': 'invisible', 'no one sees me': 'invisible',
+                'nobody notices me': 'invisible', 'no one notices me': 'invisible',
+                'i feel unheard': 'invisible', 'nobody listens': 'invisible',
+                'no one listens to me': 'invisible', 'i feel overlooked': 'invisible',
+                'i feel forgotten': 'invisible', 'nobody remembers me': 'invisible',
+                'i feel like a ghost': 'invisible', 'i feel transparent': 'invisible',
                 'rejected': 'rejected', 'rejection': 'rejected',
                 'unappreciated': 'unappreciated', 'not appreciated': 'unappreciated',
                 'taken for granted': 'unappreciated',
@@ -2489,16 +3012,42 @@
                 'i feel wonderful': 'happy',
                 'i feel amazing': 'happy',
                 'i feel fantastic': 'happy',
+                'i feel awesome': 'excited',
+                'i am feeling awesome': 'excited',
+                'feeling awesome': 'excited',
                 'i feel blessed': 'grateful',
                 'i feel grateful': 'grateful',
                 'i feel at peace': 'peaceful',
                 'i feel excited': 'excited',
                 'i feel loved': 'loved',
                 'i feel joy': 'joyful',
+                'i feel joyful': 'joyful',
+                'i feel peaceful': 'peaceful',
+                'i feel encouraged': 'encouraged',
+                'i feel hopeful': 'hopeful',
                 'feeling good': 'happy',
                 'feeling great': 'happy',
                 'feeling wonderful': 'happy',
                 'feeling amazing': 'happy',
+                'feeling awesome': 'excited',
+                'feeling blessed': 'grateful',
+                'feeling grateful': 'grateful',
+                'feeling hopeful': 'hopeful',
+                'feeling excited': 'excited',
+                'feeling peaceful': 'peaceful',
+                'feeling loved': 'loved',
+                'on top of the world': 'excited',
+                'never been better': 'happy',
+                'so happy': 'happy',
+                'so grateful': 'grateful',
+                'so excited': 'excited',
+                'so blessed': 'grateful',
+                'overjoyed': 'joyful',
+                'ecstatic': 'excited',
+                'thrilled': 'excited',
+                'over the moon': 'excited',
+                'walking on air': 'joyful',
+                'on cloud nine': 'joyful',
             }
 
             const lower = text.toLowerCase()
@@ -2676,8 +3225,22 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
 
         function updateLuloMood(mood) {
             const img = document.getElementById('lulo-img')
-            if (!img) return
-            // Tint Lulo's glow based on mood
+            const overlay = document.getElementById('lulo-emoji-overlay')
+            const luloGlow = document.getElementById('lulo-glow')
+
+            const moodEmojis = {
+                happy: '😊', joyful: '😄', excited: '🤩',
+                peaceful: '😌', loved: '🥰', encouraged: '💪',
+                grateful: '🙏', hopeful: '🌟', expecting: '🤰',
+                sad: '😢', afraid: '😨', anxious: '😟',
+                depressed: '😞', lonely: '😔', angry: '😤',
+                tired: '🥱', heartbroken: '💔', overwhelmed: '😵',
+                confused: '😕', empty: '😶', invisible: '🫥',
+                rejected: '💔', unappreciated: '😔',
+                unsettled: '🌀', unmotivated: '😑',
+                bored: '🤩', prayer: '🙏'
+            }
+
             const moodGlows = {
                 happy: 'rgba(255,220,0,0.6)',
                 joyful: 'rgba(255,200,0,0.6)',
@@ -2707,11 +3270,45 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                 bored: 'rgba(100,200,200,0.6)',
                 prayer: 'rgba(255,220,100,0.6)',
             }
-            const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
-            img.style.filter = `drop-shadow(0 0 25px ${glow})`
 
-            // Update the background glow
-            const luloGlow = document.getElementById('lulo-glow')
+            if (mood && moodEmojis[mood]) {
+                // Hide Lulo image, show big emoji
+                if (img) {
+                    img.style.transition = 'opacity 0.2s ease'
+                    img.style.opacity = '0'
+                    setTimeout(() => { img.style.display = 'none' }, 200)
+                }
+                if (overlay) {
+                    overlay.style.cssText = `
+                        position: absolute;
+                        top: 50%; left: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: 7rem;
+                        opacity: 0;
+                        transition: all 0.3s ease;
+                        z-index: 10;
+                        filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+                    `
+                    overlay.innerText = moodEmojis[mood]
+                    setTimeout(() => { overlay.style.opacity = '1' }, 50)
+                }
+            } else {
+                // Reset — show Lulo image
+                if (img) {
+                    img.style.display = 'block'
+                    setTimeout(() => { img.style.opacity = '1' }, 50)
+                }
+                if (overlay) {
+                    overlay.style.opacity = '0'
+                    setTimeout(() => { overlay.innerText = '' }, 300)
+                }
+            }
+
+            // Update glow
+            const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
+            if (img && img.style.display !== 'none') {
+                img.style.filter = `drop-shadow(0 0 25px ${glow})`
+            }
             if (luloGlow) {
                 luloGlow.style.background = `radial-gradient(circle, ${glow.replace('0.6', '0.15')} 0%, transparent 70%)`
             }
@@ -2745,12 +3342,16 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                 unappreciated: 'feeling unappreciated',
                 unsettled: 'feeling unsettled',
                 unmotivated: 'feeling unmotivated',
+                praise: 'praising',
             }
             return moodPhrases[mood] || mood
         }
 
         function showScripture(mood) {
     currentMood = mood
+    // Change input placeholder to "Tell me more"
+    const input = document.getElementById('lulo-input')
+    if (input) input.placeholder = 'Tell me more...'
     const list = specialVerses[mood]
 
     // Smart shuffle - no repeats until all verses shown
@@ -2828,7 +3429,9 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
         }
     }
 
-    document.getElementById('lulo-reaction').innerText = reactionText
+    // Reaction now lives inside the unified card
+    // Keep this for subtle display only
+    document.getElementById('lulo-reaction').innerText = ''
 
     // Save this visit to memory
     localStorage.setItem('luloLastMood', mood)
@@ -2840,11 +3443,22 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     // Log to journal
     logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
 
-    // Show scripture in new UI card
+    // Show unified response card
     const box = document.getElementById('scripture-card')
     const loading = document.getElementById('loading-text')
+    const luloMessageSection = document.getElementById('lulo-message-section')
+    const luloMessageText = document.getElementById('lulo-message-text')
+    const cardDivider = document.getElementById('card-divider')
 
     if (loading) loading.style.display = 'none'
+
+    // Show Lulo's reaction INSIDE the card
+    if (luloMessageSection && reactionText) {
+        luloMessageText.innerText = reactionText
+        luloMessageSection.style.display = 'block'
+        cardDivider.style.display = 'block'
+    }
+
     document.getElementById('scripture-text').innerText = verse.text
     document.getElementById('scripture-ref').innerText = '— ' + verse.ref
     document.getElementById('another-btn').style.display = 'block'
