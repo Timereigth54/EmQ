@@ -2427,7 +2427,15 @@
             heartbroken: ["I'm so sorry you're hurting. 💙", "Your heart matters. I'm here. 🤗", "Let me share something healing..."],
             overwhelmed: ["One breath at a time. I've got you. 💙", "You don't have to carry this alone. 🤗"],
             confused: ["It's okay not to have all the answers. 💙", "Let's find some clarity together. ✨"],
-            bored: ["Oh, I have something for you! 😄", "Story time with Lulo! 📖", "Let me entertain you! 🌟"],
+            bored: [
+                "Oh, I have something for you! 😄 How about some Bible trivia?",
+                "Have you gone for a walk today? 🌿 Fresh air does wonders — and I have something fun while you're at it!",
+                "Is there someone you'd like to call today? 💙 Sometimes boredom is just loneliness in disguise. Also — Bible joke incoming! 😄",
+                "Let me entertain you! 🌟 Did you know the Bible has some wild stories?",
+                "How about we make this interesting? 🎯 Bible trivia time!",
+                "Sometimes boredom is God's invitation to be still. 😌 Let me share something interesting!",
+                "Let me guess — you've scrolled everything twice already? 😄 Let Lulo entertain you!",
+            ],
             expecting: ["What a beautiful season you're in! 🥰", "God is already writing this little one's story! 💙", "Pregnancy is sacred ground. Let me share something just for you... 🌟", "A baby is coming! 🎉 God is so good!"],
             empty: ["I see you. Even in the emptiness, I'm here. 💙", "You don't have to feel anything right now. Just rest here with me. 💙", "Empty doesn't mean broken, it means there's space for God to fill. 💙"],
             invisible: ["God sees you completely, even when others don't. 💙", "You are never invisible to the One who matters most. 💙", "I see you, and so does He. 💙"],
@@ -3526,7 +3534,12 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     // Auto offer prayer for sick users
     if (mood === 'sick') {
         setTimeout(() => {
+            // Remove existing prayer prompt if already there
+            const existing = document.getElementById('sick-prayer-prompt')
+            if (existing) existing.remove()
+
             const prayerPrompt = document.createElement('div')
+            prayerPrompt.id = 'sick-prayer-prompt'
             prayerPrompt.style.cssText = `
                 margin-top: 15px;
                 padding: 12px 15px;
@@ -3542,7 +3555,7 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                 <span style="font-size:0.82rem;color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;">
                     Would you like me to pray healing over you?
                 </span>
-                <button onclick="generatePrayer()" style="
+                <button id="sick-prayer-btn" style="
                     background: rgba(0,255,100,0.1);
                     border: 1px solid rgba(0,255,100,0.3);
                     color: rgba(0,255,100,0.9);
@@ -3555,6 +3568,12 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                 ">Yes, pray 🙏</button>
             `
             document.getElementById('scripture-inner').appendChild(prayerPrompt)
+
+            // Add click listener properly
+            document.getElementById('sick-prayer-btn').addEventListener('click', () => {
+                prayerPrompt.remove()
+                generatePrayer()
+            })
         }, 800)
     }
 }
