@@ -1405,145 +1405,136 @@
             { mood: 'bored', emoji: '😴', label: 'Bored' },
         ]
 
-        function buildEmotionButtons() {
-            const container = document.getElementById('mood-buttons')
-            if (!container) return
-            container.innerHTML = ''
+        let infiniteReady = false
+const COPIES = 3
+const MID_COPY = 1
 
-            // Add spacers so first and last emoji can center
-            const spacer1 = document.createElement('div')
-            spacer1.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
-            container.appendChild(spacer1)
+function buildEmotionButtons() {
+    const container = document.getElementById('mood-buttons')
+    if (!container) return
+    container.innerHTML = ''
+    infiniteReady = false
 
-            emotionList.forEach((item, index) => {
-                const btn = document.createElement('div')
-                btn.className = 'emotion-btn'
-                btn.id = `emotion-btn-${index}`
-                btn.dataset.index = index
-                btn.dataset.mood = item.mood
-                btn.innerHTML = `
-                    <span class="emoji">${item.emoji}</span>
-                    <span class="label">${item.label}</span>
-                `
-                btn.onclick = () => {
-                    scrollToEmotion(index)
-                    setTimeout(() => {
-                        showScripture(item.mood)
-                    }, 300)
-                }
-                container.appendChild(btn)
-            })
+    const N = emotionList.length
 
-            // Add end spacer
-            const spacer2 = document.createElement('div')
-            spacer2.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
-            container.appendChild(spacer2)
+    const spacer1 = document.createElement('div')
+    spacer1.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
+    container.appendChild(spacer1)
 
-            // Listen for scroll to update active state
-            container.addEventListener('scroll', onRailScroll)
-
-            // Set first emotion as default active
-            setTimeout(() => {
-                scrollToEmotion(0)
-            }, 100)
-        }
-
-        function toggleHistoryCard() {
-            const expanded = document.getElementById('history-expanded')
-            const arrow = document.getElementById('history-arrow')
-            if (!expanded) return
-
-            if (expanded.style.display === 'none') {
-                expanded.style.display = 'block'
-                if (arrow) arrow.style.transform = 'rotate(180deg)'
-            } else {
-                expanded.style.display = 'none'
-                if (arrow) arrow.style.transform = 'rotate(0deg)'
+    for (let copy = 0; copy < COPIES; copy++) {
+        emotionList.forEach((item, i) => {
+            const gIndex = copy * N + i
+            const btn = document.createElement('div')
+            btn.className = 'emotion-btn'
+            btn.dataset.gindex = gIndex
+            btn.dataset.rindex = i
+            btn.dataset.mood = item.mood
+            btn.innerHTML = `<span class="emoji">${item.emoji}</span><span class="label">${item.label}</span>`
+            btn.onclick = () => {
+                scrollToGlobal(gIndex)
+                setTimeout(() => showScripture(item.mood), 300)
             }
+            container.appendChild(btn)
+        })
+    }
+
+    const spacer2 = document.createElement('div')
+    spacer2.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
+    container.appendChild(spacer2)
+
+    container.addEventListener('scroll', onRailScroll)
+
+    setTimeout(() => {
+        const N = emotionList.length
+        scrollToGlobal(MID_COPY * N, true)
+        setTimeout(() => { infiniteReady = true }, 200)
+    }, 150)
+}
+
+function scrollToGlobal(gIndex, instant = false) {
+    const container = document.getElementById('mood-buttons')
+    if (!container) return
+    const btns = container.querySelectorAll('.emotion-btn')
+    const btn = btns[gIndex]
+    if (!btn) return
+    const scrollTo = btn.offsetLeft - (container.offsetWidth / 2) + (btn.offsetWidth / 2)
+    if (instant) {
+        container.scrollLeft = scrollTo
+    } else {
+        container.scrollTo({ left: scrollTo, behavior: 'smooth' })
+    }
+}
+
+function scrollToEmotion(rIndex) {
+    scrollToGlobal(MID_COPY * emotionList.length + rIndex)
+}
+
+function onRailScroll() {
+    const container = document.getElementById('mood-buttons')
+    if (!container) return
+
+    const N = emotionList.length
+    const containerCenter = container.scrollLeft + container.offsetWidth / 2
+    const btns = container.querySelectorAll('.emotion-btn')
+
+    let closestBtn = null
+    let closestDist = Infinity
+    let closestGIndex = MID_COPY * N
+
+    btns.forEach((btn, i) => {
+        const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
+        const dist = Math.abs(containerCenter - btnCenter)
+        btn.classList.remove('active', 'near')
+        if (dist < closestDist) {
+            closestDist = dist
+            closestBtn = btn
+            closestGIndex = i
         }
+    })
 
-        function scrollToEmotion(index) {
-            const container = document.getElementById('mood-buttons')
-            const btn = document.getElementById(`emotion-btn-${index}`)
-            if (!btn || !container) return
+    btns.forEach(btn => {
+        const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
+        const dist = Math.abs(containerCenter - btnCenter)
+        if (btn === closestBtn) btn.classList.add('active')
+        else if (dist < 120) btn.classList.add('near')
+    })
 
-            const btnLeft = btn.offsetLeft
-            const btnWidth = btn.offsetWidth
-            const containerWidth = container.offsetWidth
-            const scrollTo = btnLeft - (containerWidth / 2) + (btnWidth / 2)
-
-            container.scrollTo({ left: scrollTo, behavior: 'smooth' })
-        }
-
-        function onRailScroll() {
-            const container = document.getElementById('mood-buttons')
-            if (!container) return
-
-            const containerCenter = container.scrollLeft + container.offsetWidth / 2
-            const buttons = container.querySelectorAll('.emotion-btn')
-
-            let closestBtn = null
-            let closestDist = Infinity
-            let closestIndex = 0
-
-            buttons.forEach((btn, i) => {
-                const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
-                const dist = Math.abs(containerCenter - btnCenter)
-
-                // Update opacity based on distance
-                const maxDist = container.offsetWidth / 2
-                const ratio = Math.max(0, 1 - (dist / maxDist))
-
-                btn.classList.remove('active', 'near')
-
-                if (dist < closestDist) {
-                    closestDist = dist
-                    closestBtn = btn
-                    closestIndex = i
-                }
-            })
-
-            // Apply classes
-            buttons.forEach((btn, i) => {
-                const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
-                const dist = Math.abs(containerCenter - btnCenter)
-                btn.classList.remove('active', 'near')
-
-                if (btn === closestBtn) {
-                    btn.classList.add('active')
-                } else if (dist < 120) {
-                    btn.classList.add('near')
-                }
-            })
-
-            // Update Lulo as user scrolls
-            if (closestBtn && closestBtn.dataset.mood !== window.lastScrollMood) {
-                window.lastScrollMood = closestBtn.dataset.mood
-                const mood = closestBtn.dataset.mood
-                updateLuloMood(mood)
-                animateLulo('nod')
+    // Infinite loop jump
+    if (infiniteReady) {
+        const rIndex = closestGIndex % N
+        if (closestGIndex < N || closestGIndex >= N * 2) {
+            infiniteReady = false
+            const jumpTo = MID_COPY * N + rIndex
+            const targetBtn = btns[jumpTo]
+            if (targetBtn) {
+                container.scrollLeft = targetBtn.offsetLeft - (container.offsetWidth / 2) + (targetBtn.offsetWidth / 2)
             }
+            setTimeout(() => { infiniteReady = true }, 80)
         }
+    }
 
-        // Snap to center on scroll end
-        function setupRailSnap() {
-            const container = document.getElementById('mood-buttons')
-            if (!container) return
+    if (closestBtn && closestBtn.dataset.mood !== window.lastScrollMood) {
+        window.lastScrollMood = closestBtn.dataset.mood
+        updateLuloMood(closestBtn.dataset.mood)
+        animateLulo('nod')
+    }
+}
 
-            let scrollTimer = null
-            container.addEventListener('scroll', () => {
-                clearTimeout(scrollTimer)
-                scrollTimer = setTimeout(() => {
-                    const active = container.querySelector('.emotion-btn.active')
-                    if (active) {
-                        const index = parseInt(active.dataset.index)
-                        scrollToEmotion(index)
-                        // DON'T trigger scripture on scroll stop
-                        // Only visual centering — user must TAP
-                    }
-                }, 150)
-            })
-        }
+function setupRailSnap() {
+    const container = document.getElementById('mood-buttons')
+    if (!container) return
+    let snapTimer = null
+    container.addEventListener('scroll', () => {
+        clearTimeout(snapTimer)
+        snapTimer = setTimeout(() => {
+            if (!infiniteReady) return
+            const active = container.querySelector('.emotion-btn.active')
+            if (active) {
+                scrollToGlobal(parseInt(active.dataset.gindex))
+            }
+        }, 150)
+    })
+}
         let currentMood = "";
 
         // CRISIS LEVEL - immediate danger
@@ -1889,67 +1880,47 @@
         ]
 
         function showTonguesQuestion() {
-            const name = localStorage.getItem('luloUserName') || 'friend'
-            const box = document.getElementById('scripture-box')
-            const text = document.getElementById('scripture-text')
-            const loading = document.getElementById('loading-text')
-            const anotherBtn = document.getElementById('another-btn')
+    const name = localStorage.getItem('luloUserName') || 'friend'
+    const box = document.getElementById('scripture-card')
+    const textEl = document.getElementById('scripture-text')
+    const loading = document.getElementById('loading-text')
+    const anotherBtn = document.getElementById('another-btn')
+    const luloMsgSection = document.getElementById('lulo-message-section')
+    const cardDivider = document.getElementById('card-divider')
 
-            document.getElementById('lulo-face').innerText = '🕊️'
-            document.getElementById('lulo-reaction').innerText = `${name}... 💙 Something just caught my attention.`
-            animateLulo('nod')
+    document.getElementById('lulo-reaction').innerText = ''
+    animateLulo('nod')
+    updateLuloMood('peaceful')
 
-            loading.style.display = 'none'
-            box.style.display = 'block'
-            anotherBtn.style.display = 'none'
+    if (loading) loading.style.display = 'none'
+    if (luloMsgSection) luloMsgSection.style.display = 'none'
+    if (cardDivider) cardDivider.style.display = 'none'
+    if (anotherBtn) anotherBtn.style.display = 'none'
 
-            text.innerHTML = `
-                <p style="color: #e0f4ff; font-size: 0.95rem; line-height: 1.8; margin-bottom: 20px;">
-                    You mentioned something that made my heart stir. 💙<br><br>
-                    Do you speak in tongues, ${name}?
-                </p>
-                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <button onclick="unlockTongues('yes')" style="
-                        background: rgba(0, 212, 255, 0.1);
-                        border: 2px solid #00d4ff;
-                        color: white;
-                        padding: 10px 25px;
-                        border-radius: 50px;
-                        font-size: 0.9rem;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                    "
-                    onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
-                    onmouseout="this.style.background='rgba(0,212,255,0.1)'; this.style.color='white';"
-                    >Yes I do 🕊️</button>
-                    <button onclick="unlockTongues('no')" style="
-                        background: rgba(0, 212, 255, 0.1);
-                        border: 2px solid #00d4ff;
-                        color: white;
-                        padding: 10px 25px;
-                        border-radius: 50px;
-                        font-size: 0.9rem;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                    "
-                    onmouseover="this.style.background='#00d4ff'; this.style.color='#0a0a2e';"
-                    onmouseout="this.style.background='rgba(0,212,255,0.1)'; this.style.color='white';"
-                    >Not yet 💙</button>
-                </div>
-            `
-
-            box.style.animation = 'none'
-            void box.offsetHeight
-            box.style.animation = 'fadeIn 0.8s ease'
-
-            setTimeout(() => {
-                box.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }, 100)
-        }
+    textEl.innerHTML = `
+        <p style="color:rgba(255,255,255,0.85);font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
+            You mentioned something that made my heart stir. 💙<br><br>
+            Do you speak in tongues, ${name}?
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button onclick="unlockTongues('yes')" style="background:rgba(0,212,255,0.1);border:2px solid #00d4ff;color:white;padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;"
+            onmouseover="this.style.background='#00d4ff';this.style.color='#0a0a2e';"
+            onmouseout="this.style.background='rgba(0,212,255,0.1)';this.style.color='white';">Yes I do 🕊️</button>
+            <button onclick="unlockTongues('no')" style="background:rgba(0,212,255,0.1);border:2px solid #00d4ff;color:white;padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;"
+            onmouseover="this.style.background='#00d4ff';this.style.color='#0a0a2e';"
+            onmouseout="this.style.background='rgba(0,212,255,0.1)';this.style.color='white';">Not yet 💙</button>
+        </div>
+    `
+    box.style.display = 'block'
+    box.style.animation = 'none'
+    void box.offsetHeight
+    box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 100)
+}
 
         function unlockTongues(answer) {
             const name = localStorage.getItem('luloUserName') || 'friend'
-            const box = document.getElementById('scripture-box')
+            const box = document.getElementById('scripture-card')
             const text = document.getElementById('scripture-text')
             const anotherBtn = document.getElementById('another-btn')
 
@@ -1992,37 +1963,38 @@
         }
 
         function showTonguesResponse() {
-            const name = localStorage.getItem('luloUserName') || 'friend'
-            const box = document.getElementById('scripture-box')
-            const text = document.getElementById('scripture-text')
-            const anotherBtn = document.getElementById('another-btn')
+    const name = localStorage.getItem('luloUserName') || 'friend'
+    const box = document.getElementById('scripture-card')
+    const textEl = document.getElementById('scripture-text')
+    const loading = document.getElementById('loading-text')
+    const anotherBtn = document.getElementById('another-btn')
+    const luloMsgSection = document.getElementById('lulo-message-section')
+    const cardDivider = document.getElementById('card-divider')
 
-            document.getElementById('lulo-face').innerText = '🕊️'
-            document.getElementById('lulo-reaction').innerText = `${name}, your spirit is stirring! 🔥`
-            animateLulo('nod')
+    document.getElementById('lulo-reaction').innerText = ''
+    animateLulo('nod')
+    updateLuloMood('peaceful')
 
-            const tonguesResponses = [
-                `Have you prayed in tongues today, ${name}? 💙 What did the Spirit reveal to you?`,
-                `${name}, when you pray in the Spirit today — what is God saying to your heart? 🕊️`,
-                `Your prayer language is powerful, ${name}. Have you spent time in it today? What are you sensing from the Spirit? 💙`,
-                `${name}, the Spirit intercedes through you when you pray in tongues. Have you prayed today? What's stirring in your spirit? 🔥`
-            ]
+    const tonguesResponses = [
+        `Have you prayed in tongues today, ${name}? 💙 What did the Spirit reveal to you?`,
+        `${name}, when you pray in the Spirit today — what is God saying to your heart? 🕊️`,
+        `Your prayer language is powerful, ${name}. Have you spent time in it today? What are you sensing from the Spirit? 💙`,
+        `${name}, the Spirit intercedes through you when you pray in tongues. Have you prayed today? What's stirring in your spirit? 🔥`
+    ]
+    const randomResponse = tonguesResponses[Math.floor(Math.random() * tonguesResponses.length)]
 
-            const random = tonguesResponses[Math.floor(Math.random() * tonguesResponses.length)]
+    if (loading) loading.style.display = 'none'
+    if (luloMsgSection) luloMsgSection.style.display = 'none'
+    if (cardDivider) cardDivider.style.display = 'none'
+    if (anotherBtn) anotherBtn.style.display = 'none'
+    textEl.innerText = randomResponse
 
-            loading.style.display = 'none'
-            box.style.display = 'block'
-            anotherBtn.style.display = 'none'
-            text.innerText = random
-
-            box.style.animation = 'none'
-            void box.offsetHeight
-            box.style.animation = 'fadeIn 0.8s ease'
-
-            setTimeout(() => {
-                box.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }, 100)
-        }
+    box.style.display = 'block'
+    box.style.animation = 'none'
+    void box.offsetHeight
+    box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 100)
+}
         
         function showEmergencyKit() {
             const screen = document.getElementById('emergency-screen')
@@ -3112,10 +3084,8 @@
                 if (lowerInput.includes(keyword)) {
                     // Found a situation match!
                     const randomReaction = data.reaction[Math.floor(Math.random() * data.reaction.length)]
-                    document.getElementById('lulo-reaction').innerText = randomReaction
-                    document.getElementById('lulo-face').innerText = faces[data.mood]
                     animateLulo('nod')
-                    showScripture(data.mood)
+                    showScripture(data.mood, randomReaction)
                     input.value = ''
                     return
                 }
@@ -3450,11 +3420,12 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                         position: absolute;
                         top: 50%; left: 50%;
                         transform: translate(-50%, -50%);
-                        font-size: 7rem;
+                        font-size: 5.5rem;
+                        line-height: 1;
                         opacity: 0;
                         transition: all 0.3s ease;
                         z-index: 10;
-                        filter: drop-shadow(0 0 20px rgba(255,255,255,0.3));
+                        pointer-events: none;
                     `
                     overlay.innerText = moodEmojis[mood]
                     setTimeout(() => { overlay.style.opacity = '1' }, 50)
@@ -3515,7 +3486,7 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
             return moodPhrases[mood] || mood
         }
 
-        function showScripture(mood) {
+        function showScripture(mood, overrideReaction = null) {
     currentMood = mood
     // Change input placeholder to "Tell me more"
     const input = document.getElementById('lulo-input')
@@ -3541,9 +3512,8 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     // Check last emotion and craft Lulo's reaction
     const lastMood = localStorage.getItem('luloLastMood')
     const name = localStorage.getItem('luloUserName') || 'friend'
-    let reactionText = reactionList[randomReaction]
+    let reactionText = overrideReaction || reactionList[randomReaction]
 
-    // Praise always gets celebration — no comparisons!
     if (mood === 'praise') {
         reactionText = reactions['praise'][Math.floor(Math.random() * reactions['praise'].length)]
         // Show reaction inside card not above
@@ -3580,7 +3550,7 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
         return
     }
     
-    if (lastMood && lastMood !== mood) {
+    if (!overrideReaction && lastMood && lastMood !== mood) {
         const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting']
         const lastWasNegative = !positiveEmotions.includes(lastMood)
         const newIsPositive = positiveEmotions.includes(mood)
@@ -3616,7 +3586,7 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
             ]
             reactionText = continuityReactions[Math.floor(Math.random() * continuityReactions.length)]
         }
-    } else if (lastMood && lastMood === mood) {
+    } else if (!overrideReaction && lastMood && lastMood === mood) {
         const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting']
         if (positiveEmotions.includes(mood)) {
             const samePositiveReactions = [
