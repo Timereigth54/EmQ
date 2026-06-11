@@ -1415,19 +1415,35 @@ function buildEmotionButtons() {
     container.innerHTML = ''
     infiniteReady = false
 
-    const N = emotionList.length
+    const N = emotionList.length + 1 // +1 for the Lulo home slot per copy
 
     const spacer1 = document.createElement('div')
     spacer1.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
     container.appendChild(spacer1)
 
     for (let copy = 0; copy < COPIES; copy++) {
+
+        // HOME SLOT — Lulo's face, no emotion
+        const homeGIndex = copy * N
+        const homeBtn = document.createElement('div')
+        homeBtn.className = 'emotion-btn home-btn'
+        homeBtn.dataset.gindex = homeGIndex
+        homeBtn.dataset.rindex = 0
+        homeBtn.dataset.mood = 'home'
+        homeBtn.innerHTML = `
+            <img src="lulo.png" style="width:34px;height:34px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 6px rgba(0,255,100,0.4));"/>
+            <span class="label" style="color:rgba(0,255,100,0.55);font-size:0.55rem;letter-spacing:1px;">LULO</span>
+        `
+        homeBtn.onclick = () => scrollToGlobal(homeGIndex)
+        container.appendChild(homeBtn)
+
+        // EMOTION SLOTS
         emotionList.forEach((item, i) => {
-            const gIndex = copy * N + i
+            const gIndex = copy * N + (i + 1)
             const btn = document.createElement('div')
             btn.className = 'emotion-btn'
             btn.dataset.gindex = gIndex
-            btn.dataset.rindex = i
+            btn.dataset.rindex = i + 1
             btn.dataset.mood = item.mood
             btn.innerHTML = `<span class="emoji">${item.emoji}</span><span class="label">${item.label}</span>`
             btn.onclick = () => {
@@ -1444,8 +1460,8 @@ function buildEmotionButtons() {
 
     container.addEventListener('scroll', onRailScroll)
 
+    // Start centered on Lulo home slot (middle copy)
     setTimeout(() => {
-        const N = emotionList.length
         scrollToGlobal(MID_COPY * N, true)
         setTimeout(() => { infiniteReady = true }, 200)
     }, 150)
@@ -1466,14 +1482,15 @@ function scrollToGlobal(gIndex, instant = false) {
 }
 
 function scrollToEmotion(rIndex) {
-    scrollToGlobal(MID_COPY * emotionList.length + rIndex)
+    const N = emotionList.length + 1
+    scrollToGlobal(MID_COPY * N + rIndex + 1)
 }
 
 function onRailScroll() {
     const container = document.getElementById('mood-buttons')
     if (!container) return
 
-    const N = emotionList.length
+    const N = emotionList.length + 1
     const containerCenter = container.scrollLeft + container.offsetWidth / 2
     const btns = container.querySelectorAll('.emotion-btn')
 
