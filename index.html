@@ -2768,21 +2768,26 @@ function setupRailSnap() {
            // TONGUES DETECTION - secret unlock feature
         const tonguesKeywords = [
             'pray in tongues', 'praying in tongues', 'speak in tongues',
-            'speaking in tongues', 'baptism of the holy ghost',
-            'baptism of the holy spirit', 'filled with the spirit',
-            'filled with the holy ghost', 'holy ghost fire',
-            'prayer language', 'heavenly language', 'prayed in tongues'
-        ]
+            'speaking in tongues', 'prayed in tongues',
+            'baptism of the holy ghost', 'baptism of the holy spirit',
+            'baptism of the spirit', 'baptised in the spirit',
+            'baptized in the spirit', 'received the baptism',
+            'i have received the baptism', 'received the holy spirit',
+            'received the holy ghost', 'filled with the spirit',
+            'filled with the holy ghost', 'filled with the holy spirit',
+            'holy ghost fire', 'holy spirit fire',
+            'prayer language', 'heavenly language',
+            'gift of tongues', 'gift of the spirit',
+            'spirit baptism', 'spirit filled', 'spirit-filled'
+    ]
 
         const isTonguesReference = tonguesKeywords.some(keyword =>
             text.toLowerCase().includes(keyword)
         )
 
         const alreadyUnlocked = localStorage.getItem('luloSpeaksInTongues')
-        const tonguesAsked = localStorage.getItem('luloTonguesAsked')
 
-        if (isTonguesReference && !alreadyUnlocked && !tonguesAsked) {
-            localStorage.setItem('luloTonguesAsked', 'true')
+        if (isTonguesReference && !alreadyUnlocked) {
             input.value = ''
             showTonguesQuestion()
             return
@@ -2792,6 +2797,14 @@ function setupRailSnap() {
         if (isTonguesReference && alreadyUnlocked === 'true') {
             input.value = ''
             showTonguesResponse()
+            return
+        }
+
+        // Previously said "not yet" but mentioning tongues again — maybe they received it!
+        if (isTonguesReference && alreadyUnlocked === 'false') {
+            localStorage.removeItem('luloSpeaksInTongues')
+            input.value = ''
+            showTonguesQuestion()
             return
         }
         
