@@ -3164,16 +3164,23 @@
             }
 
             // Show loading state
-            const box = document.getElementById('scripture-box')
+            const box = document.getElementById('scripture-card')
             const text_el = document.getElementById('scripture-text')
             const loading = document.getElementById('loading-text')
             const anotherBtn = document.getElementById('another-btn')
+            const luloMessageSection = document.getElementById('lulo-message-section')
+            const luloMessageText = document.getElementById('lulo-message-text')
+            const cardDivider = document.getElementById('card-divider')
 
             box.style.display = 'block'
-            loading.style.display = 'block'
-            loading.innerText = 'Lulo is praying with you... 🙏'
-            text_el.innerText = ''
-            anotherBtn.style.display = 'none'
+            if (loading) {
+                loading.style.display = 'block'
+                loading.innerText = 'Lulo is praying with you... 🙏'
+            }
+            if (text_el) text_el.innerText = ''
+            if (anotherBtn) anotherBtn.style.display = 'none'
+            if (luloMessageSection) luloMessageSection.style.display = 'none'
+            if (cardDivider) cardDivider.style.display = 'none'
 
             // Update Lulo's face and reaction
             document.getElementById('lulo-face').innerText = '🙏'
@@ -3233,8 +3240,16 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
 
                 if (data.content && data.content[0]) {
                     const prayer = data.content[0].text
-                    loading.style.display = 'none'
-                    text_el.innerText = prayer
+                    if (loading) loading.style.display = 'none'
+                    if (text_el) text_el.innerText = prayer
+                    if (anotherBtn) anotherBtn.style.display = 'none'
+
+                    // Show Lulo prayer header
+                    if (luloMessageSection && luloMessageText) {
+                        luloMessageText.innerText = 'Lulo is praying with you... 🙏'
+                        luloMessageSection.style.display = 'block'
+                        if (cardDivider) cardDivider.style.display = 'block'
+                    }
 
                     // Update Lulo's reaction after prayer
                     setTimeout(() => {
