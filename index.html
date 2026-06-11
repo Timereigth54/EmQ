@@ -890,6 +890,86 @@
             #lulo-face { font-size: 70px; }
             #lulo-name { font-size: 1.2rem; }
         }
+        /* CHAT THREAD */
+#chat-thread-container { width: 100%; margin-bottom: 15px; }
+
+#chat-toggle {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.22);
+    padding: 9px 16px;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+#chat-toggle:hover {
+    border-color: rgba(0,212,255,0.2);
+    color: rgba(0,212,255,0.5);
+}
+#chat-toggle.open {
+    border-color: rgba(0,212,255,0.18);
+    color: rgba(0,212,255,0.5);
+}
+
+#chat-count-badge {
+    background: rgba(0,212,255,0.12);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 0.62rem;
+    color: rgba(0,212,255,0.6);
+}
+
+#chat-thread {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 2px 0 4px 0;
+}
+
+.chat-bubble-user {
+    align-self: flex-end;
+    max-width: 78%;
+    background: rgba(0,212,255,0.07);
+    border: 1px solid rgba(0,212,255,0.13);
+    border-radius: 16px 16px 4px 16px;
+    padding: 9px 13px;
+    font-size: 0.79rem;
+    color: rgba(255,255,255,0.65);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.55;
+}
+
+.chat-bubble-lulo {
+    align-self: flex-start;
+    max-width: 78%;
+    background: rgba(0,255,100,0.05);
+    border: 1px solid rgba(0,255,100,0.1);
+    border-radius: 16px 16px 16px 4px;
+    padding: 9px 13px;
+    font-size: 0.79rem;
+    color: rgba(0,255,100,0.65);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.55;
+}
+
+.chat-meta {
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.16);
+    margin-top: 4px;
+}
+.chat-meta.lulo-meta { color: rgba(0,255,100,0.25); }
     </style>
 </head>
 <body>
@@ -1149,6 +1229,7 @@
     <div id="top-bar">
         <div id="app-name">EM_Q</div>
         <div id="top-icons">
+            <div class="top-icon" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</div>
             <div class="top-icon" onclick="showJournal()" title="My Journey">📔</div>
             <div class="top-icon" id="theme-btn" onclick="toggleThemePicker()" title="Themes">🎨
                 <div id="theme-picker">
@@ -1206,6 +1287,16 @@
             <div id="ring-fade-left"></div>
             <div id="ring-fade-right"></div>
         </div>
+    </div>
+
+    <!-- CHAT THREAD -->
+    <div id="chat-thread-container" style="display:none; width:100%;">
+        <button id="chat-toggle" onclick="toggleChatThread()">
+            <span id="chat-toggle-arrow">↑</span>
+            Our conversation
+            <span id="chat-count-badge">0</span>
+        </button>
+        <div id="chat-thread" style="display:none;"></div>
     </div>
 
     <!-- UNIFIED RESPONSE CARD -->
@@ -1558,7 +1649,7 @@
                 question.innerText = `Do you have someone in your life — a trusted friend, family member, or counsellor — that you feel safe talking to about this?`
                 followup.style.display = 'block'
             }
-
+            LuloSound.crisis()
             screen.style.display = 'flex'
         }
 
@@ -2589,6 +2680,7 @@
             }, { once: true })
             setTimeout(() => setupRailSnap(), 300)
             document.getElementById('welcome-screen').style.display = 'none'
+            setTimeout(() => LuloSound.welcome(), 400)
             const app = document.getElementById('main-app')
             app.style.display = 'flex'
             document.getElementById('bottom-bar').style.display = 'block'
@@ -2633,6 +2725,7 @@
             const input = document.getElementById('lulo-input')
             const text = input.value.trim()
             if (!text) return
+            window._pendingChat = text
             const name = localStorage.getItem('luloUserName') || 'friend'
 
             // PRAYER DETECTION - check first before anything else
@@ -2669,12 +2762,17 @@
         if (isPraise) {
             input.value = ''
             showScripture('praise')
+            LuloSound.praise()
+            addToChatHistory('user', window._pendingChat)
+            window._pendingChat = null
             return
         }
 
         if (isPrayerRequest) {
             input.value = ''
             await generatePrayer()
+            addToChatHistory('user', window._pendingChat)
+            window._pendingChat = null
             return
         }
 
@@ -3181,6 +3279,7 @@
 
             // Update Lulo's face and reaction
             document.getElementById('lulo-face').innerText = '🙏'
+            LuloSound.prayer()
             document.getElementById('lulo-reaction').innerText = `Of course, ${name}. Let me pray with you... 💙`
             animateLulo('nod')
 
@@ -3444,6 +3543,43 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     const name = localStorage.getItem('luloUserName') || 'friend'
     let reactionText = reactionList[randomReaction]
 
+    // Praise always gets celebration — no comparisons!
+    if (mood === 'praise') {
+        reactionText = reactions['praise'][Math.floor(Math.random() * reactions['praise'].length)]
+        // Show reaction inside card not above
+        const luloMsgSection = document.getElementById('lulo-message-section')
+        const luloMsgText = document.getElementById('lulo-message-text')
+        const cardDivider = document.getElementById('card-divider')
+        document.getElementById('lulo-reaction').innerText = ''
+        if (luloMsgSection && luloMsgText) {
+            luloMsgText.innerText = reactionText
+            luloMsgSection.style.display = 'block'
+            if (cardDivider) cardDivider.style.display = 'block'
+        }
+        document.getElementById('lulo-face').innerText = '🙌'
+        updateLuloMood('praise')
+        animateLulo('nod')
+        // Still save to memory and show scripture
+        localStorage.setItem('luloLastMood', mood)
+        localStorage.setItem('luloLastRef', verse.ref)
+        localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
+        localStorage.setItem('luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
+        localStorage.setItem('luloLastVisitTimestamp', new Date().getTime())
+        logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
+        const box = document.getElementById('scripture-card')
+        const loading = document.getElementById('loading-text')
+        if (loading) loading.style.display = 'none'
+        document.getElementById('scripture-text').innerText = verse.text
+        document.getElementById('scripture-ref').innerText = '— ' + verse.ref
+        document.getElementById('another-btn').style.display = 'block'
+        box.style.display = 'block'
+        box.style.animation = 'none'
+        void box.offsetHeight
+        box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+        setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 100)
+        return
+    }
+    
     if (lastMood && lastMood !== mood) {
         const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting']
         const lastWasNegative = !positiveEmotions.includes(lastMood)
@@ -3531,6 +3667,12 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     document.getElementById('scripture-text').innerText = verse.text
     document.getElementById('scripture-ref').innerText = '— ' + verse.ref
     document.getElementById('another-btn').style.display = 'block'
+    LuloSound.response()
+if (window._pendingChat) {
+    addToChatHistory('user', window._pendingChat)
+    window._pendingChat = null
+    if (reactionText) addToChatHistory('lulo', reactionText)
+}
     box.style.display = 'block'
 
     box.style.animation = 'none'
@@ -3592,6 +3734,134 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
             animateLulo('shake')
             setTimeout(() => { showScripture(currentMood) }, 300)
         }
+        // ─── CHAT HISTORY ───────────────────────────────────────────
+let chatHistory = []
+let chatThreadOpen = false
+
+function addToChatHistory(role, text) {
+    if (!text || !text.trim()) return
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    chatHistory.push({ role, text: text.trim(), time })
+    renderChatThread()
+    const container = document.getElementById('chat-thread-container')
+    if (container) container.style.display = 'block'
+    const badge = document.getElementById('chat-count-badge')
+    if (badge) badge.innerText = chatHistory.length
+}
+
+function renderChatThread() {
+    const thread = document.getElementById('chat-thread')
+    if (!thread) return
+    thread.innerHTML = chatHistory.map(msg => {
+        if (msg.role === 'user') {
+            return `<div class="chat-bubble-user">
+                ${msg.text}
+                <div class="chat-meta">${msg.time}</div>
+            </div>`
+        } else {
+            return `<div class="chat-bubble-lulo">
+                ${msg.text}
+                <div class="chat-meta lulo-meta">Lulo · ${msg.time}</div>
+            </div>`
+        }
+    }).join('')
+    if (chatThreadOpen) setTimeout(() => { thread.scrollTop = thread.scrollHeight }, 30)
+}
+
+function toggleChatThread() {
+    chatThreadOpen = !chatThreadOpen
+    const thread = document.getElementById('chat-thread')
+    const arrow = document.getElementById('chat-toggle-arrow')
+    const btn = document.getElementById('chat-toggle')
+    if (chatThreadOpen) {
+        thread.style.display = 'flex'
+        if (arrow) arrow.innerText = '↓'
+        if (btn) btn.classList.add('open')
+        setTimeout(() => { thread.scrollTop = thread.scrollHeight }, 30)
+    } else {
+        thread.style.display = 'none'
+        if (arrow) arrow.innerText = '↑'
+        if (btn) btn.classList.remove('open')
+    }
+}
+
+// ─── SOUND SYSTEM ───────────────────────────────────────────
+const LuloSound = {
+    ctx: null,
+    enabled: true,
+
+    init() {
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)()
+        if (this.ctx.state === 'suspended') this.ctx.resume()
+    },
+
+    tone(freq, start, dur, vol = 0.18, type = 'sine') {
+        const osc = this.ctx.createOscillator()
+        const gain = this.ctx.createGain()
+        osc.connect(gain)
+        gain.connect(this.ctx.destination)
+        osc.type = type
+        osc.frequency.setValueAtTime(freq, start)
+        gain.gain.setValueAtTime(0.001, start)
+        gain.gain.linearRampToValueAtTime(vol, start + 0.025)
+        gain.gain.exponentialRampToValueAtTime(0.001, start + dur)
+        osc.start(start)
+        osc.stop(start + dur + 0.05)
+    },
+
+    welcome() {
+        if (!this.enabled) return
+        this.init()
+        const t = this.ctx.currentTime
+        this.tone(523.25, t,        0.45, 0.14)  // C5
+        this.tone(659.25, t + 0.14, 0.45, 0.11)  // E5
+        this.tone(783.99, t + 0.28, 0.55, 0.09)  // G5
+        this.tone(1046.5, t + 0.42, 0.80, 0.07)  // C6
+    },
+
+    response() {
+        if (!this.enabled) return
+        this.init()
+        const t = this.ctx.currentTime
+        this.tone(659.25, t,        0.28, 0.11)  // E5
+        this.tone(783.99, t + 0.14, 0.50, 0.08)  // G5
+    },
+
+    prayer() {
+        if (!this.enabled) return
+        this.init()
+        const t = this.ctx.currentTime
+        this.tone(440.00, t,        1.20, 0.10)  // A4
+        this.tone(554.37, t + 0.08, 1.00, 0.07)  // C#5 harmony
+        this.tone(659.25, t + 0.18, 0.80, 0.05)  // E5 overtone
+    },
+
+    praise() {
+        if (!this.enabled) return
+        this.init()
+        const t = this.ctx.currentTime
+        this.tone(523.25, t,        0.22, 0.14)  // C5
+        this.tone(587.33, t + 0.10, 0.22, 0.12)  // D5
+        this.tone(659.25, t + 0.20, 0.22, 0.11)  // E5
+        this.tone(783.99, t + 0.30, 0.28, 0.10)  // G5
+        this.tone(1046.5, t + 0.42, 0.70, 0.08)  // C6
+    },
+
+    crisis() {
+        if (!this.enabled) return
+        this.init()
+        const t = this.ctx.currentTime
+        this.tone(392.00, t,        0.70, 0.07)  // G4 — soft, lower
+        this.tone(349.23, t + 0.45, 0.90, 0.05)  // F4
+    }
+}
+
+function toggleSound() {
+    LuloSound.enabled = !LuloSound.enabled
+    const btn = document.getElementById('sound-btn')
+    if (btn) btn.innerText = LuloSound.enabled ? '🔊' : '🔇'
+    if (LuloSound.enabled) LuloSound.response()
+}
     </script>
 
 </body>
