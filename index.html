@@ -190,7 +190,11 @@
             max-width: 320px;
             line-height: 1.5;
             transition: all 0.3s ease;
+            display: none !important;
         }
+
+        #lulo-message-section { display: none !important; }
+        #card-divider { display: none !important; }
 
         #lulo-subtitle {
             font-size: 0.8rem;
@@ -954,12 +958,12 @@
 .chat-bubble-lulo {
     align-self: flex-start;
     max-width: 78%;
-    background: rgba(0,255,100,0.05);
-    border: 1px solid rgba(0,255,100,0.1);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 16px 16px 16px 4px;
     padding: 9px 13px;
     font-size: 0.79rem;
-    color: rgba(0,255,100,0.65);
+    color: rgba(255,255,255,0.75);
     font-family: 'Inter', sans-serif;
     line-height: 1.55;
 }
@@ -1045,7 +1049,7 @@
             border-radius: 20px;
             margin-bottom: 25px;
             overflow: hidden;
-            cursor: pointer;
+            cursor: pointer; -webkit-tap-highlight-color: rgba(0,212,255,0.08);
         " onclick="toggleHistoryCard()">
 
             <!-- COLLAPSED VIEW -->
@@ -1409,6 +1413,19 @@
 const COPIES = 3
 const MID_COPY = 1
 
+function toggleHistoryCard() {
+    const expanded = document.getElementById('history-expanded')
+    const arrow = document.getElementById('history-arrow')
+    if (!expanded) return
+    if (expanded.style.display === 'none' || expanded.style.display === '') {
+        expanded.style.display = 'block'
+        if (arrow) arrow.style.transform = 'rotate(180deg)'
+    } else {
+        expanded.style.display = 'none'
+        if (arrow) arrow.style.transform = 'rotate(0deg)'
+    }
+}
+
 function buildEmotionButtons() {
     const container = document.getElementById('mood-buttons')
     if (!container) return
@@ -1448,6 +1465,7 @@ function buildEmotionButtons() {
             btn.innerHTML = `<span class="emoji">${item.emoji}</span><span class="label">${item.label}</span>`
             btn.onclick = () => {
                 scrollToGlobal(gIndex)
+                addToChatHistory('user', `${item.emoji} ${item.label}`)
                 setTimeout(() => showScripture(item.mood), 300)
             }
             container.appendChild(btn)
@@ -1905,7 +1923,8 @@ function setupRailSnap() {
     const luloMsgSection = document.getElementById('lulo-message-section')
     const cardDivider = document.getElementById('card-divider')
 
-    document.getElementById('lulo-reaction').innerText = ''
+    const fallback = `I hear you, ${name}. 💙 Can you tell me a little more about how you're feeling? Or try clicking one of the emotions below.`
+    addToChatHistory('lulo', fallback)
     animateLulo('nod')
     updateLuloMood('peaceful')
 
@@ -2297,6 +2316,12 @@ function setupRailSnap() {
         { type: "joke", text: "😄 Bible Dad Joke!\n\nWhy don't they serve coffee at church?\n\nBecause the Lord's Supper is the only 'roast' they do! ☕", ref: "1 Corinthians 11:20" },
         { type: "joke", text: "😄 Bible Dad Joke!\n\nWhat's a Bible character's favourite type of music?\n\nHeavy 'metal' — because of all the Armour of God! 🛡️", ref: "Ephesians 6:11" },
         { type: "joke", text: "😄 Bible Dad Joke!\n\nHow do we know Peter was a good fisherman?\n\nBecause he always had a 'net' profit! 🐟", ref: "Luke 5:6" },
+        { type: "joke", text: "😄 Bible Pun!\n\nWhat do you call a chef in heaven?\n\nAbba Cook! 🍳\n\n(Habakkuk — a book of the Bible that nobody can pronounce!)", ref: "Habakkuk 3:17-18" },
+        { type: "joke", text: "😄 Bible Pun!\n\nWhat do you call a sleeping dinosaur in the Bible?\n\nA Tea-Rex-us! 🦕\n\n'Be still before the Lord and wait patiently for him.'", ref: "Psalm 37:7" },
+        { type: "joke", text: "😄 Bible Pun!\n\nWhy did Samson avoid arguing with Delilah?\n\nHe didn't want to lose his head over it! 💇\n\n(He almost did though...)", ref: "Judges 16" },
+        { type: "joke", text: "😄 Bible Pun!\n\nWhat's a biblical spider's favourite verse?\n\n'I can do all things through Christ who strengthens me!' 🕷️\n\n(He's been hanging on by a thread for years!)", ref: "Philippians 4:13" },
+        { type: "joke", text: "😄 Bible Pun!\n\nWhy couldn't Jonah trust the ocean?\n\nBecause he knew there was something fishy going on! 🐟", ref: "Jonah 1:17" },
+        { type: "joke", text: "😄 Bible Pun!\n\nWhat do you call Daniel's friends in the WhatsApp group?\n\nThe 🔥 Squad — Shadrach, Meshach and the other one nobody can remember! 😄", ref: "Daniel 3" },
     ],
     excited: [
         { text: "Delight yourself in the Lord, and he will give you the desires of your heart.", ref: "Psalm 37:4" },
@@ -2496,11 +2521,11 @@ function setupRailSnap() {
             encouraged: ["Yes! Keep going! 💪", "That momentum is God-given! 🌟", "Nothing can stop what God has started in you! 🔥"],
             grateful: ["Gratitude is beautiful! 🙏", "A thankful heart is a happy heart! ✨", "That's so wonderful! 🎉"],
             hopeful: ["Hope is powerful! 🌟", "Hold on to that hope! ✨", "Beautiful things are coming! 🎉"],
-            sad: ["I'm here for you. 💙", "You're not alone in this. 🤗", "Let me share something with you..."],
+            sad: ["I'm here for you. ", "You're not alone in this. 🤗", "Let me share something with you..."],
             afraid: ["It's okay to feel afraid. I've got you. 💙", "Let's find some courage together. 🕊️", "You are braver than you think. 💪"],
-            anxious: ["Breathe. I'm right here with you. 💙", "Let's find some peace together. 🕊️", "One moment at a time. You've got this. 💪"],
+            anxious: ["Breathe. I'm right here with you. ", "Let's find some peace together. 🕊️", "One moment at a time. You've got this. 💪"],
             depressed: ["I see you. I'm here. 💙", "You are not alone in this. 🤗", "Let me share something just for you..."],
-            lonely: ["You are never truly alone. 💙", "I'm here with you right now. 🤗", "Let Lulo keep you company. ✨"],
+            lonely: ["You are never truly alone. ", "I'm here with you right now. 🤗", "Let Lulo keep you company. ✨"],
             angry: ["It's okay to feel angry. Let's breathe. 💙", "I hear you. Let's find some peace. 🕊️"],
             tired: ["Rest is sacred. You've been doing so much. 💙", "It's okay to be tired. Let me encourage you. ✨"],
             heartbroken: ["I'm so sorry you're hurting. 💙", "Your heart matters. I'm here. 🤗", "Let me share something healing..."],
@@ -2649,6 +2674,7 @@ function setupRailSnap() {
 
         function enterMainApp() {
             buildEmotionButtons()
+            luloRandomPromise()
             const label = document.getElementById('carousel-label')
             if (label) label.innerText = ''
 
@@ -2714,6 +2740,8 @@ function setupRailSnap() {
             const input = document.getElementById('lulo-input')
             const text = input.value.trim()
             if (!text) return
+            document.getElementById('scripture-card').style.display = 'none'
+            addToChatHistory('user', text)
             window._pendingChat = text
             const name = localStorage.getItem('luloUserName') || 'friend'
 
@@ -3225,6 +3253,51 @@ function setupRailSnap() {
             input.value = ''
         }
 
+        function luloRandomPromise() {
+    const promiseVerses = [
+        { text: "No weapon forged against you will prevail. This is your heritage as a servant of the Lord.", ref: "Isaiah 54:17" },
+        { text: "God will meet all your needs according to the riches of his glory in Christ Jesus.", ref: "Philippians 4:19" },
+        { text: "The Lord will make you the head, not the tail. Always at the top, never at the bottom.", ref: "Deuteronomy 28:13" },
+        { text: "Call to me and I will answer you and tell you great and unsearchable things you do not know.", ref: "Jeremiah 33:3" },
+        { text: "If you remain in me and my words remain in you, ask whatever you wish, and it will be done for you.", ref: "John 15:7" },
+        { text: "Delight yourself in the Lord, and he will give you the desires of your heart.", ref: "Psalm 37:4" },
+        { text: "God is able to do immeasurably more than all you ask or imagine, according to his power at work within you.", ref: "Ephesians 3:20" },
+        { text: "Before you call I will answer; while you are still speaking I will hear.", ref: "Isaiah 65:24" },
+        { text: "I will restore to you the years that the locust has eaten.", ref: "Joel 2:25" },
+        { text: "Ask and it will be given to you; seek and you will find; knock and the door will be opened.", ref: "Matthew 7:7" },
+        { text: "No good thing does God withhold from those whose walk is blameless.", ref: "Psalm 84:11" },
+        { text: "I will open the floodgates of heaven and pour out so much blessing there will not be room enough to store it.", ref: "Malachi 3:10" },
+    ]
+
+    // 1 in 3 chance — don't fire every session
+    if (Math.random() > 0.33) return
+
+    // Don't fire if already sent today
+    const today = new Date().toDateString()
+    const lastPromise = localStorage.getItem('luloLastPromiseDate')
+    if (lastPromise === today) return
+
+    // Save today so it doesn't fire again this session
+    localStorage.setItem('luloLastPromiseDate', today)
+
+    const name = localStorage.getItem('luloUserName') || 'friend'
+    const verse = promiseVerses[Math.floor(Math.random() * promiseVerses.length)]
+
+    const intros = [
+        `${name}, I just wanted you to know something before we start...`,
+        `Before anything else today, God wants you to hear this.`,
+        `${name}, I felt like sharing something with you right now.`,
+        `I wasn't asked to share this. I just wanted to.`,
+        `${name}, hold onto this today.`,
+    ]
+
+    const intro = intros[Math.floor(Math.random() * intros.length)]
+
+    setTimeout(() => {
+        addToChatHistory('lulo', `${intro}\n\n"${verse.text}"\n— ${verse.ref}`)
+    }, 2000)
+}
+        
         async function generatePrayer() {
             const name = localStorage.getItem('luloUserName') || 'friend'
             const lastMood = localStorage.getItem('luloLastMood') || null
@@ -3278,7 +3351,7 @@ function setupRailSnap() {
             if (cardDivider) cardDivider.style.display = 'none'
 
             // Update Lulo's face and reaction
-            document.getElementById('lulo-face').innerText = '🙏'
+            updateLuloMood('prayer')
             LuloSound.prayer()
             document.getElementById('lulo-reaction').innerText = `Of course, ${name}. Let me pray with you... 💙`
             animateLulo('nod')
@@ -3334,6 +3407,8 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                     const prayer = data.content[0].text
                     if (loading) loading.style.display = 'none'
                     if (text_el) text_el.innerText = prayer
+                    box.style.display = 'block'
+                    addToChatHistory('lulo', '🙏 Praying with you...')
                     if (anotherBtn) anotherBtn.style.display = 'none'
 
                     // Show Lulo prayer header
@@ -3391,96 +3466,93 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
         }
 
         function updateLuloMood(mood) {
-            const img = document.getElementById('lulo-img')
-            const overlay = document.getElementById('lulo-emoji-overlay')
-            const luloGlow = document.getElementById('lulo-glow')
+    const img = document.getElementById('lulo-img')
+    const luloGlow = document.getElementById('lulo-glow')
 
-            const moodEmojis = {
-                happy: '😊', joyful: '😄', excited: '🤩',
-                peaceful: '😌', loved: '🥰', encouraged: '💪',
-                grateful: '🙏', hopeful: '🌟', expecting: '🤰',
-                sad: '😢', afraid: '😨', anxious: '😟',
-                depressed: '😞', lonely: '😔', angry: '😤',
-                tired: '🥱', heartbroken: '💔', overwhelmed: '😵',
-                confused: '😕', empty: '😶', invisible: '🫥',
-                rejected: '💔', unappreciated: '😔',
-                unsettled: '🌀', unmotivated: '😑',
-                bored: '🤩', prayer: '🙏'
-            }
+    const moodFaces = {
+        happy: 'lulo_happy.png',
+        joyful: 'lulo_happy.png',
+        excited: 'lulo_excited.png',
+        peaceful: 'lulo_peaceful.png',
+        loved: 'lulo_caring.png',
+        encouraged: 'lulo_happy.png',
+        grateful: 'lulo_happy.png',
+        hopeful: 'lulo_peaceful.png',
+        expecting: 'lulo_caring.png',
+        sad: 'lulo_sad.png',
+        afraid: 'lulo_caring.png',
+        anxious: 'lulo_overwhelmed.png',
+        depressed: 'lulo_depressed.png',
+        lonely: 'lulo_sad.png',
+        angry: 'lulo_angry.png',
+        tired: 'lulo_tired.png',
+        heartbroken: 'lulo_heartbroken.png',
+        overwhelmed: 'lulo_overwhelmed.png',
+        confused: 'lulo_unsettled.png',
+        empty: 'lulo_empty.png',
+        invisible: 'lulo_sad.png',
+        rejected: 'lulo_heartbroken.png',
+        unappreciated: 'lulo_depressed.png',
+        unsettled: 'lulo_unsettled.png',
+        unmotivated: 'lulo_empty.png',
+        bored: 'lulo_happy.png',
+        prayer: 'lulo_prayer.png',
+        praise: 'lulo_praise.png',
+        sick: 'lulo_sick.png',
+        home: 'lulo.png',
+    }
 
-            const moodGlows = {
-                happy: 'rgba(255,220,0,0.6)',
-                joyful: 'rgba(255,200,0,0.6)',
-                excited: 'rgba(255,150,0,0.6)',
-                peaceful: 'rgba(0,200,255,0.6)',
-                loved: 'rgba(255,100,150,0.6)',
-                encouraged: 'rgba(100,255,100,0.6)',
-                grateful: 'rgba(255,180,0,0.6)',
-                hopeful: 'rgba(150,255,200,0.6)',
-                expecting: 'rgba(255,150,200,0.6)',
-                sad: 'rgba(100,150,255,0.6)',
-                afraid: 'rgba(200,100,255,0.6)',
-                anxious: 'rgba(255,200,100,0.6)',
-                depressed: 'rgba(100,100,200,0.6)',
-                lonely: 'rgba(150,150,255,0.6)',
-                angry: 'rgba(255,80,80,0.6)',
-                tired: 'rgba(150,150,150,0.6)',
-                heartbroken: 'rgba(255,50,100,0.6)',
-                overwhelmed: 'rgba(200,50,255,0.6)',
-                confused: 'rgba(200,200,100,0.6)',
-                empty: 'rgba(150,150,180,0.6)',
-                invisible: 'rgba(180,180,220,0.6)',
-                rejected: 'rgba(255,100,100,0.6)',
-                unappreciated: 'rgba(180,130,100,0.6)',
-                unsettled: 'rgba(180,180,100,0.6)',
-                unmotivated: 'rgba(150,150,150,0.6)',
-                bored: 'rgba(100,200,200,0.6)',
-                prayer: 'rgba(255,220,100,0.6)',
-            }
+    const moodGlows = {
+        happy: 'rgba(255,220,0,0.5)',
+        joyful: 'rgba(255,200,0,0.5)',
+        excited: 'rgba(255,150,0,0.5)',
+        peaceful: 'rgba(0,200,255,0.5)',
+        loved: 'rgba(255,100,150,0.5)',
+        encouraged: 'rgba(100,255,100,0.5)',
+        grateful: 'rgba(255,180,0,0.5)',
+        hopeful: 'rgba(150,255,200,0.5)',
+        expecting: 'rgba(255,150,200,0.5)',
+        sad: 'rgba(100,150,255,0.5)',
+        afraid: 'rgba(200,100,255,0.5)',
+        anxious: 'rgba(255,200,100,0.5)',
+        depressed: 'rgba(100,100,200,0.5)',
+        lonely: 'rgba(150,150,255,0.5)',
+        angry: 'rgba(255,80,80,0.5)',
+        tired: 'rgba(150,150,150,0.5)',
+        heartbroken: 'rgba(255,50,100,0.5)',
+        overwhelmed: 'rgba(200,50,255,0.5)',
+        confused: 'rgba(200,200,100,0.5)',
+        empty: 'rgba(150,150,180,0.5)',
+        invisible: 'rgba(180,180,220,0.5)',
+        rejected: 'rgba(255,100,100,0.5)',
+        unappreciated: 'rgba(180,130,100,0.5)',
+        unsettled: 'rgba(180,180,100,0.5)',
+        unmotivated: 'rgba(150,150,150,0.5)',
+        bored: 'rgba(100,200,200,0.5)',
+        prayer: 'rgba(255,220,100,0.5)',
+        praise: 'rgba(255,220,0,0.5)',
+        sick: 'rgba(100,200,150,0.5)',
+        home: 'rgba(0,255,100,0.5)',
+    }
 
-            if (mood && moodEmojis[mood]) {
-                // Hide Lulo image, show big emoji
-                if (img) {
-                    img.style.transition = 'opacity 0.2s ease'
-                    img.style.opacity = '0'
-                    setTimeout(() => { img.style.display = 'none' }, 200)
-                }
-                if (overlay) {
-                    overlay.style.cssText = `
-                        position: absolute;
-                        top: 50%; left: 50%;
-                        transform: translate(-50%, -50%);
-                        font-size: 5.5rem;
-                        line-height: 1;
-                        opacity: 0;
-                        transition: all 0.3s ease;
-                        z-index: 10;
-                        pointer-events: none;
-                    `
-                    overlay.innerText = moodEmojis[mood]
-                    setTimeout(() => { overlay.style.opacity = '1' }, 50)
-                }
-            } else {
-                // Reset — show Lulo image
-                if (img) {
-                    img.style.display = 'block'
-                    setTimeout(() => { img.style.opacity = '1' }, 50)
-                }
-                if (overlay) {
-                    overlay.style.opacity = '0'
-                    setTimeout(() => { overlay.innerText = '' }, 300)
-                }
-            }
-
-            // Update glow
-            const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
-            if (img && img.style.display !== 'none') {
-                img.style.filter = `drop-shadow(0 0 25px ${glow})`
-            }
-            if (luloGlow) {
-                luloGlow.style.background = `radial-gradient(circle, ${glow.replace('0.6', '0.15')} 0%, transparent 70%)`
-            }
+    // Swap Lulo's face
+    if (img) {
+        const face = moodFaces[mood] || 'lulo.png'
+        if (img.src !== face) {
+            img.style.transition = 'opacity 0.3s ease'
+            img.style.opacity = '0'
+            setTimeout(() => {
+                img.src = face
+                img.style.opacity = '1'
+            }, 300)
         }
+    }
+
+    // Update glow
+    const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
+    if (img) img.style.filter = `drop-shadow(0 0 25px ${glow})`
+    if (luloGlow) luloGlow.style.background = `radial-gradient(circle, ${glow.replace('0.5', '0.15')} 0%, transparent 70%)`
+}
 
         function formatMood(mood) {
             const moodPhrases = {
@@ -3663,16 +3735,12 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
         luloMessageSection.style.display = 'block'
         cardDivider.style.display = 'block'
     }
+    if (reactionText) addToChatHistory('lulo', reactionText + '\n— ' + verse.ref)
 
     document.getElementById('scripture-text').innerText = verse.text
     document.getElementById('scripture-ref').innerText = '— ' + verse.ref
     document.getElementById('another-btn').style.display = 'block'
     LuloSound.response()
-if (window._pendingChat) {
-    addToChatHistory('user', window._pendingChat)
-    window._pendingChat = null
-    if (reactionText) addToChatHistory('lulo', reactionText)
-}
     box.style.display = 'block'
 
     box.style.animation = 'none'
@@ -3744,7 +3812,12 @@ function addToChatHistory(role, text) {
     chatHistory.push({ role, text: text.trim(), time })
     renderChatThread()
     const container = document.getElementById('chat-thread-container')
-    if (container) container.style.display = 'block'
+if (container) {
+    container.style.display = 'block'
+    if (chatHistory.length === 1 && !chatThreadOpen) {
+        toggleChatThread()
+    }
+}
     const badge = document.getElementById('chat-count-badge')
     if (badge) badge.innerText = chatHistory.length
 }
@@ -3862,6 +3935,13 @@ function toggleSound() {
     if (btn) btn.innerText = LuloSound.enabled ? '🔊' : '🔇'
     if (LuloSound.enabled) LuloSound.response()
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const card = document.getElementById('welcome-history-card')
+    if (card) card.addEventListener('touchend', (e) => {
+        e.preventDefault()
+        toggleHistoryCard()
+    })
+})
     </script>
 
 </body>
