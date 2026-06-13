@@ -1626,8 +1626,8 @@
         ]
 
         let infiniteReady = false
-const COPIES = 3
-const MID_COPY = 1
+            const COPIES = 3
+            const MID_COPY = 1
 
 function toggleHistoryCard() {
     const expanded = document.getElementById('history-expanded')
@@ -1639,6 +1639,166 @@ function toggleHistoryCard() {
     } else {
         expanded.style.display = 'none'
         if (arrow) arrow.style.transform = 'rotate(0deg)'
+    }
+}
+
+function setTheme(theme) {
+    const root = document.body
+
+    const themes = {
+        dark: {
+            bg: '#080818',
+            bgSecondary: 'rgba(255,255,255,0.04)',
+            border: 'rgba(255,255,255,0.08)',
+            text: 'rgba(255,255,255,0.9)',
+            textMuted: 'rgba(255,255,255,0.35)',
+            accent: 'rgba(0,212,255,0.9)',
+            accentGlow: 'rgba(0,255,100,0.08)',
+            inputBg: 'rgba(255,255,255,0.05)',
+            sendBtn: 'linear-gradient(135deg,#00d4ff,#0099cc)',
+            bodyBefore: 'rgba(0,255,100,0.08)',
+            bodyAfter: 'rgba(120,60,255,0.08)',
+        },
+        light: {
+            bg: '#f8f0f5',
+            bgSecondary: 'rgba(255,255,255,0.7)',
+            border: 'rgba(200,150,200,0.25)',
+            text: 'rgba(60,20,60,0.9)',
+            textMuted: 'rgba(100,60,100,0.5)',
+            accent: 'rgba(180,60,180,0.9)',
+            accentGlow: 'rgba(255,150,200,0.12)',
+            inputBg: 'rgba(255,255,255,0.8)',
+            sendBtn: 'linear-gradient(135deg,#e066cc,#b044aa)',
+            bodyBefore: 'rgba(255,150,200,0.12)',
+            bodyAfter: 'rgba(180,100,255,0.08)',
+        },
+        neon: {
+            bg: '#0d0d0d',
+            bgSecondary: 'rgba(255,0,255,0.04)',
+            border: 'rgba(255,0,255,0.15)',
+            text: 'rgba(255,255,255,0.9)',
+            textMuted: 'rgba(255,255,255,0.35)',
+            accent: 'rgba(255,0,255,0.9)',
+            accentGlow: 'rgba(255,0,255,0.08)',
+            inputBg: 'rgba(255,0,255,0.05)',
+            sendBtn: 'linear-gradient(135deg,#ff00ff,#aa00cc)',
+            bodyBefore: 'rgba(255,0,255,0.08)',
+            bodyAfter: 'rgba(0,255,255,0.08)',
+        },
+        nature: {
+            bg: '#f0f7ee',
+            bgSecondary: 'rgba(255,255,255,0.7)',
+            border: 'rgba(100,180,100,0.25)',
+            text: 'rgba(20,60,20,0.9)',
+            textMuted: 'rgba(60,100,60,0.5)',
+            accent: 'rgba(60,150,60,0.9)',
+            accentGlow: 'rgba(100,200,100,0.12)',
+            inputBg: 'rgba(255,255,255,0.8)',
+            sendBtn: 'linear-gradient(135deg,#66bb6a,#388e3c)',
+            bodyBefore: 'rgba(100,200,100,0.1)',
+            bodyAfter: 'rgba(150,255,150,0.06)',
+        },
+        space: {
+            bg: '#0a0a1a',
+            bgSecondary: 'rgba(100,100,255,0.04)',
+            border: 'rgba(100,100,255,0.12)',
+            text: 'rgba(220,220,255,0.9)',
+            textMuted: 'rgba(150,150,255,0.4)',
+            accent: 'rgba(150,100,255,0.9)',
+            accentGlow: 'rgba(100,50,255,0.1)',
+            inputBg: 'rgba(100,100,255,0.05)',
+            sendBtn: 'linear-gradient(135deg,#7b2ff7,#4a00cc)',
+            bodyBefore: 'rgba(100,50,255,0.1)',
+            bodyAfter: 'rgba(50,0,200,0.08)',
+        },
+        sunrise: {
+            bg: '#fff8f0',
+            bgSecondary: 'rgba(255,255,255,0.7)',
+            border: 'rgba(255,150,50,0.2)',
+            text: 'rgba(80,40,0,0.9)',
+            textMuted: 'rgba(150,80,0,0.5)',
+            accent: 'rgba(220,100,0,0.9)',
+            accentGlow: 'rgba(255,150,50,0.12)',
+            inputBg: 'rgba(255,255,255,0.8)',
+            sendBtn: 'linear-gradient(135deg,#ff9800,#e65100)',
+            bodyBefore: 'rgba(255,150,50,0.1)',
+            bodyAfter: 'rgba(255,100,0,0.06)',
+        },
+    }
+
+    const t = themes[theme] || themes.dark
+    
+    // Apply to body
+    root.style.background = t.bg
+    root.style.color = t.text
+
+    // Update CSS variables
+    document.documentElement.style.setProperty('--theme-bg', t.bg)
+    document.documentElement.style.setProperty('--theme-bg-secondary', t.bgSecondary)
+    document.documentElement.style.setProperty('--theme-border', t.border)
+    document.documentElement.style.setProperty('--theme-text', t.text)
+    document.documentElement.style.setProperty('--theme-text-muted', t.textMuted)
+    document.documentElement.style.setProperty('--theme-accent', t.accent)
+    document.documentElement.style.setProperty('--theme-input-bg', t.inputBg)
+
+    // Update input bar
+    const inputRow = document.getElementById('input-row')
+    if (inputRow) {
+        inputRow.style.background = t.inputBg
+        inputRow.style.borderColor = t.border
+    }
+
+    // Update send button
+    const sendBtn = document.getElementById('send-btn')
+    if (sendBtn) sendBtn.style.background = t.sendBtn
+
+    // Update scripture card
+    const scriptureInner = document.getElementById('scripture-inner')
+    if (scriptureInner) {
+        scriptureInner.style.background = t.bgSecondary
+        scriptureInner.style.borderColor = t.border
+    }
+
+    // Update chat bubbles dynamically
+    const userBubbles = document.querySelectorAll('.chat-bubble-user')
+    const luloBubbles = document.querySelectorAll('.chat-bubble-lulo')
+    userBubbles.forEach(b => {
+        b.style.background = t.bgSecondary
+        b.style.borderColor = t.border
+    })
+    luloBubbles.forEach(b => {
+        b.style.background = t.bgSecondary
+        b.style.borderColor = t.border
+    })
+
+    // Update bottom bar
+    const bottomBar = document.getElementById('bottom-bar')
+    if (bottomBar) bottomBar.style.background = `linear-gradient(to top, ${t.bg} 60%, transparent)`
+
+    // Update top bar background
+    const app = document.getElementById('app')
+    if (app) app.style.background = t.bg
+
+    // Update theme picker active state
+    document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.remove('active')
+    })
+    event.target.classList.add('active')
+
+    // Save preference
+    localStorage.setItem('luloTheme', theme)
+}
+
+function loadSavedTheme() {
+    const saved = localStorage.getItem('luloTheme')
+    if (saved && saved !== 'dark') {
+        // Simulate a click on the right theme option
+        const options = document.querySelectorAll('.theme-option')
+        const themeOrder = ['dark', 'light', 'neon', 'nature', 'space', 'sunrise']
+        const index = themeOrder.indexOf(saved)
+        if (index !== -1 && options[index]) {
+            options[index].click()
+        }
     }
 }
 
@@ -2899,6 +3059,7 @@ function setupRailSnap() {
         function enterMainApp() {
             buildEmotionButtons()
             luloRandomPromise()
+            loadSavedTheme()
             const label = document.getElementById('carousel-label')
             if (label) label.innerText = ''
 
