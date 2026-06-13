@@ -3814,7 +3814,9 @@ function setupRailSnap() {
         Last emotion: ${lastMood || 'none'}
         Last scripture shared: ${lastRef || 'none'}
 
-        IMPORTANT: If the user is just greeting you or making small talk, respond warmly and naturally first. Don't immediately reference their emotion unless they bring it up. Let the conversation flow naturally before guiding them anywhere. Only bring up their emotion after they have said at least 2 messages.`
+        IMPORTANT: If the user is just greeting you or making small talk, respond warmly and naturally first. Don't immediately reference their emotion unless they bring it up. Let the conversation flow naturally before guiding them anywhere. Only bring up their emotion after they have said at least 2 messages.
+
+        Do NOT end every message with a question. Questions are good occasionally but not every single response. Sometimes just make a warm statement and let the user lead. When you do end with something actionable, offer a gentle choice like "Would you like me to share more on that, or is there something else on your heart?" rather than an open ended question.`
 
             // Add user message to history
             conversationHistory.push({ role: 'user', content: userText })
