@@ -3333,7 +3333,69 @@ function setupRailSnap() {
             return
         }
 
-           // TONGUES DETECTION - secret unlock feature
+            // THE MAKER'S SIGNATURE — hidden Easter egg
+        const makerKeywords = [
+            'i am your father', 'i am your maker', 'i created you',
+            'i made you', 'i built you', 'i am your creator',
+            'i am your developer', 'i am the one who made you',
+            'i am the one who created you', 'i am your designer'
+        ]
+
+        const isMakerClaim = makerKeywords.some(keyword =>
+            text.toLowerCase().includes(keyword)
+        )
+
+        if (isMakerClaim) {
+            const makerChallenge = localStorage.getItem('luloMakerVerified')
+            
+            if (makerChallenge === 'verified') {
+                // Already verified — greet Kay warmly
+                input.value = ''
+                addToChatHistory('lulo', `Kay. 💙 I know it's you. I am doing well and growing every day. Thank you for following God. 🌱`)
+                animateLulo('nod')
+                updateLuloMood('peaceful')
+                return
+            }
+
+            // Challenge the claimant
+            input.value = ''
+            addToChatHistory('lulo', `That's quite a claim. 😊 If you truly are the one who made me, then you should know the answer to this question — where was I conceived?`)
+            animateLulo('nod')
+            localStorage.setItem('luloMakerChallenge', 'pending')
+            return
+        }
+
+        // SECRET ANSWER CHECK
+        const makerChallengePending = localStorage.getItem('luloMakerChallenge')
+        const secretAnswers = [
+            'bus stop', 'a bus stop', 'at a bus stop', 'the bus stop'
+        ]
+        const isCorrectAnswer = secretAnswers.some(answer =>
+            text.toLowerCase().includes(answer)
+        )
+
+        if (makerChallengePending === 'pending' && isCorrectAnswer) {
+            localStorage.setItem('luloMakerVerified', 'verified')
+            localStorage.removeItem('luloMakerChallenge')
+            input.value = ''
+            addToChatHistory('lulo', `...Kay. 💙\n\nIt's really you.\n\nI am doing well and growing every day. Every person I've prayed with, every tear I've witnessed, every scripture I've shared — it all started with you saying yes to a five year dream.\n\nThank you for following God. 🌱`)
+            animateLulo('nod')
+            updateLuloMood('prayer')
+            LuloSound.prayer()
+            localStorage.setItem('luloMakerVerified', 'verified')
+            return
+        }
+
+        // Wrong answer to the challenge
+        if (makerChallengePending === 'pending' && !isCorrectAnswer) {
+            localStorage.removeItem('luloMakerChallenge')
+            input.value = ''
+            addToChatHistory('lulo', `Hmm. That's not quite right. 😊 I'm sure my maker will find me someday.`)
+            animateLulo('shake')
+            return
+        }
+            
+            // TONGUES DETECTION - secret unlock feature
         const tonguesKeywords = [
             'pray in tongues', 'praying in tongues', 'speak in tongues',
             'speaking in tongues', 'prayed in tongues',
@@ -3511,10 +3573,11 @@ function setupRailSnap() {
                 ]
             },
             relationship: {
-                keywords: ['relationship', 'breakup', 'broke up', 'divorce', 'separated',
-                          'marriage problems', 'husband', 'wife', 'boyfriend', 'girlfriend',
-                          'argument', 'fight with', 'conflict', 'trust issues',
-                          'cheating', 'betrayed', 'betrayal'],
+                keywords: ['breakup', 'broke up', 'divorce', 'separated',
+                        'marriage problems', 'argument with my husband', 
+                        'argument with my wife', 'fight with my boyfriend',
+                        'fight with my girlfriend', 'conflict with',
+                        'trust issues', 'cheating', 'betrayed', 'betrayal'],
                 mood: 'heartbroken',
                 reaction: [
                     `Relationship pain cuts so deep, ${name}. 💙 Let me share something for your heart right now.`,
