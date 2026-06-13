@@ -203,6 +203,35 @@
             text-align: center;
         }
 
+        /* EMOTION LOCK */
+        #carousel-container.locked #mood-buttons {
+            opacity: 0.25;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        #lock-message {
+            text-align: center;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 1.5px;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 18px;
+        }
+
+        #lock-message:hover {
+            color: rgba(0,212,255,0.5);
+        }
+
+        #lock-timer {
+            display: inline-block;
+            color: rgba(0,212,255,0.3);
+            font-size: 0.65rem;
+            margin-left: 6px;
+        }
+
         /* EMOTION CAROUSEL */
         #carousel-container {
             width: 100%;
@@ -643,6 +672,120 @@
             background: rgba(0,212,255,0.1);
         }
 
+        /* SHARE & SAVE BUTTONS */
+        #scripture-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .scripture-action-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.45);
+            padding: 7px 18px;
+            border-radius: 50px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .scripture-action-btn:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(100,255,200,0.3);
+            color: rgba(100,255,200,0.8);
+        }
+
+        .scripture-action-btn.saved {
+            border-color: rgba(255,200,0,0.4);
+            color: rgba(255,200,0,0.8);
+        }
+
+        /* JOURNAL TABS */
+        #journal-tabs {
+            display: flex;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 50px;
+            padding: 4px;
+        }
+
+        .journal-tab {
+            flex: 1;
+            padding: 9px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            border: none;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .journal-tab.active {
+            background: rgba(100,255,200,0.1);
+            color: rgba(100,255,200,0.9);
+            border: 1px solid rgba(100,255,200,0.2);
+        }
+
+        /* FAVOURITE CARD */
+        .favourite-entry {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 8px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .favourite-verse {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.7;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .favourite-ref {
+            font-size: 0.75rem;
+            color: rgba(100,255,200,0.7);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .favourite-meta {
+            font-size: 0.68rem;
+            color: rgba(255,255,255,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .favourite-remove {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.2);
+            cursor: pointer;
+            font-size: 0.68rem;
+            font-family: 'Inter', sans-serif;
+            transition: color 0.2s ease;
+        }
+
+        .favourite-remove:hover { color: rgba(255,100,100,0.6); }
+
         /* SPLASH */
         #splash-screen {
             position: fixed;
@@ -958,12 +1101,12 @@
 .chat-bubble-lulo {
     align-self: flex-start;
     max-width: 78%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(180,235,210,0.06);
+    border: 1px solid rgba(180,235,210,0.12);
     border-radius: 16px 16px 16px 4px;
     padding: 9px 13px;
     font-size: 0.79rem;
-    color: rgba(255,255,255,0.75);
+    color: rgba(100,255,200,0.85);
     font-family: 'Inter', sans-serif;
     line-height: 1.55;
 }
@@ -1160,14 +1303,21 @@
             <div style="font-size:40px;margin-bottom:10px;">📔</div>
             <h2 id="journal-name" class="screen-title"></h2>
             <p class="screen-subtitle">Your emotional journey with Lulo 💙</p>
+            <div id="journal-tabs">
+                <button class="journal-tab active" onclick="switchJournalTab('journey')">📔 My Journey</button>
+                <button class="journal-tab" onclick="switchJournalTab('favourites')">⭐ My Favourites</button>
+            </div>
         </div>
-        <div class="glass-card">
-            <h3>💙 Lulo's Weekly Reflection</h3>
-            <p id="journal-suggestion" style="color:rgba(255,255,255,0.7);font-size:0.88rem;line-height:1.7;"></p>
+        <div id="journal-journey-content">
+            <div class="glass-card">
+                <h3>💙 Lulo's Weekly Reflection</h3>
+                <p id="journal-suggestion" style="color:rgba(255,255,255,0.7);font-size:0.88rem;line-height:1.7;"></p>
+            </div>
+            <div class="stats-grid" id="journal-summary"></div>
+            <p style="font-size:0.7rem;letter-spacing:2px;color:rgba(255,255,255,0.2);margin-bottom:10px;text-transform:uppercase;">Recent Entries</p>
+            <div id="journal-entries"></div>
         </div>
-        <div class="stats-grid" id="journal-summary"></div>
-        <p style="font-size:0.7rem;letter-spacing:2px;color:rgba(255,255,255,0.2);margin-bottom:10px;text-transform:uppercase;">Recent Entries</p>
-        <div id="journal-entries"></div>
+        <div id="journal-favourites-content" style="display:none;width:100%;"></div>
         <button onclick="closeJournal()" class="back-btn">Back to Lulo 💙</button>
     </div>
 </div>
@@ -1291,6 +1441,7 @@
             <div id="ring-fade-left"></div>
             <div id="ring-fade-right"></div>
         </div>
+        <div id="lock-message" onclick="tryUnlockCarousel()"></div>
     </div>
 
     <!-- CHAT THREAD -->
@@ -1362,6 +1513,14 @@
             <p id="scripture-text"></p>
             <p id="scripture-ref"></p>
             <button id="another-btn" onclick="showAnother()">✦ Show me another</button>
+<div id="scripture-actions" style="display:none;">
+    <button class="scripture-action-btn" onclick="shareScripture()">
+        ↗ Share
+    </button>
+    <button class="scripture-action-btn" id="save-btn" onclick="saveScripture()">
+        ⭐ Save
+    </button>
+</div>
         </div>
     </div>
 
@@ -3298,6 +3457,217 @@ function setupRailSnap() {
     }, 2000)
 }
         
+        // EMOTION LOCK SYSTEM
+        let lockTimer = null
+        let lockCountdown = null
+        let lockSecondsLeft = 0
+        const LOCK_DURATION = 180 // 3 minutes in seconds
+
+        function lockCarousel() {
+            const container = document.getElementById('carousel-container')
+            const lockMsg = document.getElementById('lock-message')
+            if (!container || !lockMsg) return
+
+            container.classList.add('locked')
+            lockSecondsLeft = LOCK_DURATION
+
+            // Show message
+            updateLockMessage()
+
+            // Countdown every second
+            clearInterval(lockCountdown)
+            lockCountdown = setInterval(() => {
+                lockSecondsLeft--
+                updateLockMessage()
+                if (lockSecondsLeft <= 0) {
+                    unlockCarousel()
+                }
+            }, 1000)
+        }
+
+        function updateLockMessage() {
+            const lockMsg = document.getElementById('lock-message')
+            if (!lockMsg) return
+
+            if (lockSecondsLeft > 0) {
+                const mins = Math.floor(lockSecondsLeft / 60)
+                const secs = lockSecondsLeft % 60
+                const timeStr = mins > 0 
+                    ? `${mins}:${secs.toString().padStart(2, '0')}` 
+                    : `${secs}s`
+                lockMsg.innerHTML = `Sit with this for a moment <span id="lock-timer">${timeStr}</span>`
+            }
+        }
+
+        function unlockCarousel() {
+            const container = document.getElementById('carousel-container')
+            const lockMsg = document.getElementById('lock-message')
+            if (!container) return
+
+            clearInterval(lockCountdown)
+            container.classList.remove('locked')
+            if (lockMsg) lockMsg.innerHTML = ''
+            lockSecondsLeft = 0
+        }
+
+        function tryUnlockCarousel() {
+            if (lockSecondsLeft <= 0) return
+            const name = localStorage.getItem('luloUserName') || 'friend'
+
+            // Show gentle confirm in lock message
+            const lockMsg = document.getElementById('lock-message')
+            if (!lockMsg) return
+
+            lockMsg.innerHTML = `
+                <span style="color:rgba(255,255,255,0.35);">Change your emotion?</span>
+                <span onclick="unlockCarousel()" style="
+                    color:rgba(0,212,255,0.6);
+                    margin-left:10px;
+                    cursor:pointer;
+                    font-weight:500;
+                ">Yes</span>
+                <span style="color:rgba(255,255,255,0.15);margin:0 4px;">·</span>
+                <span onclick="resumeLock()" style="
+                    color:rgba(255,255,255,0.3);
+                    cursor:pointer;
+                ">No, stay</span>
+            `
+        }
+
+        function resumeLock() {
+            updateLockMessage()
+        }
+
+        // SHARE & SAVE SCRIPTURE
+        let currentVerse = { text: '', ref: '', mood: '' }
+
+        function shareScripture() {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const mood = currentMood || 'this moment'
+            const shareText = `Feeling ${mood} today, and Lulo reminded me:\n\n"${currentVerse.text}"\n\n— ${currentVerse.ref}\n\nEm_Q — Your Pocket Companion 🌱\ntimereigth54.github.io/EmQ`
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'A scripture from Lulo 🌱',
+                    text: shareText,
+                }).catch(() => {})
+            } else {
+                // Fallback — copy to clipboard
+                navigator.clipboard.writeText(shareText).then(() => {
+                    const btn = document.querySelector('.scripture-action-btn')
+                    if (btn) {
+                        btn.innerText = '✓ Copied!'
+                        setTimeout(() => { btn.innerHTML = '↗ Share' }, 2000)
+                    }
+                })
+            }
+        }
+
+        function saveScripture() {
+            const saveBtn = document.getElementById('save-btn')
+            const favourites = getFavourites()
+
+            // Check if already saved
+            const alreadySaved = favourites.some(f => f.ref === currentVerse.ref && f.text === currentVerse.text)
+
+            if (alreadySaved) {
+                // Unsave it
+                const updated = favourites.filter(f => !(f.ref === currentVerse.ref && f.text === currentVerse.text))
+                localStorage.setItem('luloFavourites', JSON.stringify(updated))
+                if (saveBtn) {
+                    saveBtn.classList.remove('saved')
+                    saveBtn.innerHTML = '⭐ Save'
+                }
+                return
+            }
+
+            // Save it
+            const entry = {
+                text: currentVerse.text,
+                ref: currentVerse.ref,
+                mood: currentMood || '',
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            }
+            favourites.unshift(entry)
+            localStorage.setItem('luloFavourites', JSON.stringify(favourites))
+
+            if (saveBtn) {
+                saveBtn.classList.add('saved')
+                saveBtn.innerHTML = '★ Saved!'
+                setTimeout(() => { saveBtn.innerHTML = '★ Saved' }, 1500)
+            }
+        }
+
+        function getFavourites() {
+            try {
+                return JSON.parse(localStorage.getItem('luloFavourites')) || []
+            } catch { return [] }
+        }
+
+        function checkIfSaved() {
+            const saveBtn = document.getElementById('save-btn')
+            if (!saveBtn) return
+            const favourites = getFavourites()
+            const alreadySaved = favourites.some(f => f.ref === currentVerse.ref)
+            if (alreadySaved) {
+                saveBtn.classList.add('saved')
+                saveBtn.innerHTML = '★ Saved'
+            } else {
+                saveBtn.classList.remove('saved')
+                saveBtn.innerHTML = '⭐ Save'
+            }
+        }
+
+        // JOURNAL TABS
+        let activeJournalTab = 'journey'
+
+        function switchJournalTab(tab) {
+            activeJournalTab = tab
+            const tabs = document.querySelectorAll('.journal-tab')
+            tabs.forEach(t => t.classList.remove('active'))
+            event.target.classList.add('active')
+
+            if (tab === 'journey') {
+                document.getElementById('journal-journey-content').style.display = 'block'
+                document.getElementById('journal-favourites-content').style.display = 'none'
+            } else {
+                document.getElementById('journal-journey-content').style.display = 'none'
+                document.getElementById('journal-favourites-content').style.display = 'block'
+                renderFavourites()
+            }
+        }
+
+        function renderFavourites() {
+            const container = document.getElementById('journal-favourites-content')
+            const favourites = getFavourites()
+            const name = localStorage.getItem('luloUserName') || 'friend'
+
+            if (favourites.length === 0) {
+                container.innerHTML = `<p style="color:rgba(255,255,255,0.25);text-align:center;font-size:0.85rem;padding:30px 0;">
+                    No saved scriptures yet, ${name}. 💙<br>Tap ⭐ on any scripture to save it here.
+                </p>`
+                return
+            }
+
+            container.innerHTML = favourites.map((f, i) => `
+                <div class="favourite-entry">
+                    <p class="favourite-verse">"${f.text}"</p>
+                    <p class="favourite-ref">— ${f.ref}</p>
+                    <div class="favourite-meta">
+                        <span>${f.mood ? `Feeling ${f.mood} · ` : ''}${f.date}</span>
+                        <button class="favourite-remove" onclick="removeFavourite(${i})">Remove</button>
+                    </div>
+                </div>
+            `).join('')
+        }
+
+        function removeFavourite(index) {
+            const favourites = getFavourites()
+            favourites.splice(index, 1)
+            localStorage.setItem('luloFavourites', JSON.stringify(favourites))
+            renderFavourites()
+        }
+        
         async function generatePrayer() {
             const name = localStorage.getItem('luloUserName') || 'friend'
             const lastMood = localStorage.getItem('luloLastMood') || null
@@ -3648,6 +4018,9 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
         box.style.animation = 'none'
         void box.offsetHeight
         box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+        
+        // Lock carousel after emotion is selected
+if (    mood !== 'home') lockCarousel()
         setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 100)
         return
     }
@@ -3689,9 +4062,13 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
             reactionText = continuityReactions[Math.floor(Math.random() * continuityReactions.length)]
         }
     } else if (!overrideReaction && lastMood && lastMood === mood) {
-        const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting']
+        const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting', 'bored']
         if (positiveEmotions.includes(mood)) {
-            const samePositiveReactions = [
+            const samePositiveReactions = mood === 'bored' ? [
+                `Back for more? Good. I've been waiting. 😄`,
+                `Still bored? Perfect. I have more where that came from.`,
+                `Oh you came back! Let's go again. 😄`,
+            ] : [
                 `Still feeling ${formatMood(mood)}, ${name}? 🌟 I love that for you! Let's keep that going! 🎉`,
                 `${formatMood(mood)} again, ${name}! 🎉 God's goodness just keeps showing up doesn't it? 💙`,
             ]
@@ -3735,8 +4112,19 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
         luloMessageSection.style.display = 'block'
         cardDivider.style.display = 'block'
     }
-    if (reactionText) addToChatHistory('lulo', reactionText + '\n— ' + verse.ref)
+    if (reactionText) {
+    const isBored = mood === 'bored'
+    addToChatHistory('lulo', isBored ? reactionText : reactionText + '\n— ' + verse.ref)
+}
 
+    // Store current verse for share/save
+    currentVerse = { text: verse.text, ref: verse.ref, mood: mood }
+
+    // Show action buttons
+    const actionsDiv = document.getElementById('scripture-actions')
+    if (actionsDiv) actionsDiv.style.display = 'flex'
+    checkIfSaved()
+    
     document.getElementById('scripture-text').innerText = verse.text
     document.getElementById('scripture-ref').innerText = '— ' + verse.ref
     document.getElementById('another-btn').style.display = 'block'
@@ -3750,6 +4138,9 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
     setTimeout(() => {
         box.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 100)
+
+    // Lock carousel after emotion is selected
+    if (mood !== 'home') lockCarousel()
 
     // Auto offer prayer for sick users
     if (mood === 'sick') {
