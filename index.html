@@ -1434,7 +1434,7 @@
         <div id="top-icons">
             <div class="top-icon" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</div>
             <div class="top-icon" onclick="showJournal()" title="My Journey">📔</div>
-            <div class="top-icon" id="theme-btn" onclick="document.getElementById('theme-picker').classList.toggle('show')" title="Themes">🎨
+            <div class="top-icon" id="theme-btn" onclick="const p=document.getElementById('theme-picker');p.style.display=p.style.display==='flex'?'none':'flex'" title="Themes">🎨
                 <div id="theme-picker">
                     <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="event.stopPropagation();setTheme('dark')" title="Dark"></div>
                     <div class="theme-option" style="background:linear-gradient(135deg,#fce4ec,#e3f2fd);" onclick="event.stopPropagation();setTheme('light')" title="Light"></div>
