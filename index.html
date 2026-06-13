@@ -1028,7 +1028,7 @@
             flex-wrap: wrap;
             width: 180px;
             backdrop-filter: blur(20px);
-            z-index: 200;
+            z-index: 9999;
         }
 
         #theme-picker.show { display: flex; }
@@ -1801,12 +1801,13 @@ function setTheme(theme) {
 
     // Update theme picker active state
     document.querySelectorAll('.theme-option').forEach(opt => {
-        opt.classList.remove('active')
+    opt.classList.remove('active')
     })
-    event.target.classList.add('active')
-
-    // Save preference
+    // Close picker after selection
+    const picker = document.getElementById('theme-picker')
+    if (picker) picker.classList.remove('show')
     localStorage.setItem('luloTheme', theme)
+
 }
 
 function loadSavedTheme() {
