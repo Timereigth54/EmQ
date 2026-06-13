@@ -1788,6 +1788,23 @@ function setTheme(theme) {
         scriptureInner.style.borderColor = t.border
     }
 
+    // Fix text colors for light themes
+    document.getElementById('scripture-text').style.color = t.text
+    document.getElementById('scripture-ref').style.color = t.accent
+    document.getElementById('another-btn').style.color = t.accent
+    document.getElementById('another-btn').style.borderColor = t.accent
+
+    // Fix chat bubble text
+    document.querySelectorAll('.chat-bubble-user').forEach(b => {
+        b.style.color = t.text
+    })
+    document.querySelectorAll('.chat-bubble-lulo').forEach(b => {
+        b.style.color = t.accent
+    })
+
+    // Fix input text
+    document.getElementById('lulo-input').style.color = t.text
+
     // Update chat bubbles dynamically
     const userBubbles = document.querySelectorAll('.chat-bubble-user')
     const luloBubbles = document.querySelectorAll('.chat-bubble-lulo')
