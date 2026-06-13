@@ -3285,53 +3285,6 @@ function setupRailSnap() {
             window._pendingChat = text
             const name = localStorage.getItem('luloUserName') || 'friend'
 
-            // PRAYER DETECTION - check first before anything else
-        const prayerKeywords = [
-            'pray with me', 'can you pray', 'please pray',
-            'say a prayer', 'prayer for me', 'pray for me',
-            'let\'s pray', 'lets pray', 'i need prayer',
-            'need a prayer', 'pray together'
-        ]
-
-        const isPrayerRequest = prayerKeywords.some(keyword => 
-            text.toLowerCase().includes(keyword)
-        )
-
-        // PRAISE DETECTION
-        const praiseKeywords = [
-            'hallelujah', 'halleluiah', 'hallelu',
-            'praise the lord', 'praise god', 'praise jesus',
-            'glory to god', 'glory to jesus', 'glory!',
-            'hosanna', 'blessed be', 'worthy is',
-            'thank you jesus', 'thank you lord', 'thank you god',
-            'god is good', 'he is good', 'god is faithful',
-            'he is faithful', 'god came through', 'god showed up',
-            'to god be the glory', 'all glory to god'
-        ]
-
-        // Handle repeated letters like "hallelujahhhh" or "gloryyyyy"
-        const normalizedText = text.toLowerCase().replace(/(.)\1+/g, '$1')
-        const isPraise = praiseKeywords.some(keyword =>
-            text.toLowerCase().includes(keyword) ||
-            normalizedText.includes(keyword)
-        )
-
-        if (isPraise) {
-            input.value = ''
-            showScripture('praise')
-            LuloSound.praise()
-            addToChatHistory('user', window._pendingChat)
-            window._pendingChat = null
-            return
-        }
-
-        if (isPrayerRequest) {
-            input.value = ''
-            await generatePrayer()
-            addToChatHistory('user', window._pendingChat)
-            window._pendingChat = null
-            return
-        }
 
             // THE MAKER'S SIGNATURE — hidden Easter egg
         const makerKeywords = [
@@ -3346,6 +3299,7 @@ function setupRailSnap() {
         )
 
         if (isMakerClaim) {
+            conversationHistory = [] // Clear Claude's memory — fresh slate
             const makerChallenge = localStorage.getItem('luloMakerVerified')
             
             if (makerChallenge === 'verified') {
@@ -3392,6 +3346,54 @@ function setupRailSnap() {
             input.value = ''
             addToChatHistory('lulo', `Hmm. That's not quite right. 😊 I'm sure my maker will find me someday.`)
             animateLulo('shake')
+            return
+        }
+
+            // PRAYER DETECTION - check first before anything else
+        const prayerKeywords = [
+            'pray with me', 'can you pray', 'please pray',
+            'say a prayer', 'prayer for me', 'pray for me',
+            'let\'s pray', 'lets pray', 'i need prayer',
+            'need a prayer', 'pray together'
+        ]
+
+        const isPrayerRequest = prayerKeywords.some(keyword => 
+            text.toLowerCase().includes(keyword)
+        )
+
+        // PRAISE DETECTION
+        const praiseKeywords = [
+            'hallelujah', 'halleluiah', 'hallelu',
+            'praise the lord', 'praise god', 'praise jesus',
+            'glory to god', 'glory to jesus', 'glory!',
+            'hosanna', 'blessed be', 'worthy is',
+            'thank you jesus', 'thank you lord', 'thank you god',
+            'god is good', 'he is good', 'god is faithful',
+            'he is faithful', 'god came through', 'god showed up',
+            'to god be the glory', 'all glory to god'
+        ]
+
+        // Handle repeated letters like "hallelujahhhh" or "gloryyyyy"
+        const normalizedText = text.toLowerCase().replace(/(.)\1+/g, '$1')
+        const isPraise = praiseKeywords.some(keyword =>
+            text.toLowerCase().includes(keyword) ||
+            normalizedText.includes(keyword)
+        )
+
+        if (isPraise) {
+            input.value = ''
+            showScripture('praise')
+            LuloSound.praise()
+            addToChatHistory('user', window._pendingChat)
+            window._pendingChat = null
+            return
+        }
+
+        if (isPrayerRequest) {
+            input.value = ''
+            await generatePrayer()
+            addToChatHistory('user', window._pendingChat)
+            window._pendingChat = null
             return
         }
             
