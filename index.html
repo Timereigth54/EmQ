@@ -1434,16 +1434,7 @@
         <div id="top-icons">
             <div class="top-icon" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</div>
             <div class="top-icon" onclick="showJournal()" title="My Journey">📔</div>
-            <div class="top-icon" id="theme-btn" onclick="const p=document.getElementById('theme-picker');p.style.display=p.style.display==='flex'?'none':'flex'" title="Themes">🎨
-                <div id="theme-picker">
-                    <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="event.stopPropagation();setTheme('dark')" title="Dark"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#fce4ec,#e3f2fd);" onclick="event.stopPropagation();setTheme('light')" title="Light"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#0d0d0d,#1a0a2e);" onclick="event.stopPropagation();setTheme('neon')" title="Neon"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#e8f5e9,#f3e5f5);" onclick="event.stopPropagation();setTheme('nature')" title="Nature"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#1a1a2e,#16213e);" onclick="event.stopPropagation();setTheme('space')" title="Space"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#fff8e1,#fce4ec);" onclick="event.stopPropagation();setTheme('sunrise')" title="Sunrise"></div>
-                </div>
-            </div>
+            <div class="top-icon" id="theme-btn" onclick="toggleThemePanel()" title="Themes">🎨</div>
             <div class="top-icon" onclick="showEmergencyKit()" title="Emergency">🆘</div>
         </div>
     </div>
@@ -1584,6 +1575,18 @@
 </div>
 </div>
 
+<div id="theme-panel" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:90%;max-width:380px;background:rgba(15,15,35,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:16px;z-index:9999;backdrop-filter:blur(20px);">
+    <p style="font-size:0.7rem;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;text-align:center;">Choose a theme</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <div class="theme-option" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="setTheme('dark');toggleThemePanel()" title="Dark"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#fce4ec,#e3f2fd);" onclick="setTheme('light');toggleThemePanel()" title="Light"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#0d0d0d,#1a0a2e);" onclick="setTheme('neon');toggleThemePanel()" title="Neon"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#e8f5e9,#f3e5f5);" onclick="setTheme('nature');toggleThemePanel()" title="Nature"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#1a1a2e,#16213e);" onclick="setTheme('space');toggleThemePanel()" title="Space"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#fff8e1,#fce4ec);" onclick="setTheme('sunrise');toggleThemePanel()" title="Sunrise"></div>
+    </div>
+</div>
+
 <!-- BOTTOM BAR -->
 <div id="bottom-bar" style="display:none;">
     <div id="input-row">
@@ -1640,6 +1643,12 @@ function toggleHistoryCard() {
         expanded.style.display = 'none'
         if (arrow) arrow.style.transform = 'rotate(0deg)'
     }
+}
+
+    function toggleThemePanel() {
+    const panel = document.getElementById('theme-panel')
+    if (!panel) return
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block'
 }
 
     function toggleThemePicker() {
