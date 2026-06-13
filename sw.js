@@ -1,4 +1,4 @@
-const CACHE = 'emq-v1'
+const CACHE = 'emq-v2'
 const ASSETS = [
     '/EmQ/',
     '/EmQ/index.html',
@@ -24,7 +24,13 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
     e.waitUntil(
-        caches.open(CACHE).then(cache => cache.addAll(ASSETS))
+        caches.open(CACHE).then(cache => {
+            return Promise.allSettled(
+                ASSETS.map(asset => cache.add(asset).catch(err => {
+                    console.log('Could not cache:', asset)
+                }))
+            )
+        })
     )
 })
 
