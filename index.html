@@ -1434,14 +1434,14 @@
         <div id="top-icons">
             <div class="top-icon" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</div>
             <div class="top-icon" onclick="showJournal()" title="My Journey">📔</div>
-            <div class="top-icon" id="theme-btn" onclick="toggleThemePicker()" title="Themes">🎨
+            <div class="top-icon" id="theme-btn" onclick="document.getElementById('theme-picker').classList.toggle('show')" title="Themes">🎨
                 <div id="theme-picker">
-                    <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="setTheme('dark')" title="Dark"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#fce4ec,#e3f2fd);" onclick="setTheme('light')" title="Light"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#0d0d0d,#1a0a2e);" onclick="setTheme('neon')" title="Neon"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#e8f5e9,#f3e5f5);" onclick="setTheme('nature')" title="Nature"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#1a1a2e,#16213e);" onclick="setTheme('space')" title="Space"></div>
-                    <div class="theme-option" style="background:linear-gradient(135deg,#fff8e1,#fce4ec);" onclick="setTheme('sunrise')" title="Sunrise"></div>
+                    <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="event.stopPropagation();setTheme('dark')" title="Dark"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#fce4ec,#e3f2fd);" onclick="event.stopPropagation();setTheme('light')" title="Light"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#0d0d0d,#1a0a2e);" onclick="event.stopPropagation();setTheme('neon')" title="Neon"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#e8f5e9,#f3e5f5);" onclick="event.stopPropagation();setTheme('nature')" title="Nature"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#1a1a2e,#16213e);" onclick="event.stopPropagation();setTheme('space')" title="Space"></div>
+                    <div class="theme-option" style="background:linear-gradient(135deg,#fff8e1,#fce4ec);" onclick="event.stopPropagation();setTheme('sunrise')" title="Sunrise"></div>
                 </div>
             </div>
             <div class="top-icon" onclick="showEmergencyKit()" title="Emergency">🆘</div>
