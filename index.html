@@ -1642,6 +1642,26 @@ function toggleHistoryCard() {
     }
 }
 
+    function toggleThemePicker() {
+    const picker = document.getElementById('theme-picker')
+    if (!picker) return
+    if (picker.classList.contains('show')) {
+        picker.classList.remove('show')
+    } else {
+        picker.classList.add('show')
+    }
+}
+
+// Close theme picker when clicking outside
+document.addEventListener('click', (e) => {
+    const picker = document.getElementById('theme-picker')
+    const btn = document.getElementById('theme-btn')
+    if (!picker) return
+    if (!btn.contains(e.target)) {
+        picker.classList.remove('show')
+    }
+})
+
 function setTheme(theme) {
     const root = document.body
 
