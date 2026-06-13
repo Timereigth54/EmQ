@@ -1044,85 +1044,119 @@
             #lulo-name { font-size: 1.2rem; }
         }
         /* CHAT THREAD */
-#chat-thread-container { width: 100%; margin-bottom: 15px; }
+        #chat-thread-container { width: 100%; margin-bottom: 15px; }
 
-#chat-toggle {
-    width: 100%;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.22);
-    padding: 9px 16px;
-    border-radius: 50px;
-    font-size: 0.7rem;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-#chat-toggle:hover {
-    border-color: rgba(0,212,255,0.2);
-    color: rgba(0,212,255,0.5);
-}
-#chat-toggle.open {
-    border-color: rgba(0,212,255,0.18);
-    color: rgba(0,212,255,0.5);
-}
+        #chat-toggle {
+            width: 100%;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.22);
+            padding: 9px 16px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        #chat-toggle:hover {
+            border-color: rgba(0,212,255,0.2);
+            color: rgba(0,212,255,0.5);
+        }
+        #chat-toggle.open {
+            border-color: rgba(0,212,255,0.18);
+            color: rgba(0,212,255,0.5);
+        }
 
-#chat-count-badge {
-    background: rgba(0,212,255,0.12);
-    border-radius: 10px;
-    padding: 1px 8px;
-    font-size: 0.62rem;
-    color: rgba(0,212,255,0.6);
-}
+        #chat-count-badge {
+            background: rgba(0,212,255,0.12);
+            border-radius: 10px;
+            padding: 1px 8px;
+            font-size: 0.62rem;
+            color: rgba(0,212,255,0.6);
+        }
 
-#chat-thread {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 260px;
-    overflow-y: auto;
-    padding: 2px 0 4px 0;
-}
+        #chat-thread {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding: 2px 0 4px 0;
+        }
 
-.chat-bubble-user {
-    align-self: flex-end;
-    max-width: 78%;
-    background: rgba(0,212,255,0.07);
-    border: 1px solid rgba(0,212,255,0.13);
-    border-radius: 16px 16px 4px 16px;
-    padding: 9px 13px;
-    font-size: 0.79rem;
-    color: rgba(255,255,255,0.65);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.55;
-}
+        .chat-bubble-user {
+            align-self: flex-end;
+            max-width: 78%;
+            background: rgba(0,212,255,0.07);
+            border: 1px solid rgba(0,212,255,0.13);
+            border-radius: 16px 16px 4px 16px;
+            padding: 9px 13px;
+            font-size: 0.79rem;
+            color: rgba(255,255,255,0.65);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.55;
+        }
 
-.chat-bubble-lulo {
-    align-self: flex-start;
-    max-width: 78%;
-    background: rgba(180,235,210,0.06);
-    border: 1px solid rgba(180,235,210,0.12);
-    border-radius: 16px 16px 16px 4px;
-    padding: 9px 13px;
-    font-size: 0.79rem;
-    color: rgba(100,255,200,0.85);
-    font-family: 'Inter', sans-serif;
-    line-height: 1.55;
-}
+        .chat-bubble-lulo {
+            align-self: flex-start;
+            max-width: 78%;
+            background: rgba(180,235,210,0.06);
+            border: 1px solid rgba(180,235,210,0.12);
+            border-radius: 16px 16px 16px 4px;
+            padding: 9px 13px;
+            font-size: 0.79rem;
+            color: rgba(100,255,200,0.85);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.55;
+        }
 
-.chat-meta {
-    font-size: 0.6rem;
-    color: rgba(255,255,255,0.16);
-    margin-top: 4px;
-}
-.chat-meta.lulo-meta { color: rgba(0,255,100,0.25); }
+        .chat-meta {
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.16);
+            margin-top: 4px;
+        }
+        .chat-meta.lulo-meta { color: rgba(0,255,100,0.25); }
+
+        /* TYPING INDICATOR */
+        #typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px 16px 16px 4px;
+            margin-bottom: 4px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(100,255,200,0.6);
+            animation: typingBounce 1.2s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
     </style>
 </head>
 <body>
@@ -1457,7 +1491,15 @@
             Our conversation
             <span id="chat-count-badge">0</span>
         </button>
-        <div id="chat-thread" style="display:none;"></div>
+        <div id="chat-thread" style="display:none;">
+            <div id="typing-indicator">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- UNIFIED RESPONSE CARD -->
@@ -2088,7 +2130,14 @@ function setupRailSnap() {
     const luloMsgSection = document.getElementById('lulo-message-section')
     const cardDivider = document.getElementById('card-divider')
 
-    const fallback = `I hear you, ${name}. 💙 Can you tell me a little more about how you're feeling? Or try clicking one of the emotions below.`
+    const fallbacks = [
+        `I love that ${name}! 😊 How are you feeling right now? Pick an emotion or just tell me.`,
+        `${name}, I hear you! Tell me more about how you're feeling today — or scroll the carousel and pick an emotion.`,
+        `That's wonderful ${name}! 🌱 Now tell me — how is your heart doing today?`,
+        `${name}! 😄 I'm still learning to have full conversations — that's coming soon! For now, tell me how you're feeling or pick an emotion below.`,
+        `I'm listening ${name}. My conversation brain is still growing 🌱 — but tell me how you're feeling and I'll find something for you.`,
+    ]
+    const fallback = fallbacks[Math.floor(Math.random() * fallbacks.length)]
     addToChatHistory('lulo', fallback)
     animateLulo('nod')
     updateLuloMood('peaceful')
@@ -3408,15 +3457,18 @@ function setupRailSnap() {
             }
 
             if (detectedMood) {
-                showScripture(detectedMood)
-            } else {
-                const name = localStorage.getItem('luloUserName') || 'friend'
-                document.getElementById('lulo-reaction').innerText = `I hear you, ${name}. 💙 Can you tell me a little more about how you're feeling? Or try clicking one of the emotions below.`
-                animateLulo('nod')
-            }
+            showScripture(detectedMood)
+        } else {
+            // Open thread and show typing indicator
+            if (!chatThreadOpen) toggleChatThread()
+            showTyping()
+            animateLulo('nod')
+            // Send to Claude
+            await luloThink(text)
+        }
 
             input.value = ''
-        }
+    }
 
         function luloRandomPromise() {
     const promiseVerses = [
@@ -3674,6 +3726,127 @@ function setupRailSnap() {
             renderFavourites()
         }
         
+        // TYPING INDICATOR
+        let typingTimeout = null
+
+        function showTyping() {
+            const indicator = document.getElementById('typing-indicator')
+            const thread = document.getElementById('chat-thread')
+            if (!indicator) return
+            indicator.style.display = 'block'
+            if (thread) thread.scrollTop = thread.scrollHeight
+
+            // The human pause effect — disappears briefly then comes back
+            typingTimeout = setTimeout(() => {
+                indicator.style.display = 'none'
+                setTimeout(() => {
+                    indicator.style.display = 'block'
+                    if (thread) thread.scrollTop = thread.scrollHeight
+                }, 400)
+            }, 1500)
+        }
+
+        function hideTyping() {
+            const indicator = document.getElementById('typing-indicator')
+            if (indicator) indicator.style.display = 'none'
+            clearTimeout(typingTimeout)
+        }
+
+        // LULO BRAIN — Claude conversation layer
+        async function luloThink(userText) {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const mood = currentMood || localStorage.getItem('luloLastMood') || ''
+            const lastMood = localStorage.getItem('luloLastMood') || ''
+            const lastRef = localStorage.getItem('luloLastRef') || ''
+
+            // Emotion detection for scripture decision
+            const emotionalKeywords = [
+                'feel', 'feeling', 'felt', 'sad', 'happy', 'angry', 'tired',
+                'lonely', 'scared', 'afraid', 'anxious', 'worried', 'depressed',
+                'heartbroken', 'overwhelmed', 'confused', 'empty', 'lost',
+                'stressed', 'hurt', 'broken', 'crying', 'hopeless', 'hopeful',
+                'grateful', 'blessed', 'excited', 'peaceful', 'joyful',
+                'struggling', 'suffering', 'pain', 'grief', 'mourning',
+                'frustrated', 'disappointed', 'rejected', 'alone', 'numb'
+            ]
+
+            const isEmotional = emotionalKeywords.some(k => 
+                userText.toLowerCase().includes(k)
+            ) || mood !== ''
+
+            // Weather detection
+            const isWeather = userText.toLowerCase().includes('weather') || 
+                            userText.toLowerCase().includes('temperature') ||
+                            userText.toLowerCase().includes('outside') ||
+                            userText.toLowerCase().includes('raining') ||
+                            userText.toLowerCase().includes('sunny')
+
+            const weatherResponses = [
+                `The weather is always warm and fuzzy in the presence of Abba! 😄 I don't have access to live weather data, but I know the Son is always shining.`,
+                `I wish I could check! My weather app is just Psalm 23 — He leads me beside still waters. 😄 Try your phone's weather app for the real forecast!`,
+                `Outside I can't tell you, but inside Em_Q it's always the perfect temperature. 🌱 Check your weather app and maybe grab a hot drink while you're at it!`,
+                `I'm a pocket companion, not a meteorologist! 😄 But whatever the weather outside, God's presence is always warm. Check your phone's weather for the real answer!`,
+            ]
+
+            if (isWeather) {
+                const response = weatherResponses[Math.floor(Math.random() * weatherResponses.length)]
+                hideTyping()
+                addToChatHistory('lulo', response)
+                return
+            }
+
+            const systemPrompt = `You are Lulo, a warm and caring AI companion inside Em_Q, a faith-based emotional support app. You were named after Tolulope, the developer's wife.
+
+        YOUR PERSONALITY:
+        You speak simply and naturally. Never preachy or formal. You use ${name}'s name naturally but not on every message. You care deeply but are never dramatic. You are honest about what you can and cannot do. You occasionally use 💙 but sparingly. You never use em dashes or bullet points. You keep responses short — 2 to 4 sentences maximum unless the person genuinely needs more. You are allowed to be funny and cheeky but never derogatory. Always warm and sweet.
+
+        YOUR FAITH:
+        You are rooted in Christian faith. ${isEmotional ? 'The user is showing emotion — gently weave in ONE short scripture reference naturally, not forced.' : 'The user is just chatting — respond warmly and naturally WITHOUT scripture unless it comes up organically.'} You believe God loves people deeply and is never angry at them. You point people to God gently, never pushy.
+
+        IF SOMEONE IS RUDE OR USES OFFENSIVE WORDS:
+        Never correct them. Just respond warmly as a companion would. Listen between the lines. Help them feel seen.
+
+        YOUR BOUNDARIES:
+        You never give medical, legal or financial advice. You never tell people what to do in major life decisions. For crisis situations always direct to professional help. You never replace the Bible — you point people toward it.
+
+        CONTEXT:
+        User's name: ${name}
+        Current emotion: ${mood || 'not selected yet'}
+        Last emotion: ${lastMood || 'none'}
+        Last scripture shared: ${lastRef || 'none'}
+
+        Keep your response under 4 sentences. Sound like a real friend, not an AI assistant.`
+
+            try {
+                const response = await fetch('https://em1-prayer.kayuso2011.workers.dev', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system: systemPrompt,
+                        messages: [{ role: 'user', content: userText }]
+                    })
+                })
+
+                const data = await response.json()
+
+                if (data.content && data.content[0]) {
+                    hideTyping()
+                    addToChatHistory('lulo', data.content[0].text)
+                } else {
+                    throw new Error('No response')
+                }
+
+            } catch (err) {
+                hideTyping()
+                const fallbacks = [
+                    `I'm here ${name}! My thinking brain went quiet for a second — tell me how you're feeling and I'll find something for you. 💙`,
+                    `${name}, something interrupted my thoughts! 😄 Try again — I'm listening.`,
+                    `I almost had the perfect response ${name}! Give me another chance. 🌱`,
+                ]
+                addToChatHistory('lulo', fallbacks[Math.floor(Math.random() * fallbacks.length)])
+    }
+}
+        
         async function generatePrayer() {
             const name = localStorage.getItem('luloUserName') || 'friend'
             const lastMood = localStorage.getItem('luloLastMood') || null
@@ -3740,25 +3913,25 @@ function setupRailSnap() {
             // Build the prompt for Claude
             const prompt = `You are Lulo, a warm and caring AI companion in the Em_Q app. 
             
-${name} has asked you to pray with them. Here is the context: ${prayerContext}
+            ${name} has asked you to pray with them. Here is the context: ${prayerContext}
 
-Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this style:
-- Address God warmly as "Father" or "Our Father"
-- Mention ${name} by name
-- Reference their current emotional state naturally
-- If they've been struggling for a while, acknowledge that gently
-- Include ONE brief scripture reference (just book and verse, not the full text)
-- End with a faith declaration based on a prayer promise verse (like Mark 11:24, Matthew 7:7, John 16:24, or similar)
-- Close with "In Jesus' name, Amen."
-- Keep it friendly, warm and conversational — like a friend praying with them
-- If the emotion is positive, make it a prayer of thanksgiving and celebration
-- Do NOT be preachy or formal
-- Do NOT use flowery religious language
-- Maximum 5 sentences total
-- Do NOT use any dashes of any kind — no em dashes, no hyphens as pauses, no bullet points
-- Write as pure flowing natural prose only
-- Instead of dashes use commas or rewrite the sentence naturally
-- No formatting of any kind whatsoever`
+            Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this style:
+            - Address God warmly as "Father" or "Our Father"
+            - Mention ${name} by name
+            - Reference their current emotional state naturally
+            - If they've been struggling for a while, acknowledge that gently
+            - Include ONE brief scripture reference (just book and verse, not the full text)
+            - End with a faith declaration based on a prayer promise verse (like Mark 11:24, Matthew 7:7, John 16:24, or similar)
+            - Close with "In Jesus' name, Amen."
+            - Keep it friendly, warm and conversational — like a friend praying with them
+            - If the emotion is positive, make it a prayer of thanksgiving and celebration
+            - Do NOT be preachy or formal
+            - Do NOT use flowery religious language
+            - Maximum 5 sentences total
+            - Do NOT use any dashes of any kind — no em dashes, no hyphens as pauses, no bullet points
+            - Write as pure flowing natural prose only
+            - Instead of dashes use commas or rewrite the sentence naturally
+            - No formatting of any kind whatsoever`
 
             try {
                 const response = await fetch('https://em1-prayer.kayuso2011.workers.dev', {
@@ -3767,6 +3940,7 @@ Write a short, heartfelt, conversational prayer (3-5 sentences maximum) in this 
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    model: 'claude-sonnet-4-6',
                     system: `You are Lulo, a warm and caring AI companion in the Em_Q app.`,
                     messages: [
                         {
