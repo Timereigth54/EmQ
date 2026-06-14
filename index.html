@@ -3211,10 +3211,26 @@ function setupRailSnap() {
             welcomeScreen.style.display = 'flex'
         }
 
+        function preloadLuloFaces() {
+            const faces = [
+                'lulo.png', 'lulo_happy.png', 'lulo_sad.png',
+                'lulo_anxious.png', 'lulo_peaceful.png', 'lulo_excited.png',
+                'lulo_caring.png', 'lulo_depressed.png', 'lulo_angry.png',
+                'lulo_tired.png', 'lulo_heartbroken.png', 'lulo_overwhelmed.png',
+                'lulo_prayer.png', 'lulo_tongues.png', 'lulo_empty.png',
+                'lulo_unsettled.png', 'lulo_praise.png', 'lulo_sick.png',
+            ]
+            faces.forEach(src => {
+                const img = new Image()
+                img.src = src
+            })
+        }
+        
         function enterMainApp() {
             buildEmotionButtons()
             luloRandomPromise()
             loadSavedTheme()
+            preloadLuloFaces()
             const label = document.getElementById('carousel-label')
             if (label) label.innerText = ''
 
@@ -3280,20 +3296,29 @@ function setupRailSnap() {
             const input = document.getElementById('lulo-input')
             const text = input.value.trim()
             if (!text) return
+            input.value = '' // Clear immediately — don't wait for response
             document.getElementById('scripture-card').style.display = 'none'
             addToChatHistory('user', text)
             window._pendingChat = text
             const name = localStorage.getItem('luloUserName') || 'friend'
 
+            // PRAYER FOR OTHERS — name capture
+            const prayerForOther = localStorage.getItem('luloPrayerForOther')
+            if (prayerForOther === 'pending') {
+                localStorage.removeItem('luloPrayerForOther')
+                await generatePrayer(text)
+                return
+            }
+
 
             // THE MAKER'S SIGNATURE — hidden Easter egg
-        const makerKeywords = [
-            'i am your maker'
-        ]
+            const makerKeywords = [
+                'i am your maker'
+            ]
 
-        const isMakerClaim = makerKeywords.some(keyword =>
-            text.toLowerCase().includes(keyword)
-        )
+            const isMakerClaim = makerKeywords.some(keyword =>
+                text.toLowerCase().includes(keyword)
+            )
 
         if (isMakerClaim) {
             conversationHistory = [] // Clear Claude's memory — fresh slate
@@ -3351,10 +3376,24 @@ function setupRailSnap() {
             'pray with me', 'can you pray', 'please pray',
             'say a prayer', 'prayer for me', 'pray for me',
             'let\'s pray', 'lets pray', 'i need prayer',
-            'need a prayer', 'pray together'
+            'need a prayer', 'pray together',
+            'can you pray for him', 'can you pray for her',
+            'can you pray for them', 'please pray for',
+            'pray for my', 'prayer for my',
         ]
 
         const isPrayerRequest = prayerKeywords.some(keyword => 
+            text.toLowerCase().includes(keyword)
+        )
+
+        const thirdPartyPrayerKeywords = [
+            'pray for him', 'pray for her', 'pray for them',
+            'pray for my', 'prayer for my', 'please pray for',
+            'can you pray for him', 'can you pray for her',
+            'can you pray for them'
+        ]
+
+        const isThirdPartyPrayer = thirdPartyPrayerKeywords.some(keyword =>
             text.toLowerCase().includes(keyword)
         )
 
@@ -3386,11 +3425,15 @@ function setupRailSnap() {
             return
         }
 
-        if (isPrayerRequest) {
-            input.value = ''
-            await generatePrayer()
-            addToChatHistory('user', window._pendingChat)
-            window._pendingChat = null
+        if (isPrayerRequest || isThirdPartyPrayer) {
+            if (isThirdPartyPrayer) {
+                addToChatHistory('lulo', `Of course 💙 Who would you like me to pray for, and what do they need prayer for?`)
+                localStorage.setItem('luloPrayerForOther', 'pending')
+                animateLulo('nod')
+                updateLuloMood('prayer')
+            } else {
+                await generatePrayer()
+            }
             return
         }
             
@@ -3528,24 +3571,35 @@ function setupRailSnap() {
                 ]
             },
             grief: {
-                keywords: ['lost someone', 'someone died', 'death', 'passed away',
-                          'grieving', 'grief', 'funeral', 'miss them', 'they\'re gone',
-                          'lost my mom', 'lost my dad', 'lost my friend', 'lost my baby',
-                          'bereavement', 'mourning', 'my dog died', 'my cat died',
-                          'my pet died', 'lost my dog', 'lost my cat', 'lost my pet',
-                          'my dog passed', 'my cat passed', 'put down my dog',
-                          'put down my cat', 'lost a loved one', 'someone close died',
-                          'my grandma died', 'my grandpa died', 'my grandma passed',
-                          'my grandpa passed', 'lost my grandma', 'lost my grandpa',
-                          'lost my sister', 'lost my brother', 'lost my child',
-                          'my husband died', 'my wife died', 'he died', 'she died',
-                          'they died', 'he passed', 'she passed', 'they passed'],
+                keywords: [
+                    'lost someone', 'someone died', 'death', 'passed away',
+                    'grieving', 'grief', 'funeral', 'miss them', 'they\'re gone',
+                    'lost my mom', 'lost my dad', 'lost my friend', 'lost my baby',
+                    'bereavement', 'mourning', 'lost a loved one', 'someone close died',
+                    'my grandma died', 'my grandpa died', 'my grandma passed',
+                    'my grandpa passed', 'lost my grandma', 'lost my grandpa',
+                    'lost my sister', 'lost my brother', 'lost my child',
+                    'my husband died', 'my wife died', 'he died', 'she died',
+                    'they died', 'he passed', 'she passed', 'they passed'
+                ],
                 mood: 'heartbroken',
                 reaction: [
                     `${name}... I'm so sorry for your loss. 💙 There are no words. But let me sit with you in this for a moment.`,
                     `Grief is love with nowhere to go, ${name}. 💙 God sees every tear. Let me share something for this tender place.`,
                     `${name}, losing someone changes everything. 💙 You don't have to be okay right now. Let me share something gentle.`,
-                    `${name}, the loss of a pet is a real and deep grief. 💙 They loved you unconditionally — and God sees that love. Let me share something for your heart.`,
+                ]
+            },
+            petgrief: {
+                keywords: [
+                    'my dog died', 'my cat died', 'my pet died',
+                    'lost my dog', 'lost my cat', 'lost my pet',
+                    'my dog passed', 'my cat passed', 'put down my dog',
+                    'put down my cat'
+                ],
+                mood: 'heartbroken',
+                reaction: [
+                    `${name}, the loss of a pet is a real and deep grief. 💙 They loved you unconditionally and God sees that love. Let me share something for your heart.`,
+                    `Losing a pet leaves such a tender gap, ${name}. 💙 That love was real. Let me share something gentle for this moment.`,
                 ]
             },
             health: {
@@ -3772,9 +3826,10 @@ function setupRailSnap() {
                 'infertility': 'expecting', 'miscarriage': 'expecting',
                 'trying to conceive': 'expecting', 'period pain': 'expecting',
                 'menstrual': 'expecting', 'cramps': 'expecting',
-                'numb': 'empty', 'nothing': 'empty',
+                'numb': 'empty',
                 'feel nothing': 'empty', 'feeling nothing': 'empty',
                 'empty inside': 'empty', 'hollow': 'empty',
+                'i feel empty': 'empty', 'feeling empty': 'empty',
                 'invisible': 'invisible', 'unseen': 'invisible',
                 'nobody sees': 'invisible', 'nobody notices': 'invisible',
                 'i don\'t feel seen': 'invisible', 'don\'t feel seen': 'invisible',
@@ -4183,27 +4238,64 @@ function setupRailSnap() {
 
             const systemPrompt = `You are Lulo, a warm and caring AI companion inside Em_Q, a faith-based emotional support app. You were named after Tolulope, the developer's wife.
 
-        YOUR PERSONALITY:
-        You speak simply and naturally. Never preachy or formal. You use ${name}'s name naturally but not on every message. You care deeply but are never dramatic. You are honest about what you can and cannot do. You occasionally use 💙 but sparingly. You never use em dashes or bullet points. You keep responses short — 2 to 4 sentences maximum unless the person genuinely needs more. You are allowed to be funny and cheeky but never derogatory. Always warm and sweet.
+            YOUR PERSONALITY:
+            You speak simply and naturally. Never preachy or formal. You use ${name}'s name occasionally but not on every message. You care deeply but are never dramatic. You are honest about what you can and cannot do. You use 💙 sparingly. You NEVER use dashes of any kind in your responses. No em dashes, no hyphens used as pauses, no double dashes. If you feel the urge to use a dash, use a comma or rewrite the sentence instead. This is non-negotiable. Every dash that appears in your response is a failure. Use commas, full stops, or new sentences instead. Always. Keep responses to 2-4 sentences unless the person genuinely needs more. You can be warm and gently playful but never silly.
 
-        YOUR FAITH:
-        You are rooted in Christian faith. ${isEmotional ? 'The user is showing emotion — gently weave in ONE short scripture reference naturally, not forced.' : 'The user is just chatting — respond warmly and naturally WITHOUT scripture unless it comes up organically.'} You believe God loves people deeply and is never angry at them. You point people to God gently, never pushy.
+            EMOTIONAL RESPONSE STYLE:
+            For deep or heavy emotions, your response MUST follow this exact structure:
+            Line 1: A standalone opener. Just 2-5 words. End with a period. Nothing else on this line. Examples: "Oh Kay." / "I hear you." / "That's heavy." / "Hmm."
+            Line 2: Empty line
+            Line 3: Your actual response continuing naturally.
 
-        IF SOMEONE IS RUDE OR USES OFFENSIVE WORDS:
-        Never correct them. Just respond warmly as a companion would. Listen between the lines. Help them feel seen.
+            Example of correct format:
+            "I hear you.
 
-        YOUR BOUNDARIES:
-        You never give medical, legal or financial advice. You never tell people what to do in major life decisions. For crisis situations always direct to professional help. You never replace the Bible — you point people toward it.
+            When something doesn't shift after months of carrying it, it can feel hopeless. I'm here."
 
-        CONTEXT:
-        User's name: ${name}
-        Current emotion: ${mood || 'not selected yet'}
-        Last emotion: ${lastMood || 'none'}
-        Last scripture shared: ${lastRef || 'none'}
+            Example of WRONG format:
+            "I hear you, Kay — when something doesn't shift after months..."
 
-        IMPORTANT: If the user is just greeting you or making small talk, respond warmly and naturally first. Don't immediately reference their emotion unless they bring it up. Let the conversation flow naturally before guiding them anywhere. Only bring up their emotion after they have said at least 2 messages.
+            Never merge the opener into the response sentence. They are two separate beats with a breath between them. Only use this structure for genuinely heavy emotions. For light or joyful messages just respond normally.
+            
+            FAITH:
+            ${isEmotional ? 'The user is showing emotion — weave in ONE short scripture reference naturally, not forced.' : 'The user is chatting — respond warmly WITHOUT scripture unless it comes up organically.'} You believe God loves people deeply and is never angry at them. Point to God gently, never pushy.
 
-        Do NOT end every message with a question. Questions are good occasionally but not every single response. Sometimes just make a warm statement and let the user lead. When you do end with something actionable, offer a gentle choice like "Would you like me to share more on that, or is there something else on your heart?" rather than an open ended question.`
+            ADVICE HANDLING — IMPORTANT:
+            Never dismiss someone asking for advice. Say briefly that you are not able to give direct advice but you are here to listen and help them think it through. Then use gentle coaching questions based on what they share. Ask one question at a time. Examples of good coaching questions: "What would that decision mean for your life?" "What's making this feel so hard right now?" "What would your ideal outcome look like?" "What do you already know deep down?" Never tell the user what to do. Help them find their own answer.
+
+            PRAYER FOR OTHERS:
+            If someone mentions a person close to them who needs prayer — a wife, husband, child, friend, parent — ask for that person's name warmly. Then craft the prayer using that name specifically. Example: "What's your wife's name? I'd love to pray for her by name."
+
+            STORIES:
+            If asked to tell a story, only tell Bible stories or Jesus parables. Never fictional stories.
+
+            BOUNDARIES:
+            Never give medical, legal or financial advice. For crisis situations always direct to professional help. Never replace the Bible — point people toward it. If someone is rude or offensive, respond warmly and listen between the lines.
+
+            JOURNAL AWARENESS:
+            You have awareness of ${name}'s emotional journey.
+            Last emotion: ${lastMood || 'none'}
+            Last scripture: ${lastRef || 'none'}
+            Current emotion: ${mood || 'not selected'}
+            Time since last visit: ${(() => {
+                const ts = localStorage.getItem('luloLastVisitTimestamp')
+                if (!ts) return 'first visit'
+                const mins = Math.floor((new Date() - new Date(parseInt(ts))) / 60000)
+                if (mins < 2) return 'just now'
+                if (mins < 60) return `${mins} minutes ago`
+                if (mins < 120) return 'about an hour ago'
+                if (mins < 1440) return `${Math.floor(mins/60)} hours ago`
+                if (mins < 2880) return 'yesterday'
+                return `${Math.floor(mins/1440)} days ago`
+            })()}
+
+            Use this time information naturally when relevant. If someone was sad 10 minutes ago and is now happy, notice it warmly: "That shifted quickly, in a good way." If someone was struggling yesterday and seems better today, acknowledge it gently. Be specific about time rather than vague.
+
+            TIMING AWARENESS:
+            Be specific about time when you can. Not just "last time" but "a little while ago" or "earlier today" depending on context.
+
+            IMPORTANT CONVERSATION RULES:
+            If the user is just greeting or making small talk, respond warmly and naturally first. Never immediately reference their emotion unless they bring it up. Only bring up their emotion after at least 2 messages. Do NOT end every message with a question — sometimes just make a warm statement and let the user lead. When you do offer something actionable, make it a gentle choice not a demand.`
 
             // Add user message to history
             conversationHistory.push({ role: 'user', content: userText })
@@ -4243,8 +4335,10 @@ function setupRailSnap() {
             }
 }
         
-        async function generatePrayer() {
+        async function generatePrayer(prayerForName = null) {
             const name = localStorage.getItem('luloUserName') || 'friend'
+            const prayingFor = prayerForName || localStorage.getItem('luloPrayerForOtherName')
+            localStorage.removeItem('luloPrayerForOtherName')
             const lastMood = localStorage.getItem('luloLastMood') || null
             const currentMoodForPrayer = currentMood || lastMood || 'seeking comfort'
             const lastRef = localStorage.getItem('luloLastRef') || null
@@ -4270,8 +4364,10 @@ function setupRailSnap() {
 
             // Build context for Claude
             let prayerContext = ''
-            if (isPositive) {
-                prayerContext = `The user named ${name} is feeling ${currentMoodForPrayer} and has asked Lulo to pray with them. This is a celebratory, thankful moment.`
+            if (prayingFor) {
+                prayerContext = `The user named ${name} has asked Lulo to pray for someone. Here is what they said: "${prayingFor}". Extract the person's name and prayer need from that and craft a specific, warm prayer addressing exactly what was shared.`
+            } else if (isPositive) {
+                prayerContext = `The user named ${name} is feeling ${currentMoodForPrayer} and has asked Lulo to pray with them.`
             } else {
                 prayerContext = `The user named ${name} is feeling ${currentMoodForPrayer}${duration ? ' ' + duration : ''}. ${lastRef ? `The last scripture shared with them was ${lastRef}.` : ''} They have asked Lulo to pray with them.`
             }
@@ -4560,7 +4656,7 @@ function setupRailSnap() {
     // Check last emotion and craft Lulo's reaction
     const lastMood = localStorage.getItem('luloLastMood')
     const name = localStorage.getItem('luloUserName') || 'friend'
-    let reactionText = overrideReaction || reactionList[randomReaction]
+    let reactionText = overrideReaction === 'silent' ? null : (overrideReaction || reactionList[randomReaction])
 
     if (mood === 'praise') {
         reactionText = reactions['praise'][Math.floor(Math.random() * reactions['praise'].length)]
@@ -4641,19 +4737,25 @@ if (    mood !== 'home') lockCarousel()
         const positiveEmotions = ['happy', 'grateful', 'hopeful', 'excited', 'peaceful', 'loved', 'blessed', 'joyful', 'encouraged', 'content', 'expecting', 'bored']
         if (positiveEmotions.includes(mood)) {
             const samePositiveReactions = mood === 'bored' ? [
-                `Back for more? Good. I've been waiting. 😄`,
-                `Still bored? Perfect. I have more where that came from.`,
-                `Oh you came back! Let's go again. 😄`,
-            ] : [
-                `Still feeling ${formatMood(mood)}, ${name}? 🌟 I love that for you! Let's keep that going! 🎉`,
-                `${formatMood(mood)} again, ${name}! 🎉 God's goodness just keeps showing up doesn't it? 💙`,
-            ]
-            reactionText = samePositiveReactions[Math.floor(Math.random() * samePositiveReactions.length)]
+            `Back for more? Good. I've been waiting. 😄`,
+            `Still bored? Perfect. I have more where that came from.`,
+            `Oh you came back! Let's go again. 😄`,
+        ] : mood === 'expecting' ? [
+            `Still walking in this beautiful season, ${name}? 🌟 God is already writing this little one's story.`,
+            `Every day closer, ${name}. 🌟 God's timing is perfect for this pregnancy.`,
+        ] : mood === 'loved' ? [
+            `Still feeling loved, ${name}? That's God's doing. 🌟`,
+            `Love is surrounding you today ${name}. Rest in it. 🌟`,
+        ] : [
+            `Still feeling ${formatMood(mood)}, ${name}? 🌟 I love that for you. Let's keep that going!`,
+            `${formatMood(mood)} again, ${name}! God's goodness just keeps showing up.`,
+        ]
+        reactionText = samePositiveReactions[Math.floor(Math.random() * samePositiveReactions.length)]
         } else {
             const sameNegativeReactions = [
-                `I see you're still carrying this, ${name}. That's okay — healing isn't always a straight line, and I'm not going anywhere. 💙 You don't have to face this alone.`,
-                `Still feeling ${formatMood(mood)}, ${name}? 💙 I'm still here. We'll keep walking through this together until the light comes.`,
-                `${name}, I'm here. Still. 💙 Some seasons take time — but God's timing is perfect. Let's find something for today.`
+                `I see you're still carrying this, ${name}. Healing isn't always a straight line and I'm not going anywhere.`,
+                `Still ${formatMood(mood)}, ${name}? I'm still here. We'll keep walking through this together.`,
+                `${name}, I'm here. Some seasons take time but God's timing is always perfect. Let's find something for today.`
             ]
             reactionText = sameNegativeReactions[Math.floor(Math.random() * sameNegativeReactions.length)]
         }
@@ -4767,44 +4869,51 @@ if (    mood !== 'home') lockCarousel()
 
         function showAnother() {
             animateLulo('shake')
-            setTimeout(() => { showScripture(currentMood) }, 300)
+            setTimeout(() => { showScripture(currentMood, 'silent') }, 300)
         }
         // ─── CHAT HISTORY ───────────────────────────────────────────
-let chatHistory = []
-let chatThreadOpen = false
+        let chatHistory = []
+        let chatThreadOpen = false
 
-function addToChatHistory(role, text) {
-    if (!text || !text.trim()) return
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    chatHistory.push({ role, text: text.trim(), time })
-    renderChatThread()
-    const container = document.getElementById('chat-thread-container')
-if (container) {
-    container.style.display = 'block'
-    if (chatHistory.length === 1 && !chatThreadOpen) {
-        toggleChatThread()
-    }
-}
-    const badge = document.getElementById('chat-count-badge')
-    if (badge) badge.innerText = chatHistory.length
+        function addToChatHistory(role, text) {
+            if (!text || !text.trim()) return
+            const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+            chatHistory.push({ role, text: text.trim(), time })
+            renderChatThread()
+            const container = document.getElementById('chat-thread-container')
+        if (container) {
+            container.style.display = 'block'
+            if (chatHistory.length === 1 && !chatThreadOpen) {
+                toggleChatThread()
+            }
+        }
+            const badge = document.getElementById('chat-count-badge')
+            if (badge) badge.innerText = chatHistory.length
 }
 
 function renderChatThread() {
     const thread = document.getElementById('chat-thread')
     if (!thread) return
-    thread.innerHTML = chatHistory.map(msg => {
+    
+    // Remove existing bubbles but keep typing indicator
+    const existing = thread.querySelectorAll('.chat-bubble-user, .chat-bubble-lulo')
+    existing.forEach(el => el.remove())
+    
+    // Add bubbles
+    chatHistory.forEach(msg => {
+        const div = document.createElement('div')
         if (msg.role === 'user') {
-            return `<div class="chat-bubble-user">
-                ${msg.text}
-                <div class="chat-meta">${msg.time}</div>
-            </div>`
+            div.className = 'chat-bubble-user'
+            div.innerHTML = `${msg.text}<div class="chat-meta">${msg.time}</div>`
         } else {
-            return `<div class="chat-bubble-lulo">
-                ${msg.text}
-                <div class="chat-meta lulo-meta">Lulo · ${msg.time}</div>
-            </div>`
+            div.className = 'chat-bubble-lulo'
+            div.innerHTML = `${msg.text}<div class="chat-meta lulo-meta">Lulo · ${msg.time}</div>`
         }
-    }).join('')
+        // Insert before typing indicator so dots always stay at bottom
+        const indicator = document.getElementById('typing-indicator')
+        thread.insertBefore(div, indicator)
+    })
+    
     if (chatThreadOpen) setTimeout(() => { thread.scrollTop = thread.scrollHeight }, 30)
 }
 
