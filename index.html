@@ -459,28 +459,6 @@
             overflow: hidden;
         }
 
-        #scripture-text {
-            font-size: 1.05rem;
-            line-height: 1.9;
-            color: rgba(255,255,255,0.95);
-            text-align: center;
-            margin-bottom: 10px;
-            white-space: pre-line;
-            position: relative;
-            z-index: 1;
-            font-weight: 300;
-            letter-spacing: 0.3px;
-        }
-
-        #scripture-ref {
-            font-size: 0.78rem;
-            color: rgba(0,255,100,0.7);
-            text-align: center;
-            font-weight: 600;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-        }
-
         #scripture-inner::before {
             content: '\201C';
             position: absolute;
@@ -1934,6 +1912,37 @@ function setTheme(theme) {
         }
         .emotion-btn.active .label { color: ${t.emotionLabelActive} !important; }
         body { background: ${t.bg} !important; color: ${t.text} !important; }
+
+        /* SHARE BUTTON */
+        .scripture-action-btn {
+            color: ${t.accent} !important;
+            border-color: ${t.accent} !important;
+            opacity: 1 !important;
+        }
+
+        /* CHAT TIMESTAMPS */
+        .chat-meta {
+            color: ${isLight ? 'rgba(61,53,80,0.5)' : 'rgba(255,255,255,0.25)'} !important;
+        }
+        .lulo-meta {
+            color: ${isLight ? 'rgba(61,53,80,0.4)' : 'rgba(100,255,200,0.3)'} !important;
+        }
+
+        /* LULO BUBBLE FONT — thicker in light theme */
+        .chat-bubble-lulo {
+            font-weight: ${isLight ? '500' : '400'} !important;
+            font-size: ${isLight ? '0.82rem' : '0.79rem'} !important;
+        }
+
+        /* SCRIPTURE CARD TEXT */
+        #scripture-text {
+            font-weight: ${isLight ? '500' : '300'} !important;
+        }
+
+        #scripture-inner {
+            background: ${isLight ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.04)'} !important;
+            border-color: ${isLight ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.08)'} !important;
+        }
     `
     document.head.appendChild(style)
 
@@ -2271,6 +2280,7 @@ function setupRailSnap() {
                 mood: mood,
                 ref: ref,
                 preview: preview,
+                verseText: document.getElementById('scripture-text')?.innerText || '',
                 date: new Date().toLocaleDateString('en-US', { 
                     weekday: 'short', month: 'short', day: 'numeric' 
                 }),
@@ -2352,6 +2362,29 @@ function setupRailSnap() {
             }
         }
 
+        function buildEmotionalSummaryForLulo() {
+            const entries = getJournalEntries()
+            if (entries.length === 0) return 'No emotional history yet.'
+
+            const recent = entries.slice(0, 10)
+            const now = new Date().getTime()
+
+            const summary = recent.map(e => {
+                const mins = Math.floor((now - e.timestamp) / 60000)
+                let timeAgo = ''
+                if (mins < 2) timeAgo = 'just now'
+                else if (mins < 60) timeAgo = `${mins} minutes ago`
+                else if (mins < 120) timeAgo = 'about an hour ago'
+                else if (mins < 1440) timeAgo = `${Math.floor(mins / 60)} hours ago`
+                else if (mins < 2880) timeAgo = 'yesterday'
+                else timeAgo = `${Math.floor(mins / 1440)} days ago`
+
+                return `${timeAgo}: ${e.mood}${e.ref ? ' (scripture: ' + e.ref + ')' : ''}`
+            }).join('\n')
+
+            return summary
+        }
+                
         function getMoodEmoji(mood) {
             const moodEmojis = {
                 happy: '😊', joyful: '😄', excited: '🤩', peaceful: '😌',
@@ -2407,15 +2440,23 @@ function setupRailSnap() {
             if (entries.length === 0) {
                 entriesHTML = `<p style="color: #a0c4d8; text-align: center; font-size: 0.9rem; padding: 20px;">Your journey starts the moment you click your first emotion. 💙</p>`
             } else {
-                entriesHTML = entries.slice(0, 30).map(entry => `
-                    <div style="background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15); border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px;">
-                        <div style="font-size: 1.8rem; flex-shrink: 0;">${getMoodEmoji(entry.mood)}</div>
-                        <div style="flex: 1;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <span style="color: #00d4ff; font-size: 0.85rem; font-weight: 500; text-transform: capitalize;">${entry.mood === 'prayer' ? 'Prayer' : entry.mood}</span>
-                                <span style="color: #a0c4d8; font-size: 0.75rem;">${entry.date} · ${entry.time}</span>
+                entriesHTML = entries.slice(0, 30).map((entry, i) => `
+                    <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:15px;padding:15px;margin-bottom:10px;cursor:pointer;" 
+                        onclick="toggleJournalEntry(${i})">
+                        <div style="display:flex;align-items:flex-start;gap:12px;">
+                            <div style="font-size:1.8rem;flex-shrink:0;">${getMoodEmoji(entry.mood)}</div>
+                            <div style="flex:1;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                    <span style="color:#00d4ff;font-size:0.85rem;font-weight:500;text-transform:capitalize;">${entry.mood === 'prayer' ? 'Prayer' : entry.mood}</span>
+                                    <span style="color:#a0c4d8;font-size:0.75rem;">${entry.date} · ${entry.time}</span>
+                                </div>
+                                <div style="color:#e0f4ff;font-size:0.8rem;opacity:0.8;">${entry.ref}</div>
                             </div>
-                            <div style="color: #e0f4ff; font-size: 0.8rem; opacity: 0.8;">${entry.ref}</div>
+                            <div style="color:rgba(255,255,255,0.2);font-size:0.7rem;">▼</div>
+                        </div>
+                        <div id="journal-entry-${i}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,212,255,0.1);">
+                            <p style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.7;font-style:italic;margin-bottom:8px;">"${entry.verseText || entry.preview}"</p>
+                            <p style="font-size:0.75rem;color:rgba(0,212,255,0.7);">— ${entry.ref}</p>
                         </div>
                     </div>
                 `).join('')
@@ -2472,18 +2513,17 @@ function setupRailSnap() {
     if (cardDivider) cardDivider.style.display = 'none'
     if (anotherBtn) anotherBtn.style.display = 'none'
 
+    const tonguesTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : 'rgba(255,255,255,0.85)'
+    const tonguesBtnColor = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+
     textEl.innerHTML = `
-        <p style="color:rgba(255,255,255,0.85);font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
+        <p style="color:${tonguesTextColor};font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
             You mentioned something that made my heart stir. 💙<br><br>
             Do you speak in tongues, ${name}?
         </p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button onclick="unlockTongues('yes')" style="background:rgba(0,212,255,0.1);border:2px solid #00d4ff;color:white;padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;"
-            onmouseover="this.style.background='#00d4ff';this.style.color='#0a0a2e';"
-            onmouseout="this.style.background='rgba(0,212,255,0.1)';this.style.color='white';">Yes I do 🕊️</button>
-            <button onclick="unlockTongues('no')" style="background:rgba(0,212,255,0.1);border:2px solid #00d4ff;color:white;padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;"
-            onmouseover="this.style.background='#00d4ff';this.style.color='#0a0a2e';"
-            onmouseout="this.style.background='rgba(0,212,255,0.1)';this.style.color='white';">Not yet 💙</button>
+            <button onclick="unlockTongues('yes')" style="background:rgba(0,212,255,0.1);border:2px solid ${tonguesBtnColor};color:${tonguesTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Yes I do 🕊️</button>
+            <button onclick="unlockTongues('no')" style="background:rgba(0,212,255,0.1);border:2px solid ${tonguesBtnColor};color:${tonguesTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Not yet 💙</button>
         </div>
     `
     box.style.display = 'block'
@@ -2501,35 +2541,49 @@ function setupRailSnap() {
 
             if (answer === 'yes') {
                 localStorage.setItem('luloSpeaksInTongues', 'true')
-                document.getElementById('lulo-face').innerText = '🕊️'
+                updateLuloMood('tongues')
                 document.getElementById('lulo-reaction').innerText = `${name}... this changes everything. 💙`
                 animateLulo('nod')
 
+                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
+                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+
                 text.innerHTML = `
-                    <p style="color: #e0f4ff; font-size: 0.95rem; line-height: 1.8;">
+                    <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
                         ${name}, that is one of the most powerful gifts God gives. 🕊️💙<br><br>
                         From now on, whenever you come to me, I'll ask about your prayer language — because I know that what happens when you pray in the Spirit shapes everything else in your day.<br><br>
-                        <em style="color: #00d4ff;">"For if I pray in a tongue, my spirit prays." — 1 Corinthians 14:14</em><br><br>
+                        <em style="color:${unlockAccent};">"For if I pray in a tongue, my spirit prays." — 1 Corinthians 14:14</em><br><br>
                         I'm so glad you told me. This is now part of our journey together. 💙
                     </p>
                 `
                 anotherBtn.style.display = 'none'
 
+                setTimeout(() => {
+                    updateLuloMood(currentMood || 'home')
+                }, 20000)
+
             } else {
                 localStorage.setItem('luloSpeaksInTongues', 'false')
-                document.getElementById('lulo-face').innerText = '💙'
+                updateLuloMood('home')
                 document.getElementById('lulo-reaction').innerText = `That's okay, ${name}. 💙`
                 animateLulo('nod')
 
+                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
+                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+
                 text.innerHTML = `
-                    <p style="color: #e0f4ff; font-size: 0.95rem; line-height: 1.8;">
+                    <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
                         That's completely okay, ${name}. 💙<br><br>
                         The baptism of the Holy Spirit is a beautiful gift available to every believer. If you ever want to explore it, Acts 2:38-39 is a wonderful place to start.<br><br>
-                        <em style="color: #00d4ff;">"For the promise is for you and your children and for all who are far off." — Acts 2:39</em><br><br>
+                        <em style="color:${unlockAccent};">"For the promise is for you and your children and for all who are far off." — Acts 2:39</em><br><br>
                         I'm here whenever you're ready. 💙
                     </p>
                 `
                 anotherBtn.style.display = 'none'
+
+                setTimeout(() => {
+                    updateLuloMood(currentMood || 'home')
+                }, 20000)
             }
 
             box.style.animation = 'none'
@@ -3231,6 +3285,7 @@ function setupRailSnap() {
             luloRandomPromise()
             loadSavedTheme()
             preloadLuloFaces()
+            updateLuloMood('home')
             const label = document.getElementById('carousel-label')
             if (label) label.innerText = ''
 
@@ -3280,7 +3335,7 @@ function setupRailSnap() {
                     ]
                     const random = tonguesCheckins[Math.floor(Math.random() * tonguesCheckins.length)]
                     document.getElementById('lulo-reaction').innerText = random
-                    document.getElementById('lulo-face').innerText = '🕊️'
+                    updateLuloMood('tongues')
                     animateLulo('nod')
                 }, 1500)
             }
@@ -3310,6 +3365,39 @@ function setupRailSnap() {
                 return
             }
 
+            if (activeGame && (text.toLowerCase().includes('end game') || 
+                text.toLowerCase().includes('stop game') ||
+                text.toLowerCase().includes('quit'))) {
+                activeGame = null
+                gameState = {}
+                addToChatHistory('lulo', `Game ended! 😊 Come back whenever you want to play again.`)
+                return
+            }
+            
+            // ACTIVE GAME — intercept input if game is running
+            if (activeGame === 'numberGuess') {
+                playNumberGuess(text)
+                return
+            }
+            if (activeGame === 'bibleTrivia') {
+                playBibleTrivia(text)
+                return
+            }
+
+            if (activeGame === 'choosingGame') {
+                const lower = text.toLowerCase()
+                const name = localStorage.getItem('luloUserName') || 'friend'
+                if (lower.includes('number')) {
+                    activeGame = null
+                    startNumberGuess(name)
+                } else if (lower.includes('trivia')) {
+                    activeGame = null
+                    startBibleTrivia(name)
+                } else {
+                    addToChatHistory('lulo', `Just type "number" or "trivia" 😄`)
+                }
+                return
+            }
 
             // THE MAKER'S SIGNATURE — hidden Easter egg
             const makerKeywords = [
@@ -3420,8 +3508,6 @@ function setupRailSnap() {
             input.value = ''
             showScripture('praise')
             LuloSound.praise()
-            addToChatHistory('user', window._pendingChat)
-            window._pendingChat = null
             return
         }
 
@@ -3826,7 +3912,9 @@ function setupRailSnap() {
                 'infertility': 'expecting', 'miscarriage': 'expecting',
                 'trying to conceive': 'expecting', 'period pain': 'expecting',
                 'menstrual': 'expecting', 'cramps': 'expecting',
-                'numb': 'empty',
+                'i feel numb': 'empty',
+                'feeling numb': 'empty',
+                'gone numb': 'empty',
                 'feel nothing': 'empty', 'feeling nothing': 'empty',
                 'empty inside': 'empty', 'hollow': 'empty',
                 'i feel empty': 'empty', 'feeling empty': 'empty',
@@ -4138,6 +4226,12 @@ function setupRailSnap() {
             }
         }
 
+        function toggleJournalEntry(index) {
+            const el = document.getElementById(`journal-entry-${index}`)
+            if (!el) return
+            el.style.display = el.style.display === 'none' ? 'block' : 'none'
+        }
+        
         function renderFavourites() {
             const container = document.getElementById('journal-favourites-content')
             const favourites = getFavourites()
@@ -4216,6 +4310,22 @@ function setupRailSnap() {
                 userText.toLowerCase().includes(k)
             ) || mood !== ''
 
+            // GAME TRIGGER
+            if (userText.toLowerCase().includes('game') ||
+                userText.toLowerCase() === 'play' ||
+                userText.toLowerCase().includes('let\'s play') ||
+                userText.toLowerCase().includes('lets play') ||
+                userText.toLowerCase() === 'again' ||
+                userText.toLowerCase().includes('play again') ||
+                userText.toLowerCase().includes('another game') ||
+                userText.toLowerCase().includes('trivia') ||
+                userText.toLowerCase().includes('number game')) {
+                const name = localStorage.getItem('luloUserName') || 'friend'
+                startRandomGame(name)
+                return
+            }
+
+            // WEATHER DETECTION
             const isWeather = userText.toLowerCase().includes('weather') ||
                             userText.toLowerCase().includes('temperature') ||
                             userText.toLowerCase().includes('outside') ||
@@ -4288,8 +4398,10 @@ function setupRailSnap() {
                 if (mins < 2880) return 'yesterday'
                 return `${Math.floor(mins/1440)} days ago`
             })()}
+            Emotional history (most recent first):
+            ${buildEmotionalSummaryForLulo()}
 
-            Use this time information naturally when relevant. If someone was sad 10 minutes ago and is now happy, notice it warmly: "That shifted quickly, in a good way." If someone was struggling yesterday and seems better today, acknowledge it gently. Be specific about time rather than vague.
+            Use this history naturally when relevant. Notice patterns. Celebrate improvements. Acknowledge when someone has been carrying something for a while. Be specific about time.
 
             TIMING AWARENESS:
             Be specific about time when you can. Not just "last time" but "a little while ago" or "earlier today" depending on context.
@@ -4538,6 +4650,7 @@ function setupRailSnap() {
         unsettled: 'lulo_unsettled.png',
         unmotivated: 'lulo_empty.png',
         bored: 'lulo_happy.png',
+        tongues: 'lulo_tongues.png',
         prayer: 'lulo_prayer.png',
         praise: 'lulo_praise.png',
         sick: 'lulo_sick.png',
@@ -4670,7 +4783,6 @@ function setupRailSnap() {
             luloMsgSection.style.display = 'block'
             if (cardDivider) cardDivider.style.display = 'block'
         }
-        document.getElementById('lulo-face').innerText = '🙌'
         updateLuloMood('praise')
         animateLulo('nod')
         // Still save to memory and show scripture
@@ -4820,6 +4932,14 @@ if (    mood !== 'home') lockCarousel()
     // Lock carousel after emotion is selected
     if (mood !== 'home') lockCarousel()
 
+    // Offer a game after bored scripture
+    if (mood === 'bored') {
+        setTimeout(() => {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            addToChatHistory('lulo', `Also ${name} — want to play a game? I can guess your number or we can do Bible trivia! Just say "game" to start. 😄`)
+        }, 1500)
+    }
+
     // Auto offer prayer for sick users
     if (mood === 'sick') {
         setTimeout(() => {
@@ -4933,6 +5053,399 @@ function toggleChatThread() {
         if (btn) btn.classList.remove('open')
     }
 }
+
+        // LULO GAMES SYSTEM
+        let activeGame = null
+        let gameState = {}
+
+        function startRandomGame(name) {
+            activeGame = 'choosingGame'
+            gameState = { name }
+            addToChatHistory('lulo', `Which game? 😄 Type "number" for the number guessing game or "trivia" for Bible trivia!`)
+            if (!chatThreadOpen) toggleChatThread()
+        }
+
+        // GAME 1 — NUMBER GUESSING
+        function startNumberGuess(name) {
+            activeGame = 'numberGuess'
+            gameState = { phase: 'chooseMode', name }
+            addToChatHistory('lulo', `Let's play! 😄 Who goes first? Type "me" if you pick a number and I guess, or "you" if I pick and you guess!`)
+            if (!chatThreadOpen) toggleChatThread()
+        }
+
+function playNumberGuess(text) {
+    const name = localStorage.getItem('luloUserName') || 'friend'
+    const lower = text.toLowerCase().trim()
+    if (lower.includes('end game') || lower.includes('stop game') || 
+        lower.includes('quit') || lower === 'exit') {
+        activeGame = null
+        gameState = {}
+        addToChatHistory('lulo', `Game ended! 😊 Come back whenever you want to play again.`)
+        return
+    }
+
+    // PHASE 1 — Choose who goes first
+    if (gameState.phase === 'chooseMode') {
+        if (lower.includes('me') || lower.includes('i pick') || lower.includes('i will')) {
+            gameState.phase = 'chooseRange'
+            gameState.mode = 'userPicks'
+            addToChatHistory('lulo', `You pick, I guess! 😄 What range shall we use? Type "10", "50" or "100"!`)
+            return
+        }
+        if (lower.includes('you') || lower.includes('lulo') || lower.includes('you pick')) {
+            gameState.phase = 'chooseRange'
+            gameState.mode = 'luloPicks'
+            addToChatHistory('lulo', `I'll pick, you guess! 😄 What range shall we use? Type "10", "50" or "100"!`)
+            return
+        }
+        addToChatHistory('lulo', `Just type "me" if you pick or "you" if I pick! 😄`)
+        return
+    }
+
+    // PHASE 2 — Choose range
+    if (gameState.phase === 'chooseRange') {
+        let max = 10
+        if (lower.includes('50')) max = 50
+        else if (lower.includes('100')) max = 100
+        else if (lower.includes('10')) max = 10
+
+        gameState.max = max
+        gameState.phase = 'playing'
+
+        if (gameState.mode === 'userPicks') {
+            gameState.low = 1
+            gameState.high = max
+            gameState.attempts = 0
+            gameState.lastGuess = null
+            addToChatHistory('lulo', `Perfect! Pick any number between 1 and ${max} and keep it in your head. Say "ready" when you've got one! 🤔`)
+        } else {
+            // Lulo picks
+            gameState.secret = Math.floor(Math.random() * max) + 1
+            gameState.attempts = 0
+            addToChatHistory('lulo', `I've got my number between 1 and ${max}! Start guessing! 😄`)
+        }
+        return
+    }
+
+    // PHASE 3 — Playing
+    if (gameState.phase === 'playing') {
+
+        // USER PICKS MODE — Lulo guesses
+        if (gameState.mode === 'userPicks') {
+
+            if (lower.includes('ready') && gameState.attempts === 0) {
+                gameState.attempts++
+                const guess = Math.floor((gameState.low + gameState.high) / 2)
+                gameState.lastGuess = guess
+                addToChatHistory('lulo', `Okay... is it ${guess}? 🤔`)
+                return
+            }
+
+            if (lower.includes('yes') || lower.includes('correct') || lower.includes('right')) {
+                const attempts = gameState.attempts
+                activeGame = null
+                gameState = {}
+                addToChatHistory('lulo', `YESSS! 🎉 Got it in ${attempts} guess${attempts > 1 ? 'es' : ''}! I know you well ${name}! 😄 Type "again" for another round or "trivia" for Bible trivia!`)
+                return
+            }
+
+            if (lower.includes('no') || lower.includes('nope') || lower.includes('wrong') || lower.includes('not')) {
+                if (gameState.lastGuess === null) {
+                    addToChatHistory('lulo', `Say "ready" when you have your number! 😄`)
+                    return
+                }
+                addToChatHistory('lulo', `Okay not ${gameState.lastGuess}! Is it higher or lower? 😄`)
+                return
+            }
+
+            if (lower.includes('higher') || lower.includes('bigger') || lower.includes('more')) {
+                gameState.low = gameState.lastGuess + 1
+                gameState.attempts++
+                const guess = Math.floor((gameState.low + gameState.high) / 2)
+                gameState.lastGuess = guess
+                addToChatHistory('lulo', `Higher! Is it ${guess}? 🤔`)
+                return
+            }
+
+            if (lower.includes('lower') || lower.includes('smaller') || lower.includes('less')) {
+                gameState.high = gameState.lastGuess - 1
+                gameState.attempts++
+                const guess = Math.floor((gameState.low + gameState.high) / 2)
+                gameState.lastGuess = guess
+                addToChatHistory('lulo', `Lower! Is it ${guess}? 🤔`)
+                return
+            }
+
+            addToChatHistory('lulo', `Just say "higher", "lower" or "yes"! 😄`)
+            return
+        }
+
+        // LULO PICKS MODE — User guesses
+        if (gameState.mode === 'luloPicks') {
+            const userGuess = parseInt(lower.replace(/[^0-9]/g, ''))
+
+            if (isNaN(userGuess)) {
+                addToChatHistory('lulo', `Just type a number between 1 and ${gameState.max}! 😄`)
+                return
+            }
+
+            gameState.attempts++
+
+            if (userGuess === gameState.secret) {
+                const attempts = gameState.attempts
+                activeGame = null
+                gameState = {}
+                addToChatHistory('lulo', `YES! 🎉 You got it in ${attempts} guess${attempts > 1 ? 'es' : ''}! Well done ${name}! 😄 Type "again" or "trivia"!`)
+                return
+            }
+
+            if (userGuess < gameState.secret) {
+                addToChatHistory('lulo', `Higher! Keep going ${name}! 🤔`)
+                return
+            }
+
+            if (userGuess > gameState.secret) {
+                addToChatHistory('lulo', `Lower! You're getting closer... maybe! 😄`)
+                return
+            }
+        }
+    }
+}
+
+        // GAME 2 — BIBLE TRIVIA
+        const triviaQuestions = [
+            // EASY (1-30)
+            { q: "How many days did God take to create the world?", a: "6", hint: "He rested on the seventh.", ref: "Genesis 1" },
+            { q: "What was the name of the garden where Adam and Eve lived?", a: "eden", hint: "It had a forbidden tree.", ref: "Genesis 2:8" },
+            { q: "How many apostles did Jesus choose?", a: "12", hint: "One for each tribe of Israel.", ref: "Matthew 10:1" },
+            { q: "What is the shortest verse in the Bible?", a: "jesus wept", hint: "Just two words. John chapter 11.", ref: "John 11:35" },
+            { q: "Who built the ark?", a: "noah", hint: "God gave him very specific measurements.", ref: "Genesis 6" },
+            { q: "How many days and nights did Jesus fast in the wilderness?", a: "40", hint: "Same number as Noah's rain.", ref: "Matthew 4:2" },
+            { q: "How many people did Jesus raise from the dead in the Gospels?", a: "3", hint: "Lazarus, Jairus's daughter, and the widow's son.", ref: "John 11, Luke 8, Luke 7" },
+            { q: "Who was swallowed by a great fish?", a: "jonah", hint: "He was running away from God's assignment.", ref: "Jonah 1:17" },
+            { q: "What is the first book of the Bible?", a: "genesis", hint: "It means 'beginning'.", ref: "Genesis 1:1" },
+            { q: "What is the last book of the Bible?", a: "revelation", hint: "It was written by John on the island of Patmos.", ref: "Revelation 1:1" },
+            { q: "How many books are in the Bible?", a: "66", hint: "39 Old Testament, 27 New Testament.", ref: "The Holy Bible" },
+            { q: "Who was the first man created by God?", a: "adam", hint: "He was made from dust.", ref: "Genesis 2:7" },
+            { q: "What was the name of Adam's wife?", a: "eve", hint: "She was made from Adam's rib.", ref: "Genesis 2:22" },
+            { q: "Who denied Jesus three times?", a: "peter", hint: "Jesus predicted it before it happened.", ref: "Matthew 26:75" },
+            { q: "What was the name of the disciple who betrayed Jesus?", a: "judas", hint: "He did it for 30 pieces of silver.", ref: "Matthew 26:15" },
+            { q: "How many stones did David pick up to fight Goliath?", a: "5", hint: "He only needed one.", ref: "1 Samuel 17:40" },
+            { q: "What were the disciples doing when Jesus calmed the storm?", a: "sleeping", hint: "They woke him up in panic.", ref: "Mark 4:38" },
+            { q: "What river was Jesus baptised in?", a: "jordan", hint: "John the Baptist baptised him there.", ref: "Matthew 3:13" },
+            { q: "Who wrote most of the Psalms?", a: "david", hint: "He was also a king and a shepherd.", ref: "Various Psalms" },
+            { q: "What did God create on the first day?", a: "light", hint: "He said 'Let there be...'", ref: "Genesis 1:3" },
+            { q: "What animal spoke to Balaam?", a: "donkey", hint: "God opened its mouth.", ref: "Numbers 22:28" },
+            { q: "How many commandments did God give Moses?", a: "10", hint: "Written on two stone tablets.", ref: "Exodus 20" },
+            { q: "What did Jesus turn water into?", a: "wine", hint: "His mother asked him to help.", ref: "John 2:9" },
+            { q: "What was the name of the city where Jesus grew up?", a: "nazareth", hint: "People said nothing good could come from there.", ref: "Luke 2:51" },
+            { q: "What is the middle book of the Bible?", a: "psalms", hint: "It has 150 chapters.", ref: "Psalms" },
+            { q: "Who was Moses' brother?", a: "aaron", hint: "He became the first high priest.", ref: "Exodus 4:14" },
+            { q: "What did the wise men follow to find Jesus?", a: "star", hint: "It led them from the east.", ref: "Matthew 2:9" },
+            { q: "How many days was Jesus in the tomb?", a: "3", hint: "He rose on the third day.", ref: "Matthew 12:40" },
+            { q: "Who was the mother of Jesus?", a: "mary", hint: "She was a virgin.", ref: "Luke 1:27" },
+            { q: "What did God send to feed the Israelites in the wilderness?", a: "manna", hint: "It appeared on the ground every morning.", ref: "Exodus 16:15" },
+
+            // MEDIUM (31-75)
+            { q: "How old was Noah when the flood began?", a: "600", hint: "He lived to 950 total.", ref: "Genesis 7:6" },
+            { q: "How many people were on Noah's ark?", a: "8", hint: "Noah, his wife, his three sons and their wives.", ref: "1 Peter 3:20" },
+            { q: "What was the name of Abraham's first son?", a: "ishmael", hint: "His mother was Hagar.", ref: "Genesis 16:15" },
+            { q: "How many years did the Israelites wander in the wilderness?", a: "40", hint: "One year for each day the spies spent in Canaan.", ref: "Numbers 14:34" },
+            { q: "What was Paul's name before his conversion?", a: "saul", hint: "He was from Tarsus.", ref: "Acts 13:9" },
+            { q: "How many letters did Paul write in the New Testament?", a: "13", hint: "Romans through Philemon.", ref: "The New Testament" },
+            { q: "What was the name of Moses' sister?", a: "miriam", hint: "She watched over baby Moses in the river.", ref: "Exodus 15:20" },
+            { q: "How many plagues did God send on Egypt?", a: "10", hint: "The last one was the most devastating.", ref: "Exodus 7-12" },
+            { q: "What was the name of the tower men built to reach heaven?", a: "babel", hint: "God confused their language there.", ref: "Genesis 11:9" },
+            { q: "Who was the first king of Israel?", a: "saul", hint: "The people demanded a king and God gave them one.", ref: "1 Samuel 10:1" },
+            { q: "How many chapters are in the longest book of the Bible?", a: "150", hint: "It's a book of songs and prayers.", ref: "Psalms" },
+            { q: "What was the name of the sea God parted for Moses?", a: "red sea", hint: "The Egyptian army drowned in it.", ref: "Exodus 14:21" },
+            { q: "What were the names of the Hebrew boys thrown into the fiery furnace?", a: "shadrach meshach abednego", hint: "There were three of them.", ref: "Daniel 3:20" },
+            { q: "What did Samson's strength come from?", a: "hair", hint: "Delilah discovered his secret.", ref: "Judges 16:17" },
+            { q: "How many sons did Jacob have?", a: "12", hint: "They became the 12 tribes of Israel.", ref: "Genesis 35:22" },
+            { q: "What is the longest book in the New Testament?", a: "luke", hint: "The same author wrote Acts.", ref: "Luke" },
+            { q: "Who was the tax collector Jesus called to follow him?", a: "matthew", hint: "He later wrote the first gospel.", ref: "Matthew 9:9" },
+            { q: "How many beatitudes are in the Sermon on the Mount?", a: "8", hint: "They all start with Blessed are...", ref: "Matthew 5:3-10" },
+            { q: "What was the name of the well where Jesus met the Samaritan woman?", a: "jacob's well", hint: "Jesus asked her for water.", ref: "John 4:6" },
+            { q: "How many days was Lazarus in the tomb before Jesus raised him?", a: "4", hint: "Martha said he would already smell.", ref: "John 11:17" },
+            { q: "How many times did Noah send out a dove?", a: "3", hint: "The third time it didn't return.", ref: "Genesis 8:8-12" },
+            { q: "What was the name of David's best friend?", a: "jonathan", hint: "He was King Saul's son.", ref: "1 Samuel 18:1" },
+            { q: "How many pieces of silver was Joseph sold for?", a: "20", hint: "His brothers sold him to Ishmaelite traders.", ref: "Genesis 37:28" },
+            { q: "What was the name of the queen who visited Solomon?", a: "queen of sheba", hint: "She came to test his wisdom.", ref: "1 Kings 10:1" },
+            { q: "How many years did Joseph spend in prison in Egypt?", a: "2", hint: "After interpreting the cupbearer's dream.", ref: "Genesis 41:1" },
+            { q: "What was the name of Ruth's mother in law?", a: "naomi", hint: "Ruth refused to leave her side.", ref: "Ruth 1:16" },
+            { q: "How many days did Esther fast before going to the king?", a: "3", hint: "She asked all the Jews to fast with her.", ref: "Esther 4:16" },
+            { q: "What was the name of the giant city Jonah was sent to preach in?", a: "nineveh", hint: "It took three days to walk across.", ref: "Jonah 1:2" },
+            { q: "How many times did Samuel hear God's voice before recognising it?", a: "3", hint: "Eli finally told him to say speak Lord.", ref: "1 Samuel 3:8" },
+            { q: "What was the name of the pool where Jesus healed the paralysed man?", a: "bethesda", hint: "The man had been waiting 38 years.", ref: "John 5:2" },
+            { q: "How many talents did the servant who buried his money receive?", a: "1", hint: "The others received 5 and 2.", ref: "Matthew 25:15" },
+            { q: "What was the name of the sorcerer who opposed Paul in Cyprus?", a: "elymas", hint: "Paul struck him blind temporarily.", ref: "Acts 13:8" },
+            { q: "How many times did Jesus appear to his disciples after the resurrection?", a: "10", hint: "Including once to over 500 people.", ref: "1 Corinthians 15:5-8" },
+            { q: "What was the name of the woman who hid the two spies in Jericho?", a: "rahab", hint: "She hung a red cord from her window.", ref: "Joshua 2:1" },
+            { q: "How many years did Eli judge Israel?", a: "40", hint: "He died when he heard the ark was captured.", ref: "1 Samuel 4:18" },
+
+            // HARD (76-100)
+            { q: "How many years did Solomon reign over Israel?", a: "40", hint: "Same as David his father.", ref: "1 Kings 11:42" },
+            { q: "What was the name of the judge who had 70 sons?", a: "gideon", hint: "He also defeated the Midianites with 300 men.", ref: "Judges 8:30" },
+            { q: "How many years did the Israelites spend in Egypt?", a: "430", hint: "God told Abraham about it in advance.", ref: "Exodus 12:40" },
+            { q: "What was the name of Moses' father in law?", a: "jethro", hint: "He was a priest of Midian.", ref: "Exodus 3:1" },
+            { q: "How many chapters are in the book of Isaiah?", a: "66", hint: "Same number as books in the whole Bible.", ref: "Isaiah" },
+            { q: "Who was the first person to see Jesus after the resurrection?", a: "mary magdalene", hint: "She thought he was the gardener.", ref: "John 20:14-16" },
+            { q: "What was the name of the king who tried to kill baby Jesus?", a: "herod", hint: "He ordered all boys under two to be killed.", ref: "Matthew 2:16" },
+            { q: "How many people did Jesus feed with five loaves and two fish?", a: "5000", hint: "That was just the men counted.", ref: "Matthew 14:21" },
+            { q: "What was the name of Abraham's nephew?", a: "lot", hint: "His wife looked back and turned to salt.", ref: "Genesis 13:1" },
+            { q: "How many years did Methuselah live?", a: "969", hint: "He is the oldest person in the Bible.", ref: "Genesis 5:27" },
+            { q: "What was the name of the first martyr in the New Testament?", a: "stephen", hint: "He saw heaven open as he died.", ref: "Acts 7:59" },
+            { q: "How many sons did Jesse have?", a: "8", hint: "David was the youngest of them all.", ref: "1 Samuel 16:10-11" },
+            { q: "What was the name of the prophetess who judged Israel?", a: "deborah", hint: "She led Israel to victory with Barak.", ref: "Judges 4:4" },
+            { q: "How many times did Peter say we should forgive someone?", a: "70 times 7", hint: "Jesus corrected his original answer of 7.", ref: "Matthew 18:22" },
+            { q: "What was the name of Timothy's mother?", a: "eunice", hint: "His grandmother was Lois.", ref: "2 Timothy 1:5" },
+            { q: "How many gates does the New Jerusalem have?", a: "12", hint: "Three on each side.", ref: "Revelation 21:12" },
+            { q: "What was the name of the Roman governor who sentenced Jesus?", a: "pontius pilate", hint: "He washed his hands to show his innocence.", ref: "Matthew 27:24" },
+            { q: "How many times did Elijah stretch himself over the widow's son?", a: "3", hint: "The child came back to life.", ref: "1 Kings 17:21" },
+            { q: "What was the name of the king who wrote Ecclesiastes?", a: "solomon", hint: "He called everything vanity.", ref: "Ecclesiastes 1:1" },
+            { q: "How many years was the temple in Jerusalem being built?", a: "7", hint: "Solomon built it.", ref: "1 Kings 6:38" },
+            { q: "What was the name of the king of Bashan defeated by Moses?", a: "og", hint: "He was one of the last of the giants.", ref: "Numbers 21:33" },
+            { q: "How many years did Anna the prophetess serve in the temple?", a: "84", hint: "She was a widow who never left the temple.", ref: "Luke 2:37" },
+            { q: "What was the name of the Ethiopian eunuch baptised by Philip?", a: "no name given", hint: "The Bible never actually names him.", ref: "Acts 8:27" },
+            { q: "How many false prophets did Elijah defeat at Mount Carmel?", a: "450", hint: "There were also 400 prophets of Asherah.", ref: "1 Kings 18:22" },
+            { q: "What was the name of the king of Salem who blessed Abraham?", a: "melchizedek", hint: "He was both king and priest.", ref: "Genesis 14:18" },
+            { q: "How many years did it take to build Solomon's own palace?", a: "13", hint: "Longer than it took to build the temple.", ref: "1 Kings 7:1" },
+            { q: "What was the name of the disciple who replaced Judas?", a: "matthias", hint: "He was chosen by casting lots.", ref: "Acts 1:26" },
+            { q: "How many days was Paul blinded after seeing Jesus on the road?", a: "3", hint: "He fasted the whole time too.", ref: "Acts 9:9" },
+            { q: "What was the name of the silversmith who started a riot against Paul?", a: "demetrius", hint: "He made shrines to Artemis in Ephesus.", ref: "Acts 19:24" },
+            { q: "How many times did the Israelites march around Jericho on the seventh day?", a: "7", hint: "They marched once each day for six days first.", ref: "Joshua 6:15" },
+            { q: "What was the name of Isaac's wife?", a: "rebekah", hint: "Abraham's servant found her at a well.", ref: "Genesis 24:67" },
+            { q: "How many concubines did Solomon have?", a: "300", hint: "He also had 700 wives.", ref: "1 Kings 11:3" },
+            { q: "What was the specific wood used to build the ark of the covenant?", a: "acacia", hint: "It was then overlaid with pure gold.", ref: "Exodus 25:10" },
+            { q: "Who was the father of John the Baptist?", a: "zechariah", hint: "He was struck mute until the baby was named.", ref: "Luke 1:13" },
+            { q: "What was the name of the island where Paul was shipwrecked?", a: "malta", hint: "A snake bit him but he didn't die.", ref: "Acts 28:1" },
+        ]
+
+        function startBibleTrivia(name, difficulty = 'easy') {
+            activeGame = 'bibleTrivia'
+            
+            const easy = triviaQuestions.slice(0, 30) // 30 easy questions
+            const medium = triviaQuestions.slice(30, 65) // 35 medium questions
+            const hard = triviaQuestions.slice(65, 100) // 35 hard questions
+            
+            let pool = easy
+            if (difficulty === 'medium') pool = medium
+            if (difficulty === 'hard') pool = hard
+
+            const shuffled = [...pool].sort(() => Math.random() - 0.5)
+            gameState = {
+                questions: shuffled.slice(0, 5),
+                current: 0,
+                score: 0,
+                hintUsed: false,
+                difficulty,
+                name
+            }
+
+            const difficultyLabel = difficulty === 'easy' ? 'Easy 😊' : difficulty === 'medium' ? 'Medium 🤔' : 'Hard 😅'
+            addToChatHistory('lulo', `Bible Trivia — ${difficultyLabel}! 🎯 5 questions. Type your answer, "hint" if stuck, or "skip" to move on. Say "harder" anytime to increase difficulty. Ready?\n\nQuestion 1: ${gameState.questions[0].q}`)
+            if (!chatThreadOpen) toggleChatThread()
+        }
+
+        function playBibleTrivia(text) {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const lower = text.toLowerCase()
+            if (lower.includes('end game') || lower.includes('stop game') || 
+                lower.includes('quit') || lower === 'exit') {
+                activeGame = null
+                gameState = {}
+                addToChatHistory('lulo', `Game ended! 😊 Come back whenever you want to play again.`)
+                return
+            }
+            const current = gameState.questions[gameState.current]
+
+            // Difficulty change
+            if (lower.includes('harder') || lower.includes('increase difficulty') || lower.includes('make it harder')) {
+                const next = gameState.difficulty === 'easy' ? 'medium' : 'hard'
+                if (gameState.difficulty === 'hard') {
+                    addToChatHistory('lulo', `You\'re already on hard mode! 😅 You asked for it!`)
+                    return
+                }
+                activeGame = null
+                gameState = {}
+                addToChatHistory('lulo', `Challenge accepted! 🔥 Switching to ${next} difficulty!`)
+                setTimeout(() => startBibleTrivia(name, next), 800)
+                return
+            }
+
+            if (lower.includes('easier') || lower.includes('too hard')) {
+                const prev = gameState.difficulty === 'hard' ? 'medium' : 'easy'
+                if (gameState.difficulty === 'easy') {
+                    addToChatHistory('lulo', `You\'re already on easy mode! 😄`)
+                    return
+                }
+                activeGame = null
+                gameState = {}
+                addToChatHistory('lulo', `No problem! Dropping to ${prev} difficulty. 😊`)
+                setTimeout(() => startBibleTrivia(name, prev), 800)
+                return
+            }
+
+            if (lower === 'hint' || lower.includes('hint')) {
+                gameState.hintUsed = true
+                addToChatHistory('lulo', `Hint: ${current.hint} 😊`)
+                return
+            }
+
+            if (lower === 'skip' || lower.includes('skip')) {
+                addToChatHistory('lulo', `No worries! The answer was: ${current.a.charAt(0).toUpperCase() + current.a.slice(1)}. — ${current.ref}`)
+                nextTriviaQuestion(name)
+                return
+            }
+
+            const isCorrect = lower.includes(current.a.toLowerCase())
+            if (isCorrect) {
+                const points = gameState.hintUsed ? 0.5 : 1
+                gameState.score += points
+                gameState.hintUsed = false
+                const celebrations = [
+                    `CORRECT! 🎉 Well done ${name}!`,
+                    `YES! 🎉 You got it!`,
+                    `That's right! 🌟 Impressive ${name}!`,
+                    `Correct! 🎯 You know your Bible!`,
+                ]
+                addToChatHistory('lulo', `${celebrations[Math.floor(Math.random() * celebrations.length)]} — ${current.ref}`)
+                nextTriviaQuestion(name)
+            } else {
+                addToChatHistory('lulo', `Not quite! Want to try again, get a "hint", or "skip"? 😊`)
+            }
+        }
+
+        function nextTriviaQuestion(name) {
+            gameState.current++
+            gameState.hintUsed = false
+
+            if (gameState.current >= gameState.questions.length) {
+                const score = gameState.score
+                const total = gameState.questions.length
+                const finalDifficulty = gameState.difficulty
+                activeGame = null
+                gameState = {}
+
+                let verdict = ''
+                const diffMsg = gameState.difficulty === 'hard' 
+                    ? `You completed HARD mode! You're a Bible scholar ${name}! 🏆` 
+                    : `Type "harder" to try the next difficulty or "again" for another round!`
+
+                if (score === total) verdict = `PERFECT SCORE! 🎉 You're a Bible genius ${name}! ${diffMsg}`
+                else if (score >= total * 0.8) verdict = `Amazing ${name}! ${score}/${total}! 🌟 ${diffMsg}`
+                else if (score >= total * 0.6) verdict = `Great job ${name}! ${score}/${total}! 💙 ${diffMsg}`
+                else if (score >= total * 0.4) verdict = `Not bad ${name}! ${score}/${total}! 😄 ${diffMsg}`
+                else verdict = `${score}/${total} — keep reading that Bible ${name}! 😄 ${diffMsg}`
+
+                addToChatHistory('lulo', verdict)
+                return
+            }
+
+            setTimeout(() => {
+                addToChatHistory('lulo', `Question ${gameState.current + 1}: ${gameState.questions[gameState.current].q}`)
+            }, 800)
+        }
 
 // ─── SOUND SYSTEM ───────────────────────────────────────────
 const LuloSound = {
