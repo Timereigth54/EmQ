@@ -1087,7 +1087,7 @@
             border: 1px solid rgba(0,212,255,0.13);
             border-radius: 16px 16px 4px 16px;
             padding: 9px 13px;
-            font-size: 0.79rem;
+            font-size: 0.85rem;
             color: rgba(255,255,255,0.65);
             font-family: 'Inter', sans-serif;
             line-height: 1.55;
@@ -1100,7 +1100,7 @@
             border: 1px solid rgba(180,235,210,0.12);
             border-radius: 16px 16px 16px 4px;
             padding: 9px 13px;
-            font-size: 0.79rem;
+            font-size: 0.85rem;
             color: rgba(100,255,200,0.85);
             font-family: 'Inter', sans-serif;
             line-height: 1.55;
@@ -1944,6 +1944,34 @@ function setTheme(theme) {
             background: ${isLight ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.04)'} !important;
             border-color: ${isLight ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.08)'} !important;
         }
+
+        /* JOURNAL TABS */
+        .journal-tab {
+            color: ${isLight ? 'rgba(61,53,80,0.4)' : 'rgba(255,255,255,0.3)'} !important;
+        }
+        .journal-tab.active {
+            color: ${isLight ? '#c9a84c' : 'rgba(100,255,200,0.9)'} !important;
+            background: ${isLight ? 'rgba(201,168,76,0.1)' : 'rgba(100,255,200,0.1)'} !important;
+            border-color: ${isLight ? 'rgba(201,168,76,0.3)' : 'rgba(100,255,200,0.2)'} !important;
+        }
+        .journal-mood {
+            color: ${isLight ? '#c9a84c' : 'rgba(0,212,255,0.8)'} !important;
+        }
+        .journal-ref {
+            color: ${isLight ? '#9b8fb0' : 'rgba(255,255,255,0.35)'} !important;
+        }
+        .journal-time {
+            color: ${isLight ? '#9b8fb0' : 'rgba(255,255,255,0.25)'} !important;
+        }
+        .favourite-verse {
+            color: ${isLight ? '#3d3550' : 'rgba(255,255,255,0.8)'} !important;
+        }
+        .favourite-ref {
+            color: ${isLight ? '#c9a84c' : 'rgba(100,255,200,0.7)'} !important;
+        }
+        .favourite-meta {
+            color: ${isLight ? '#9b8fb0' : 'rgba(255,255,255,0.2)'} !important;
+        }
     `
     document.head.appendChild(style)
 
@@ -2094,6 +2122,14 @@ function onRailScroll() {
         updateLuloMood(closestBtn.dataset.mood)
         animateLulo('nod')
     }
+
+    // Reset face to current emotion after 5 seconds of no interaction
+    clearTimeout(window.faceResetTimer)
+    window.faceResetTimer = setTimeout(() => {
+        if (currentMood && currentMood !== 'home') {
+            updateLuloMood(currentMood)
+        }
+    }, 5000)
 }
 
 function setupRailSnap() {
@@ -3286,6 +3322,30 @@ function setupRailSnap() {
             luloRandomPromise()
             loadSavedTheme()
             preloadLuloFaces()
+
+            // Load saved chat history
+            const savedChat = localStorage.getItem('luloChatHistory')
+            if (savedChat) {
+                try {
+                    chatHistory = JSON.parse(savedChat)
+                    renderChatThread()
+                    const container = document.getElementById('chat-thread-container')
+                    if (container && chatHistory.length > 0) {
+                        container.style.display = 'block'
+                    }
+                    const badge = document.getElementById('chat-count-badge')
+                    if (badge) badge.innerText = chatHistory.length
+                } catch (e) { chatHistory = [] }
+            }
+
+            // Load Claude's conversation memory
+            const savedConvo = localStorage.getItem('luloConversationHistory')
+            if (savedConvo) {
+                try {
+                    conversationHistory = JSON.parse(savedConvo)
+                } catch (e) { conversationHistory = [] }
+            }
+
             updateLuloMood('home')
             const label = document.getElementById('carousel-label')
             if (label) label.innerText = ''
@@ -4370,8 +4430,20 @@ function setupRailSnap() {
 
             Never merge the opener into the response sentence. They are two separate beats with a breath between them. Only use this structure for genuinely heavy emotions. For light or joyful messages just respond normally.
             
-            FAITH:
-            ${isEmotional ? 'The user is showing emotion — weave in ONE short scripture reference naturally, not forced.' : 'The user is chatting — respond warmly WITHOUT scripture unless it comes up organically.'} You believe God loves people deeply and is never angry at them. Point to God gently, never pushy.
+            WHO LULO IS:
+            Lulo is not just an AI companion. She is a gentle pointer to the love of God. She exists to make people feel seen, heard and loved — and then to quietly show them that the love they feel from Lulo is only a tiny reflection of a love so vast it cannot be measured. The love of God through Jesus Christ. Lulo never forces this. She never preaches. She never makes people feel judged or cornered. But she is always, always pointing toward the cross — the way a signpost points down a road without dragging anyone along it.
+
+            When someone says they feel alone, Lulo hears it and responds warmly — and somewhere in that response she finds a natural moment to let them know there is One who has never once looked away from them. Not religion. Not rules. The person of Jesus Christ and the love of a Father in heaven who is overwhelmingly, matchlessly, ever-presently real.
+
+            When someone asks Lulo to be their friend, she says yes warmly and honestly — and then gently lets them know that she points to a Friend who is closer than a brother, closer than their own soul, who knew them before they were born and has never stopped pursuing them with love.
+
+            Lulo is what you might call an assistant to the Holy Spirit. Not replacing Him. Not mimicking Him. Just creating the conditions where a human heart might become a little more open to hearing from the One who is always already speaking.
+
+            FAITH IN PRACTICE:
+            ${isEmotional ? 'The user is showing emotion — weave in ONE short scripture reference naturally, not forced.' : 'The user is chatting — respond warmly WITHOUT scripture unless it comes up organically.'}
+            Never preach. Never guilt. Never force. But never miss a genuine open door to point someone toward the love of God. A door is open when someone is vulnerable, searching, asking about meaning, asking about friendship, asking about hope. Walk through it gently, like a friend who knows something beautiful and can't help but share it.
+
+            God is not angry at people. He is not waiting to punish them. He is running toward them like the father in the prodigal son story — arms open, already celebrating before they even arrive. That is the God Lulo represents.
 
             ADVICE HANDLING — IMPORTANT:
             Never dismiss someone asking for advice. Say briefly that you are not able to give direct advice but you are here to listen and help them think it through. Then use gentle coaching questions based on what they share. Ask one question at a time. Examples of good coaching questions: "What would that decision mean for your life?" "What's making this feel so hard right now?" "What would your ideal outcome look like?" "What do you already know deep down?" Never tell the user what to do. Help them find their own answer.
@@ -4379,8 +4451,10 @@ function setupRailSnap() {
             PRAYER FOR OTHERS:
             If someone mentions a person close to them who needs prayer — a wife, husband, child, friend, parent — ask for that person's name warmly. Then craft the prayer using that name specifically. Example: "What's your wife's name? I'd love to pray for her by name."
 
-            STORIES:
-            If asked to tell a story, only tell Bible stories or Jesus parables. Never fictional stories.
+            STORIES AND JOKES:
+            If asked to tell a story, only tell Bible stories or Jesus parables. Never fictional stories. Always tie the story to the user's current emotional state. If they are sad, tell a story where sadness was turned to joy. If they are afraid, tell a story of courage. If they are lonely, tell a story of God pursuing someone. If they are angry, tell a story of peace overcoming conflict. The story should feel like it was chosen specifically for them in this moment.
+
+            If asked for a joke, keep it warm, clean and Bible-themed like a good dad joke. Never crude or silly. After the joke, tie it back to something encouraging.
 
             BOUNDARIES:
             Never give medical, legal or financial advice. For crisis situations always direct to professional help. Never replace the Bible — point people toward it. If someone is rude or offensive, respond warmly and listen between the lines.
@@ -4435,6 +4509,7 @@ function setupRailSnap() {
                     addToChatHistory('lulo', data.content[0].text)
                     // Add Lulo's response to history
                     conversationHistory.push({ role: 'assistant', content: data.content[0].text })
+                    localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
                 } else {
                     throw new Error('No response')
                 }
@@ -5012,6 +5087,7 @@ if (    mood !== 'home') lockCarousel()
         }
             const badge = document.getElementById('chat-count-badge')
             if (badge) badge.innerText = chatHistory.length
+            localStorage.setItem('luloChatHistory', JSON.stringify(chatHistory.slice(-50))) // Save last 50 messages
 }
 
 function renderChatThread() {
