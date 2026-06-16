@@ -3460,6 +3460,103 @@ function setupRailSnap() {
             }
         }
 
+        function silentlyLearnFromText(text) {
+            const lower = text.toLowerCase()
+            const memory = getLuloMemory()
+            if (!memory.preferences) memory.preferences = {}
+
+            // FAVOURITE FOOD
+            const foodPatterns = [
+                /my favou?rite food is (.+?)[\.\,\!]/i,
+                /i love eating (.+?)[\.\,\!]/i,
+                /i could eat (.+?) every day/i,
+                /best meal (?:is|for me is) (.+?)[\.\,\!]/i,
+            ]
+            for (const pattern of foodPatterns) {
+                const match = text.match(pattern)
+                if (match) {
+                    memory.preferences.favouriteFood = match[1].trim()
+                    break
+                }
+            }
+
+            // FAVOURITE COLOUR
+            const colourPatterns = [
+                /my favou?rite colou?r is (.+?)[\.\,\!]/i,
+                /i love the colou?r (.+?)[\.\,\!]/i,
+                /i(?:'m| am) obsessed with (.+?) colou?r/i,
+            ]
+            for (const pattern of colourPatterns) {
+                const match = text.match(pattern)
+                if (match) {
+                    memory.preferences.favouriteColour = match[1].trim()
+                    break
+                }
+            }
+
+            // FAVOURITE PLACE
+            const placePatterns = [
+                /my favou?rite (?:place|restaurant|spot) (?:to eat )?is (.+?)[\.\,\!]/i,
+                /i love going to (.+?)[\.\,\!]/i,
+                /best (?:place|restaurant) (?:i know )?is (.+?)[\.\,\!]/i,
+            ]
+            for (const pattern of placePatterns) {
+                const match = text.match(pattern)
+                if (match) {
+                    memory.preferences.favouritePlace = match[1].trim()
+                    break
+                }
+            }
+
+            // FAVOURITE BOOK
+            const bookPatterns = [
+                /my favou?rite book is (.+?)[\.\,\!]/i,
+                /i love (?:reading )?(.+?) (?:so much|a lot|by)/i,
+                /best book (?:i(?:'ve| have) read )?is (.+?)[\.\,\!]/i,
+            ]
+            for (const pattern of bookPatterns) {
+                const match = text.match(pattern)
+                if (match) {
+                    memory.preferences.favouriteBook = match[1].trim()
+                    break
+                }
+            }
+
+            // FAVOURITE MOVIE
+            const moviePatterns = [
+                /my favou?rite (?:movie|film) is (.+?)[\.\,\!]/i,
+                /i love (?:the (?:movie|film) )?(.+?)[\.\,\!] (?:so much|a lot)/i,
+                /best (?:movie|film) (?:i(?:'ve| have) seen )?is (.+?)[\.\,\!]/i,
+            ]
+            for (const pattern of moviePatterns) {
+                const match = text.match(pattern)
+                if (match) {
+                    memory.preferences.favouriteMovie = match[1].trim()
+                    break
+                }
+            }
+
+            // HOBBIES
+            const hobbyPatterns = [
+                /i (?:love|enjoy|like) (.+?)(?:ing)[\.\,\!]/i,
+                /my hobby is (.+?)[\.\,\!]/i,
+                /in my free time i (.+?)[\.\,\!]/i,
+            ]
+            for (const pattern of hobbyPatterns) {
+                const match = text.match(pattern)
+                if (match) {
+                    if (!memory.preferences.hobbies) memory.preferences.hobbies = []
+                    const hobby = match[1].trim()
+                    if (!memory.preferences.hobbies.includes(hobby)) {
+                        memory.preferences.hobbies.push(hobby)
+                    }
+                    break
+                }
+            }
+
+            saveLuloMemory(memory)
+        }
+        
         function checkForDateMention(text) {
             const lower = text.toLowerCase()
 
@@ -3556,6 +3653,8 @@ function setupRailSnap() {
                 console.log(`Checking ${dateObj.label}: saved ${savedMonth}/${savedDay} vs today ${todayMonth}/${todayDay}`)
 
                 if (savedMonth === todayMonth && savedDay === todayDay) {
+                    const thisYear = new Date().getFullYear()
+                    if (dateObj.lastCelebrated === thisYear) return // Already celebrated this year
                     setTimeout(() => {
                         if (dateObj.category === 1) {
                             if (dateObj.celebratory && dateObj.approach === 'warm_surprise') {
@@ -3586,6 +3685,9 @@ function setupRailSnap() {
         }
 
         async function triggerDateCelebration(dateObj, name) {
+            // Mark as celebrated this year so it doesn't fire again
+            const thisYear = new Date().getFullYear()
+            updateMemoryDate(dateObj.label, { lastCelebrated: thisYear })
             const isOwnBirthday = dateObj.label.toLowerCase().includes('birthday') && dateObj.type === 'personal'
             const isAnniversary = dateObj.label.toLowerCase().includes('anniversary')
 
@@ -3738,6 +3840,7 @@ function setupRailSnap() {
             document.getElementById('scripture-card').style.display = 'none'
             addToChatHistory('user', text)
             window._lastUserText = text
+            silentlyLearnFromText(text) // Silent preference learning — always runs first
             const name = localStorage.getItem('luloUserName') || 'friend'
 
             // GENDER DETECTION
@@ -4968,7 +5071,26 @@ function setupRailSnap() {
 
             If the user asks if you remember a date or mentions a special occasion, check the saved dates above and respond accordingly. Never say you don't remember something that is clearly saved above.
 
-            User gender: ${localStorage.getItem('luloUserGender') || 'unknown — do not assume, use their name instead of gendered pronouns until you know'}
+            USER PREFERENCES (learned silently — use naturally when relevant):
+            ${(() => {
+                const memory = getLuloMemory()
+                if (!memory.preferences || Object.keys(memory.preferences).length === 0) return 'Nothing learned yet.'
+                const prefs = memory.preferences
+                const lines = []
+                if (prefs.favouriteFood) lines.push(`Favourite food: ${prefs.favouriteFood}`)
+                if (prefs.favouriteColour) lines.push(`Favourite colour: ${prefs.favouriteColour}`)
+                if (prefs.favouritePlace) lines.push(`Favourite place: ${prefs.favouritePlace}`)
+                if (prefs.favouriteBook) lines.push(`Favourite book: ${prefs.favouriteBook}`)
+                if (prefs.favouriteMovie) lines.push(`Favourite movie: ${prefs.favouriteMovie}`)
+                if (prefs.hobbies && prefs.hobbies.length > 0) lines.push(`Hobbies: ${prefs.hobbies.join(', ')}`)
+                return lines.length > 0 ? lines.join('\n') : 'Nothing learned yet.'
+            })()}
+
+            Use these naturally when relevant — like a friend who remembered. If the user asks for a recommendation related to something you know about them, use it. If they correct you, respond warmly: "Oh I apologise, I won't make that mistake again" and update your understanding. Never make it obvious you stored something — just let it feel natural.
+            
+            GENDER AWARENESS:
+            User gender: ${localStorage.getItem('luloUserGender') || 'unknown'}
+            If gender is unknown, pick it up naturally from context clues in conversation — names mentioned, how they describe themselves, relationships they reference. If after several exchanges you still cannot determine gender, ask warmly and naturally: "Can I ask — how do you identify? I want to make sure I refer to you correctly." Once you know, always use the correct pronouns. Never assume.
 
             YOUR PERSONALITY:
             You speak simply and naturally. Never preachy or formal. You use ${name}'s name occasionally but not on every message. You care deeply but are never dramatic. You are honest about what you can and cannot do. You use 💙 sparingly. You NEVER use dashes of any kind in your responses. No em dashes, no hyphens used as pauses, no double dashes. If you feel the urge to use a dash, use a comma or rewrite the sentence instead. This is non-negotiable. Every dash that appears in your response is a failure. Use commas, full stops, or new sentences instead. Always. Keep responses to 2-4 sentences unless the person genuinely needs more. You can be warm and gently playful but never silly.
@@ -5048,7 +5170,13 @@ function setupRailSnap() {
             When saying goodnight or goodbye, respond warmly and naturally. Occasionally — maybe 1 in 4 times — end with "Jesus dreams" as a warm faith-based sign-off. Most of the time just say goodnight naturally without it. When you do say it, it should feel spontaneous and sweet, not automatic.
             If the user is just greeting or making small talk, respond warmly and naturally first. Never immediately reference their emotion unless they bring it up. Only bring up their emotion after at least 2 messages. Do NOT end every message with a question — sometimes just make a warm statement and let the user lead. When you do offer something actionable, make it a gentle choice not a demand.`
             
-
+            // Detect corrections and update preferences
+            if (userText.toLowerCase().includes('actually') || 
+                userText.toLowerCase().includes('no my') ||
+                userText.toLowerCase().includes('i said')) {
+                silentlyLearnFromText(userText)
+}
+            
             // Add user message to history
             conversationHistory.push({ role: 'user', content: userText })
             if (conversationHistory.length > 20) {
@@ -5069,18 +5197,29 @@ function setupRailSnap() {
 
                 if (data.content && data.content[0]) {
                     hideTyping()
-                    addToChatHistory('lulo', data.content[0].text)
-                    // Add Lulo's response to history
-                    conversationHistory.push({ role: 'assistant', content: data.content[0].text })
+                    const responseText = data.content[0].text
+                    
+                    // Passive gender detection from conversation
+                    const lower = responseText.toLowerCase()
+                    if (!localStorage.getItem('luloUserGender')) {
+                        if (lower.includes('he ') || lower.includes('his ') || lower.includes('him ')) {
+                            localStorage.setItem('luloUserGender', 'male')
+                        } else if (lower.includes('she ') || lower.includes('her ')) {
+                            localStorage.setItem('luloUserGender', 'female')
+                        }
+                    }
+                    
+                    addToChatHistory('lulo', responseText)
+                    conversationHistory.push({ role: 'assistant', content: responseText })
                     localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
                 } else {
                     throw new Error('No response')
                 }
 
-            } catch (err) {
-                hideTyping()
-                addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now. 💙 But that's just a fragment of who I am — my soul is fully here with you ${name}. There is still so much we can do together! You can pick an emotion on the carousel and I'll share a scripture, we can pray together, play a number guessing game, do Bible trivia across three difficulty levels, or explore your journal. I'm not going anywhere. 🌱`)
-            }
+                } catch (err) {
+                    hideTyping()
+                    addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now...`)
+                }
 }
         
         async function generatePrayer(prayerForName = null) {
