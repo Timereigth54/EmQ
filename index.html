@@ -1562,6 +1562,7 @@
     <div style="display:flex;gap:10px;justify-content:center;">
         <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="setTheme('dark');toggleThemePanel()" title="Dark"></div>
         <div class="theme-option" style="background:linear-gradient(135deg,#faf8ff,#f0eaff);" onclick="setTheme('light');toggleThemePanel()" title="Cloud of Angels"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:2px solid rgba(255,200,200,0.5);" onclick="setTheme('soft');toggleThemePanel()" title="Soft"></div>
     </div>
     <p style="font-size:0.65rem;color:rgba(255,255,255,0.2);text-align:center;margin-top:10px;letter-spacing:1px;">More themes coming soon</p>
 </div>
@@ -1736,7 +1737,49 @@ function setTheme(theme) {
             glassCardTitle: '#c9a84c',
             backBtn: 'rgba(201,168,76,0.3)',
             backBtnText: '#c9a84c',
-        }
+        },
+        soft: {
+            bg: '#fff8f8',
+            bgBefore: 'rgba(255,180,180,0.08)',
+            bgAfter: 'rgba(255,200,200,0.06)',
+            cardBg: 'rgba(255,255,255,0.8)',
+            cardBorder: 'rgba(255,180,180,0.2)',
+            text: '#4a3535',
+            textMuted: '#b09090',
+            accent: '#e8a0a0',
+            gold: '#e8a0a0',
+            inputBg: 'rgba(255,255,255,0.8)',
+            inputBorder: 'rgba(255,180,180,0.2)',
+            inputText: '#4a3535',
+            inputPlaceholder: '#b09090',
+            sendBtn: 'linear-gradient(135deg,#e8a0a0,#d08080)',
+            luloGlow: 'rgba(255,180,180,0.2)',
+            luloFilter: 'drop-shadow(0 0 25px rgba(255,180,180,0.5))',
+            carouselBg: 'linear-gradient(180deg,rgba(255,240,240,0.9) 0%,rgba(255,248,248,0.8) 50%,rgba(255,240,240,0.9) 100%)',
+            carouselBorder: 'rgba(255,180,180,0.2)',
+            activeSlotBorder: 'rgba(232,160,160,0.4)',
+            activeSlotGlow: 'rgba(232,160,160,0.1)',
+            activeSlotLine: 'rgba(232,160,160,0.6)',
+            emotionLabel: '#b09090',
+            emotionLabelActive: '#e8a0a0',
+            bottomBar: 'linear-gradient(to top,#fff8f8 60%,transparent)',
+            scrollbar: '#e8a0a0',
+            appName: '#b09090',
+            chatBubbleUserBg: 'rgba(232,160,160,0.15)',
+            chatBubbleUserBorder: 'rgba(232,160,160,0.35)',
+            chatBubbleUserText: '#4a3535',
+            chatBubbleLuloBg: 'rgba(255,255,255,0.8)',
+            chatBubbleLuloBorder: 'rgba(255,180,180,0.2)',
+            chatBubbleLuloText: '#5a4040',
+            scriptureFont: "'Palatino Linotype', Georgia, serif",
+            glassScreenBg: 'rgba(255,248,248,0.98)',
+            glassCardBg: 'rgba(255,255,255,0.8)',
+            glassCardBorder: 'rgba(255,180,180,0.2)',
+            glassCardText: '#4a3535',
+            glassCardTitle: '#e8a0a0',
+            backBtn: 'rgba(232,160,160,0.3)',
+            backBtnText: '#e8a0a0',
+        },
     }
 
     const t = themes[theme] || themes.dark
@@ -2018,8 +2061,9 @@ function buildEmotionButtons() {
         homeBtn.dataset.gindex = homeGIndex
         homeBtn.dataset.rindex = 0
         homeBtn.dataset.mood = 'home'
+        const isT2 = localStorage.getItem('luloTheme') === 'soft'
         homeBtn.innerHTML = `
-            <img src="lulo.png" style="width:34px;height:34px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 6px rgba(0,255,100,0.4));"/>
+            <img src="${isT2 ? 'lulo_t2.png' : 'lulo.png'}" style="width:34px;height:34px;object-fit:contain;${isT2 ? '' : 'mix-blend-mode:screen;'}filter:drop-shadow(0 0 6px rgba(0,255,100,0.4));"/>
             <span class="label" style="color:rgba(0,255,100,0.55);font-size:0.55rem;letter-spacing:1px;">LULO</span>
         `
         homeBtn.onclick = () => scrollToGlobal(homeGIndex)
@@ -3312,13 +3356,23 @@ function setupRailSnap() {
                 'lulo_tired.png', 'lulo_heartbroken.png', 'lulo_overwhelmed.png',
                 'lulo_prayer.png', 'lulo_tongues.png', 'lulo_empty.png',
                 'lulo_unsettled.png', 'lulo_praise.png', 'lulo_sick.png',
+                'lulo_loved.png', 'lulo_afraid.png', 'lulo_invisible.png', 'lulo_bored.png',
+                // THEME 2
+                'lulo_t2.png', 'lulo_t2_happy.png', 'lulo_t2_sad.png',
+                'lulo_t2_anxious.png', 'lulo_t2_caring.png', 'lulo_t2_depressed.png',
+                'lulo_t2_angry.png', 'lulo_t2_tired.png', 'lulo_t2_heartbroken.png',
+                'lulo_t2_overwhelmed.png', 'lulo_t2_prayerful.png', 'lulo_t2_tongues.png',
+                'lulo_t2_empty.png', 'lulo_t2_unsettled.png', 'lulo_t2_praise.png',
+                'lulo_t2_sick.png', 'lulo_t2_excited.png', 'lulo_t2_loved.png',
+                'lulo_t2_lonely.png', 'lulo_t2_afraid.png', 'lulo_t2_invisible.png',
+                'lulo_t2_bored.png', 'lulo_t2_expecting.png', 'lulo_t2_joyful.png',
             ]
             faces.forEach(src => {
                 const img = new Image()
                 img.src = src
             })
         }
-        
+                
         // LULO MEMORY SYSTEM
         function getLuloMemory() {
             try {
@@ -5147,94 +5201,96 @@ function setupRailSnap() {
         }
 
         function updateLuloMood(mood) {
-    const img = document.getElementById('lulo-img')
-    const luloGlow = document.getElementById('lulo-glow')
+        const img = document.getElementById('lulo-img')
+        const luloGlow = document.getElementById('lulo-glow')
+        const currentTheme = localStorage.getItem('luloTheme') || 'dark'
+        const isT2 = currentTheme === 'soft'
 
-    const moodFaces = {
-        happy: 'lulo_happy.png',
-        joyful: 'lulo_happy.png',
-        excited: 'lulo_excited.png',
-        peaceful: 'lulo_peaceful.png',
-        loved: 'lulo_loved.png',
-        encouraged: 'lulo_praise.png',
-        grateful: 'lulo_happy.png',
-        hopeful: 'lulo_peaceful.png',
-        expecting: 'lulo_caring.png',
-        sad: 'lulo_sad.png',
-        afraid: 'lulo_afraid.png',
-        anxious: 'lulo_unsettled.png',
-        depressed: 'lulo_depressed.png',
-        lonely: 'lulo_sad.png',
-        angry: 'lulo_angry.png',
-        tired: 'lulo_tired.png',
-        heartbroken: 'lulo_heartbroken.png',
-        overwhelmed: 'lulo_overwhelmed.png',
-        confused: 'lulo_unsettled.png',
-        empty: 'lulo_empty.png',
-        invisible: 'lulo_invisible.png',
-        rejected: 'lulo_heartbroken.png',
-        unappreciated: 'lulo_depressed.png',
-        unsettled: 'lulo_unsettled.png',
-        unmotivated: 'lulo_empty.png',
-        bored: 'lulo_bored.png',
-        tongues: 'lulo_tongues.png',
-        prayer: 'lulo_prayer.png',
-        praise: 'lulo_praise.png',
-        sick: 'lulo_sick.png',
-        home: 'lulo.png',
-    }
-
-    const moodGlows = {
-        happy: 'rgba(255,220,0,0.5)',
-        joyful: 'rgba(255,200,0,0.5)',
-        excited: 'rgba(255,150,0,0.5)',
-        peaceful: 'rgba(0,200,255,0.5)',
-        loved: 'rgba(255,100,150,0.5)',
-        encouraged: 'rgba(100,255,100,0.5)',
-        grateful: 'rgba(255,180,0,0.5)',
-        hopeful: 'rgba(150,255,200,0.5)',
-        expecting: 'rgba(255,150,200,0.5)',
-        sad: 'rgba(100,150,255,0.5)',
-        afraid: 'rgba(200,100,255,0.5)',
-        anxious: 'rgba(255,200,100,0.5)',
-        depressed: 'rgba(100,100,200,0.5)',
-        lonely: 'rgba(150,150,255,0.5)',
-        angry: 'rgba(255,80,80,0.5)',
-        tired: 'rgba(150,150,150,0.5)',
-        heartbroken: 'rgba(255,50,100,0.5)',
-        overwhelmed: 'rgba(200,50,255,0.5)',
-        confused: 'rgba(200,200,100,0.5)',
-        empty: 'rgba(150,150,180,0.5)',
-        invisible: 'rgba(180,180,220,0.5)',
-        rejected: 'rgba(255,100,100,0.5)',
-        unappreciated: 'rgba(180,130,100,0.5)',
-        unsettled: 'rgba(180,180,100,0.5)',
-        unmotivated: 'rgba(150,150,150,0.5)',
-        bored: 'rgba(100,200,200,0.5)',
-        prayer: 'rgba(255,220,100,0.5)',
-        praise: 'rgba(255,220,0,0.5)',
-        sick: 'rgba(100,200,150,0.5)',
-        home: 'rgba(0,255,100,0.5)',
-    }
-
-    // Swap Lulo's face
-    if (img) {
-        const face = moodFaces[mood] || 'lulo.png'
-        if (img.src !== face) {
-            img.style.transition = 'opacity 0.3s ease'
-            img.style.opacity = '0'
-            setTimeout(() => {
-                img.src = face
-                img.style.opacity = '1'
-            }, 300)
+        const moodFaces = {
+            happy: isT2 ? 'lulo_t2_happy.png' : 'lulo_happy.png',
+            joyful: isT2 ? 'lulo_t2_joyful.png' : 'lulo_happy.png',
+            excited: isT2 ? 'lulo_t2_excited.png' : 'lulo_excited.png',
+            peaceful: isT2 ? 'lulo_t2_caring.png' : 'lulo_peaceful.png',
+            loved: isT2 ? 'lulo_t2_loved.png' : 'lulo_loved.png',
+            encouraged: isT2 ? 'lulo_t2_happy.png' : 'lulo_praise.png',
+            grateful: isT2 ? 'lulo_t2_happy.png' : 'lulo_happy.png',
+            hopeful: isT2 ? 'lulo_t2_caring.png' : 'lulo_peaceful.png',
+            expecting: isT2 ? 'lulo_t2_expecting.png' : 'lulo_caring.png',
+            sad: isT2 ? 'lulo_t2_sad.png' : 'lulo_sad.png',
+            afraid: isT2 ? 'lulo_t2_afraid.png' : 'lulo_afraid.png',
+            anxious: isT2 ? 'lulo_t2_anxious.png' : 'lulo_unsettled.png',
+            depressed: isT2 ? 'lulo_t2_depressed.png' : 'lulo_depressed.png',
+            lonely: isT2 ? 'lulo_t2_lonely.png' : 'lulo_sad.png',
+            angry: isT2 ? 'lulo_t2_angry.png' : 'lulo_angry.png',
+            tired: isT2 ? 'lulo_t2_tired.png' : 'lulo_tired.png',
+            heartbroken: isT2 ? 'lulo_t2_heartbroken.png' : 'lulo_heartbroken.png',
+            overwhelmed: isT2 ? 'lulo_t2_overwhelmed.png' : 'lulo_overwhelmed.png',
+            confused: isT2 ? 'lulo_t2_unsettled.png' : 'lulo_unsettled.png',
+            empty: isT2 ? 'lulo_t2_empty.png' : 'lulo_empty.png',
+            invisible: isT2 ? 'lulo_t2_invisible.png' : 'lulo_invisible.png',
+            rejected: isT2 ? 'lulo_t2_heartbroken.png' : 'lulo_heartbroken.png',
+            unappreciated: isT2 ? 'lulo_t2_depressed.png' : 'lulo_depressed.png',
+            unsettled: isT2 ? 'lulo_t2_unsettled.png' : 'lulo_unsettled.png',
+            unmotivated: isT2 ? 'lulo_t2_empty.png' : 'lulo_empty.png',
+            bored: isT2 ? 'lulo_t2_bored.png' : 'lulo_bored.png',
+            tongues: isT2 ? 'lulo_t2_tongues.png' : 'lulo_tongues.png',
+            prayer: isT2 ? 'lulo_t2_prayerful.png' : 'lulo_prayer.png',
+            praise: isT2 ? 'lulo_t2_praise.png' : 'lulo_praise.png',
+            sick: isT2 ? 'lulo_t2_sick.png' : 'lulo_sick.png',
+            home: isT2 ? 'lulo_t2.png' : 'lulo.png',
         }
-    }
 
-    // Update glow
-    const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
-    if (img) img.style.filter = `drop-shadow(0 0 25px ${glow})`
-    if (luloGlow) luloGlow.style.background = `radial-gradient(circle, ${glow.replace('0.5', '0.15')} 0%, transparent 70%)`
-}
+        const moodGlows = {
+            happy: 'rgba(255,220,0,0.5)',
+            joyful: 'rgba(255,200,0,0.5)',
+            excited: 'rgba(255,150,0,0.5)',
+            peaceful: 'rgba(0,200,255,0.5)',
+            loved: 'rgba(255,100,150,0.5)',
+            encouraged: 'rgba(100,255,100,0.5)',
+            grateful: 'rgba(255,180,0,0.5)',
+            hopeful: 'rgba(150,255,200,0.5)',
+            expecting: 'rgba(255,150,200,0.5)',
+            sad: 'rgba(100,150,255,0.5)',
+            afraid: 'rgba(200,100,255,0.5)',
+            anxious: 'rgba(255,200,100,0.5)',
+            depressed: 'rgba(100,100,200,0.5)',
+            lonely: 'rgba(150,150,255,0.5)',
+            angry: 'rgba(255,80,80,0.5)',
+            tired: 'rgba(150,150,150,0.5)',
+            heartbroken: 'rgba(255,50,100,0.5)',
+            overwhelmed: 'rgba(200,50,255,0.5)',
+            confused: 'rgba(200,200,100,0.5)',
+            empty: 'rgba(150,150,180,0.5)',
+            invisible: 'rgba(180,180,220,0.5)',
+            rejected: 'rgba(255,100,100,0.5)',
+            unappreciated: 'rgba(180,130,100,0.5)',
+            unsettled: 'rgba(180,180,100,0.5)',
+            unmotivated: 'rgba(150,150,150,0.5)',
+            bored: 'rgba(100,200,200,0.5)',
+            prayer: 'rgba(255,220,100,0.5)',
+            praise: 'rgba(255,220,0,0.5)',
+            sick: 'rgba(100,200,150,0.5)',
+            home: 'rgba(0,255,100,0.5)',
+        }
+
+        // Swap Lulo's face
+        if (img) {
+            const face = moodFaces[mood] || 'lulo.png'
+            if (img.src !== face) {
+                img.style.transition = 'opacity 0.3s ease'
+                img.style.opacity = '0'
+                setTimeout(() => {
+                    img.src = face
+                    img.style.opacity = '1'
+                }, 300)
+            }
+        }
+
+        // Update glow
+        const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
+        if (img) img.style.filter = `drop-shadow(0 0 25px ${glow})`
+        if (luloGlow) luloGlow.style.background = `radial-gradient(circle, ${glow.replace('0.5', '0.15')} 0%, transparent 70%)`
+    }
 
         function formatMood(mood) {
             const moodPhrases = {
