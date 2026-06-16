@@ -1563,6 +1563,7 @@
         <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="setTheme('dark');toggleThemePanel()" title="Dark"></div>
         <div class="theme-option" style="background:linear-gradient(135deg,#faf8ff,#f0eaff);" onclick="setTheme('light');toggleThemePanel()" title="Cloud of Angels"></div>
         <div class="theme-option" style="background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:2px solid rgba(255,200,200,0.5);" onclick="setTheme('soft');toggleThemePanel()" title="Soft"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#080818,#1a0a0a);border:2px solid rgba(255,255,255,0.15);" onclick="setTheme('midnight');toggleThemePanel()" title="Midnight Egg"></div>
     </div>
     <p style="font-size:0.65rem;color:rgba(255,255,255,0.2);text-align:center;margin-top:10px;letter-spacing:1px;">More themes coming soon</p>
 </div>
@@ -1779,6 +1780,49 @@ function setTheme(theme) {
             glassCardTitle: '#e8a0a0',
             backBtn: 'rgba(232,160,160,0.3)',
             backBtnText: '#e8a0a0',
+        },
+        midnight: {
+            // Same as dark theme
+            bg: '#080818',
+            bgBefore: 'rgba(0,255,100,0.08)',
+            bgAfter: 'rgba(120,60,255,0.08)',
+            cardBg: 'rgba(255,255,255,0.04)',
+            cardBorder: 'rgba(255,255,255,0.08)',
+            text: 'rgba(255,255,255,0.9)',
+            textMuted: 'rgba(255,255,255,0.35)',
+            accent: '#00d4ff',
+            gold: '#00d4ff',
+            inputBg: 'rgba(255,255,255,0.05)',
+            inputBorder: 'rgba(255,255,255,0.1)',
+            inputText: 'white',
+            inputPlaceholder: 'rgba(255,255,255,0.25)',
+            sendBtn: 'linear-gradient(135deg,#00d4ff,#0099cc)',
+            luloGlow: 'rgba(0,255,100,0.2)',
+            luloFilter: 'drop-shadow(0 0 25px rgba(0,255,100,0.5))',
+            carouselBg: 'linear-gradient(180deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.03) 50%,rgba(255,255,255,0.06) 100%)',
+            carouselBorder: 'rgba(255,255,255,0.08)',
+            activeSlotBorder: 'rgba(0,255,100,0.2)',
+            activeSlotGlow: 'rgba(0,255,100,0.12)',
+            activeSlotLine: 'rgba(0,255,100,0.5)',
+            emotionLabel: 'rgba(255,255,255,0.6)',
+            emotionLabelActive: 'rgba(0,255,100,0.9)',
+            bottomBar: 'linear-gradient(to top,#080818 60%,transparent)',
+            scrollbar: 'rgba(0,212,255,0.2)',
+            appName: 'rgba(255,255,255,0.3)',
+            chatBubbleUserBg: 'rgba(0,212,255,0.07)',
+            chatBubbleUserBorder: 'rgba(0,212,255,0.13)',
+            chatBubbleUserText: 'rgba(255,255,255,0.65)',
+            chatBubbleLuloBg: 'rgba(255,255,255,0.04)',
+            chatBubbleLuloBorder: 'rgba(255,255,255,0.08)',
+            chatBubbleLuloText: 'rgba(100,255,200,0.85)',
+            scriptureFont: "'Inter', sans-serif",
+            glassScreenBg: 'rgba(8,8,24,0.97)',
+            glassCardBg: 'rgba(255,255,255,0.04)',
+            glassCardBorder: 'rgba(255,255,255,0.08)',
+            glassCardText: 'rgba(255,255,255,0.75)',
+            glassCardTitle: 'rgba(0,212,255,0.9)',
+            backBtn: 'rgba(0,212,255,0.3)',
+            backBtnText: 'rgba(0,212,255,0.8)',
         },
     }
 
@@ -2031,6 +2075,17 @@ function setTheme(theme) {
     // Update active theme circle
     document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'))
 
+    // Update Lulo's face immediately when theme changes
+    updateLuloMood(currentMood || 'home')
+
+    // Update carousel home slot image
+    const homeBtn = document.querySelector('.home-btn img')
+    if (homeBtn) {
+        const isT2 = theme === 'soft' || theme === 'midnight'
+        homeBtn.src = isT2 ? 'lulo_t2.png' : 'lulo.png'
+        homeBtn.style.mixBlendMode = isT2 ? 'normal' : 'screen'
+    }
+    
     // Save preference
     localStorage.setItem('luloTheme', theme)
 }
@@ -2061,7 +2116,7 @@ function buildEmotionButtons() {
         homeBtn.dataset.gindex = homeGIndex
         homeBtn.dataset.rindex = 0
         homeBtn.dataset.mood = 'home'
-        const isT2 = localStorage.getItem('luloTheme') === 'soft'
+        const isT2 = localStorage.getItem('luloTheme') === 'soft' || localStorage.getItem('luloTheme') === 'midnight'
         homeBtn.innerHTML = `
             <img src="${isT2 ? 'lulo_t2.png' : 'lulo.png'}" style="width:34px;height:34px;object-fit:contain;${isT2 ? '' : 'mix-blend-mode:screen;'}filter:drop-shadow(0 0 6px rgba(0,255,100,0.4));"/>
             <span class="label" style="color:rgba(0,255,100,0.55);font-size:0.55rem;letter-spacing:1px;">LULO</span>
@@ -5204,7 +5259,7 @@ function setupRailSnap() {
         const img = document.getElementById('lulo-img')
         const luloGlow = document.getElementById('lulo-glow')
         const currentTheme = localStorage.getItem('luloTheme') || 'dark'
-        const isT2 = currentTheme === 'soft'
+        const isT2 = currentTheme === 'soft' || currentTheme === 'midnight'
 
         const moodFaces = {
             happy: isT2 ? 'lulo_t2_happy.png' : 'lulo_happy.png',
