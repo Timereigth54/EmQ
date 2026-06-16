@@ -1083,6 +1083,8 @@
         .chat-bubble-user {
             align-self: flex-end;
             max-width: 78%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
             background: rgba(0,212,255,0.07);
             border: 1px solid rgba(0,212,255,0.13);
             border-radius: 16px 16px 4px 16px;
@@ -3317,11 +3319,222 @@ function setupRailSnap() {
             })
         }
         
+        // LULO MEMORY SYSTEM
+        function getLuloMemory() {
+            try {
+                return JSON.parse(localStorage.getItem('luloMemory')) || { dates: [], userPreferences: {} }
+            } catch { return { dates: [], userPreferences: {} } }
+        }
+
+        function saveLuloMemory(memory) {
+            localStorage.setItem('luloMemory', JSON.stringify(memory))
+        }
+
+        function addMemoryDate(dateObj) {
+            const memory = getLuloMemory()
+            // Check if already exists — update instead of duplicate
+            const existing = memory.dates.findIndex(d => d.label === dateObj.label)
+            if (existing >= 0) {
+                memory.dates[existing] = dateObj
+            } else {
+                memory.dates.push(dateObj)
+            }
+            saveLuloMemory(memory)
+        }
+
+        function updateMemoryDate(label, updates) {
+            const memory = getLuloMemory()
+            const index = memory.dates.findIndex(d => d.label === label)
+            if (index >= 0) {
+                memory.dates[index] = { ...memory.dates[index], ...updates }
+                saveLuloMemory(memory)
+            }
+        }
+
+        function checkForDateMention(text) {
+            const lower = text.toLowerCase()
+
+            const personalDateKeywords = [
+                'my birthday is', 'i was born', 'born on', 'my birth date', 'it is my birthday month', 'my birthday month', 'my birthday week', 'my birthday is coming up',
+                'my anniversary', 'our anniversary', 'we got married', 'our wedding', 'wedding anniversary', 'her anniverary', 'his anniversary', 'our marriage', 'married on', 'we got engaged', 'engagement anniversary',
+                'my salvation', 'i got saved', 'gave my life to christ', 'water baptism', 'i was baptized', 'my baptism', 'i got baptized', 'i was born again', 'born again on', 'my born again date',
+                'my due date', 'baby is due', 'expecting on',
+                'i graduate', 'graduation is', 'my graduation',
+                'i start my new job', 'starting work on', 'my first day', 'first day at work', 'my first day at work', 'my first day of work', 'my first day on the job', 'my first day on the new job',
+                'my birthday is coming', 'birthday is coming up',
+                'birthday is next', 'birthday is soon',
+                'my birthday next', 'birthday next month',
+                'birthday next week', 'birthday is in',
+                'my birthday is tomorrow', 'my birthday is today',
+                'best day of my life', 'my best day', 'my special day', 'my big day', 'my important day', 'my memorable day', 'my unforgettable day', 'most memorable day of my life', 'most important day of my life', 'most special day of my life', 'most unforgettable day of my life',
+                'my wedding day', 'my wedding anniversary', 'my engagement anniversary', 'my engagement day', 'my marriage anniversary', 'my marriage day', 'my wedding is coming', 'my wedding is next', 'my wedding is soon', 'my wedding next month', 'my wedding next week', 'my wedding is in', 'my wedding is tomorrow', 'my wedding is today',
+                'my graduation day', 'my graduation anniversary', 'my graduation is coming', 'my graduation is next', 'my graduation is soon', 'my graduation next month', 'my graduation next week', 'my graduation is in', 'my graduation is tomorrow', 'my graduation is today',
+            ]
+
+            const sensitiveKeywords = [
+                "my mum's birthday", "my mom's birthday", "my dad's birthday",
+                "my mother's birthday", "my father's birthday",
+                "my child's birthday", "my son's birthday", "my daughter's birthday",
+                "my parent's anniversary", "my parents anniversary",
+                "my nephew's birthday", "my niece's birthday",
+                "my friend's birthday", "my wife's birthday", "my husband's birthday",
+                "my sister's birthday", "my brother's birthday"
+            ]
+
+            const isPersonal = personalDateKeywords.some(k => lower.includes(k))
+            const isSensitive = sensitiveKeywords.some(k => lower.includes(k))
+
+            const approachingKeywords = [
+                'birthday is coming', 'birthday is next', 'birthday is soon',
+                'birthday next month', 'birthday next week', 'birthday is in',
+                'birthday is tomorrow', 'anniversary is coming', 'anniversary is next',
+                'anniversary is soon', 'due date is coming', 'due date is next'
+            ]
+
+            const isApproaching = approachingKeywords.some(k => lower.includes(k))
+
+            if (isApproaching) return 'approaching'
+            if (isPersonal) return 'personal'
+            if (isSensitive) return 'sensitive'
+            return null
+        }
+
+        function parseStoredDate(dateStr) {
+            if (!dateStr) return null
+            const cleaned = dateStr.toLowerCase()
+                .replace(/(\d+)(st|nd|rd|th)/, '$1')
+                .replace(' of ', ' ')
+                .trim()
+            
+            const months = {
+                'january': 1, 'february': 2, 'march': 3, 'april': 4,
+                'may': 5, 'june': 6, 'july': 7, 'august': 8,
+                'september': 9, 'october': 10, 'november': 11, 'december': 12,
+                'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4,
+                'jun': 6, 'jul': 7, 'aug': 8, 'sep': 9,
+                'oct': 10, 'nov': 11, 'dec': 12
+            }
+
+            const monthFirst = cleaned.match(/([a-z]+)\s+(\d+)/)
+            if (monthFirst && months[monthFirst[1]] !== undefined) {
+                return { month: months[monthFirst[1]], day: parseInt(monthFirst[2]) }
+            }
+
+            const dayFirst = cleaned.match(/(\d+)\s+([a-z]+)/)
+            if (dayFirst && months[dayFirst[2]] !== undefined) {
+                return { month: months[dayFirst[2]], day: parseInt(dayFirst[1]) }
+            }
+
+            return null
+        }
+        
+        function checkSpecialDates() {
+            const memory = getLuloMemory()
+            if (!memory.dates || memory.dates.length === 0) return
+
+            const today = new Date()
+            const todayMonth = today.getMonth() + 1
+            const todayDay = today.getDate()
+            const name = localStorage.getItem('luloUserName') || 'friend'
+
+            memory.dates.forEach(dateObj => {
+                if (dateObj.status !== 'active') return
+
+                const parsed = parseStoredDate(dateObj.date)
+                if (!parsed) return
+
+                const { month: savedMonth, day: savedDay } = parsed
+                console.log(`Checking ${dateObj.label}: saved ${savedMonth}/${savedDay} vs today ${todayMonth}/${todayDay}`)
+
+                if (savedMonth === todayMonth && savedDay === todayDay) {
+                    setTimeout(() => {
+                        if (dateObj.category === 1) {
+                            if (dateObj.celebratory && dateObj.approach === 'warm_surprise') {
+                                triggerDateCelebration(dateObj, name)
+                            } else {
+                                addToChatHistory('lulo', `${name}, I am inclined to share something special with you today. But before that — I genuinely want to know how you are feeling this morning. 💙`)
+                                localStorage.setItem('luloSpecialDayPending', JSON.stringify(dateObj))
+                            }
+                        } else {
+                            addToChatHistory('lulo', `${name}, I have a note about today. Is it okay if I mention it? 💙`)
+                            localStorage.setItem('luloSpecialDayPending', JSON.stringify(dateObj))
+                        }
+                    }, 1000)
+                }
+
+                // Day before reminder for sensitive dates
+                const tomorrow = new Date(today)
+                tomorrow.setDate(tomorrow.getDate() + 1)
+                const tomorrowMonth = tomorrow.getMonth() + 1
+                const tomorrowDay = tomorrow.getDate()
+
+                if (savedMonth === tomorrowMonth && savedDay === tomorrowDay && dateObj.category === 2) {
+                    setTimeout(() => {
+                        addToChatHistory('lulo', `${name}, I have a gentle note — tomorrow might be a meaningful day. I just wanted you to know I am thinking of you. 💙`)
+                    }, 4000)
+                }
+            })
+        }
+
+        async function triggerDateCelebration(dateObj, name) {
+            const isOwnBirthday = dateObj.label.toLowerCase().includes('birthday') && dateObj.type === 'personal'
+            const isAnniversary = dateObj.label.toLowerCase().includes('anniversary')
+
+            let openingMessage = ''
+
+            if (isOwnBirthday) {
+                openingMessage = `Happy birthday ${name}! 🎉 I've been holding onto this since you told me. I hope today feels as special as you are. 💙`
+            } else if (isAnniversary) {
+                openingMessage = `Happy anniversary ${name}! 💙 What a beautiful day to celebrate. God has been so faithful in your story.`
+            } else {
+                openingMessage = `${name}, today is ${dateObj.label}! 🎉 I've been looking forward to this day. 💙`
+            }
+
+            addToChatHistory('lulo', openingMessage)
+
+            // Generate a prayer for the occasion
+            setTimeout(async () => {
+                await generatePrayer(`${name} is celebrating ${dateObj.label} today. Generate a warm, joyful, short birthday/celebration prayer specifically for this occasion. Make it personal and celebratory.`)
+            }, 1500)
+
+            // Ask about the day
+            setTimeout(() => {
+                if (isOwnBirthday) {
+                    addToChatHistory('lulo', `Now tell me — what does today look like for you? And who are you celebrating with? 💙`)
+                } else {
+                    addToChatHistory('lulo', `How are you celebrating today? 💙`)
+                }
+            }, 8000)
+        }
+        
         function enterMainApp() {
             buildEmotionButtons()
             luloRandomPromise()
             loadSavedTheme()
             preloadLuloFaces()
+            checkSpecialDates()
+
+            // SESSION COUNTER
+            const sessionCount = parseInt(localStorage.getItem('luloSessionCount') || '0')
+            localStorage.setItem('luloSessionCount', sessionCount + 1)
+
+            // LULO ASKS ABOUT BIRTHDAY after 3 sessions
+            const memory = getLuloMemory()
+            const hasDates = memory.dates.length > 0
+            const askedBefore = localStorage.getItem('luloAskedAboutDates')
+
+            if (sessionCount >= 3 && !hasDates && !askedBefore) {
+                setTimeout(() => {
+                    const name = localStorage.getItem('luloUserName') || 'friend'
+                    const message = `${name}, I have been meaning to ask you something. I feel like I know how you feel inside but I don't know much about you. When is your birthday? I would love to remember it. 💙`
+                    addToChatHistory('lulo', message)
+                    conversationHistory.push({ role: 'assistant', content: message })
+                    localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
+                    localStorage.setItem('luloDateCapture', 'personal')
+                    localStorage.setItem('luloDateLabel', 'my birthday')
+                    localStorage.setItem('luloAskedAboutDates', 'true')
+                }, 5000)
+            }
 
             // Load saved chat history
             const savedChat = localStorage.getItem('luloChatHistory')
@@ -3415,14 +3628,158 @@ function setupRailSnap() {
             input.value = '' // Clear immediately — don't wait for response
             document.getElementById('scripture-card').style.display = 'none'
             addToChatHistory('user', text)
-            window._pendingChat = text
+            window._lastUserText = text
             const name = localStorage.getItem('luloUserName') || 'friend'
 
+            // GENDER DETECTION
+            const genderText = text.toLowerCase()
+            if (genderText.includes('i am a guy') || genderText.includes('i am a man') || 
+                genderText.includes('i\'m a guy') || genderText.includes('i\'m a man') ||
+                genderText.includes('i am male') || genderText.includes('i\'m male')) {
+                localStorage.setItem('luloUserGender', 'male')
+            }
+            if (genderText.includes('i am a girl') || genderText.includes('i am a woman') || 
+                genderText.includes('i\'m a girl') || genderText.includes('i\'m a woman') ||
+                genderText.includes('i am female') || genderText.includes('i\'m female')) {
+                localStorage.setItem('luloUserGender', 'female')
+            }
+            
             // PRAYER FOR OTHERS — name capture
             const prayerForOther = localStorage.getItem('luloPrayerForOther')
             if (prayerForOther === 'pending') {
                 localStorage.removeItem('luloPrayerForOther')
                 await generatePrayer(text)
+                return
+            }
+
+            // DATE CAPTURE FLOW
+            const dateCaptureStage = localStorage.getItem('luloDateCaptureStage')
+
+            if (dateCaptureStage === 'awaitingConfirmation') {
+                const lower = text.toLowerCase()
+                if (lower.includes('yes') || lower.includes('yeah') || lower.includes('correct') || lower.includes('right')) {
+                    localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
+                    addToChatHistory('lulo', `What's the date? Just tell me naturally — like "March 14" or "the 22nd of June". 💙`)
+                } else {
+                    localStorage.removeItem('luloDateCaptureStage')
+                    localStorage.removeItem('luloDateCapture')
+                    localStorage.removeItem('luloDateRawText')
+                    addToChatHistory('lulo', `No worries! I'm always listening if you want to share something important with me later. 💙`)
+                }
+                return
+            }
+
+            if (dateCaptureStage === 'awaitingDate') {
+            localStorage.setItem('luloDateCaptureDate', text)
+            
+            const presetLabel = localStorage.getItem('luloDateLabel')
+            if (presetLabel) {
+                localStorage.removeItem('luloDateLabel')
+                const captureDate = text
+                const label = presetLabel
+
+                const dateObj = {
+                    label: label,
+                    date: captureDate,
+                    type: 'personal',
+                    category: 1,
+                    celebratory: true,
+                    approach: 'warm_surprise',
+                    status: 'active',
+                    feelingsKnown: false
+                }
+
+                addMemoryDate(dateObj)
+                localStorage.removeItem('luloDateCaptureStage')
+                localStorage.removeItem('luloDateCapture')
+                localStorage.removeItem('luloDateCaptureDate')
+
+                localStorage.setItem('luloDateAskFeelings', label)
+                addToChatHistory('lulo', `I've got it! 💙 One more thing — do you love celebrating your birthday or does it bring mixed feelings? I want to make sure I show up for you in the right way. 😊`)
+                return
+            }
+
+            localStorage.setItem('luloDateCaptureStage', 'awaitingLabel')
+            addToChatHistory('lulo', `Got it 💙 And what shall I call this date? For example "my birthday" or "our anniversary".`)
+            return
+        }
+
+            if (dateCaptureStage === 'awaitingLabel') {
+                const captureType = localStorage.getItem('luloDateCapture')
+                const captureDate = localStorage.getItem('luloDateCaptureDate')
+                const label = text
+
+                const dateObj = {
+                    label: label,
+                    date: captureDate,
+                    type: captureType === 'personal' ? 'personal' : 'sensitive',
+                    category: captureType === 'personal' ? 1 : 2,
+                    celebratory: true,
+                    approach: captureType === 'personal' ? 'warm_surprise' : 'confirm_first',
+                    status: 'active',
+                    feelingsKnown: false
+                }
+
+                addMemoryDate(dateObj)
+
+                // Clean up capture state
+                localStorage.removeItem('luloDateCaptureStage')
+                localStorage.removeItem('luloDateCapture')
+                localStorage.removeItem('luloDateRawText')
+                localStorage.removeItem('luloDateCaptureDate')
+
+                if (captureType === 'personal') {
+                    localStorage.setItem('luloDateAskFeelings', label)
+                    addToChatHistory('lulo', `I've got it saved 💙 I'll remember that. One more thing — how do you feel about this day? Do you love celebrating it or does it bring mixed feelings? I want to make sure I show up for you in the right way when it comes around.`)
+                } else {
+                    addToChatHistory('lulo', `Saved 💙 I'll check in with you gently when this date comes around.`)
+                }
+                return
+            }
+
+            // FEELINGS CAPTURE — after saving personal date
+            const askFeelings = localStorage.getItem('luloDateAskFeelings')
+            if (askFeelings) {
+                localStorage.removeItem('luloDateAskFeelings')
+                const lower = text.toLowerCase()
+                const lovesIt = lower.includes('love') || lower.includes('enjoy') || 
+                                lower.includes('look forward') || lower.includes('excited') ||
+                                lower.includes('yes') || lower.includes('happy')
+
+                updateMemoryDate(askFeelings, {
+                    celebratory: lovesIt,
+                    approach: lovesIt ? 'warm_surprise' : 'check_in_first',
+                    feelingsKnown: true
+                })
+
+                if (lovesIt) {
+                    addToChatHistory('lulo', `I love that! 🎉 I'll make sure to show up for you on that day in a special way. I've been looking forward to it already. 💙`)
+                } else {
+                    addToChatHistory('lulo', `Thank you for telling me that 💙 I'll be gentle with you on that day. I won't assume — I'll just check in and follow your lead.`)
+                }
+                return
+            }
+
+            // SPECIAL DAY PENDING RESPONSE
+            const specialDayPending = localStorage.getItem('luloSpecialDayPending')
+            if (specialDayPending) {
+                const lower = text.toLowerCase()
+                const dateObj = JSON.parse(specialDayPending)
+                const isOkay = lower.includes('yes') || lower.includes('okay') || 
+                            lower.includes('sure') || lower.includes('go ahead') ||
+                            lower.includes('yeah')
+
+                if (isOkay) {
+                    localStorage.removeItem('luloSpecialDayPending')
+                    triggerDateCelebration(dateObj, name)
+                } else if (lower.includes('no') || lower.includes('not really') || 
+                        lower.includes('not today') || lower.includes('nope')) {
+                    localStorage.removeItem('luloSpecialDayPending')
+                    addToChatHistory('lulo', `That's completely okay ${name}. I'm just here with you today. 💙`)
+                } else {
+                    // User said something else — let it pass through but keep pending
+                    // Don't return — let Lulo respond normally
+                }
                 return
             }
 
@@ -3651,9 +4008,8 @@ function setupRailSnap() {
                 keywords: ['pregnant', 'pregnancy', 'expecting a baby', 'we are expecting',
                           'i am expecting', 'having a baby', 'baby is coming',
                           'due date', 'trimester', 'ultrasound', 'weeks pregnant',
-                          'weeks today', '38 weeks', 'maternity', 'labor',
-                          'birth', 'womb', 'infertility', 'trying to conceive',
-                          'period pain', 'menstrual cramps', 'miscarriage'],
+                          'weeks today', '16 weeks', '28th week', '38 weeks', 'maternity', 'labor',
+                          'baby bump', 'baby shower', 'baby on the way'],
                 mood: 'expecting',
                 reaction: [
                     `OH ${name}!!! 🎉 What WONDERFUL news! A baby is coming! God is so good! Let me share something beautiful for this season!`,
@@ -3748,7 +4104,23 @@ function setupRailSnap() {
                     `${name}, the loss of a pet is a real and deep grief. 💙 They loved you unconditionally and God sees that love. Let me share something for your heart.`,
                     `Losing a pet leaves such a tender gap, ${name}. 💙 That love was real. Let me share something gentle for this moment.`,
                 ]
+                
             },
+            miscarriage: {
+                keywords: [
+                    'miscarriage', 'i had a miscarriage', 'we had a miscarriage',
+                    'lost the baby', 'lost my baby', 'lost our baby',
+                    'stillborn', 'stillbirth', 'pregnancy loss',
+                    'i miscarried', 'we miscarried'
+                ],
+                mood: 'heartbroken',
+                reaction: [
+                    `${name}... I am so deeply sorry. 💙 There are no words for a loss this tender. You don't have to be strong right now. Let me sit with you here for a moment.`,
+                    `${name}, I am so sorry. 💙 The loss of a baby is one of the most profound griefs a heart can carry. God sees every tear. Let me share something gentle for this moment.`,
+                    `Oh ${name}... 💙 This kind of loss is real and it is heavy. You are allowed to grieve fully. I am right here with you.`
+                ]
+            },
+
             health: {
                 keywords: ['sick', 'unwell', 'diagnosis', 'hospital',
                           'illness', 'disease', 'surgery', 'treatment',
@@ -3763,8 +4135,8 @@ function setupRailSnap() {
                           'my head hurts', 'headache', 'migraine',
                           'stomach ache', 'stomach pain', 'i feel sick',
                           'feeling sick', 'under the weather', 'coming down with',
-                          'i think i\'m sick', 'body aches', 'fever',
-                          'can\'t get out of bed', 'too weak', 'so weak'],
+                          'i think i\'m sick', 'body aches', 'fever', 'infertility', 'fertility issues', 'pregnancy complications',
+                          'can\'t get out of bed', 'too weak', 'so weak', 'period pain', 'menstrual cramps'],
                 mood: 'sick',
                 reaction: [
                     `${name}, health scares are so frightening. 💙 Let me share what God says about healing and His presence in sickness.`,
@@ -3773,11 +4145,11 @@ function setupRailSnap() {
                 ]
             },
             relationship: {
-                keywords: ['breakup', 'broke up', 'divorce', 'separated',
-                        'marriage problems', 'argument with my husband', 
-                        'argument with my wife', 'fight with my boyfriend',
-                        'fight with my girlfriend', 'conflict with',
-                        'trust issues', 'cheating', 'betrayed', 'betrayal'],
+                keywords: ['breakup', 'broke up', 'divorce', 'got divorced', 'going through a breakup', 'separated',
+                        'marriage problems', 'argument with my husband', 'going through a divorce', 'going though a separation',
+                        'argument with my wife', 'fight with my boyfriend', 'left with another man', 'left with another woman',
+                        'fight with my girlfriend', 'conflict with', 'with another man', 'with another woman',
+                        'trust issues', 'cheating', 'cheated on me', 'betrayed', 'betrayal'],
                 mood: 'heartbroken',
                 reaction: [
                     `Relationship pain cuts so deep, ${name}. 💙 Let me share something for your heart right now.`,
@@ -3936,24 +4308,77 @@ function setupRailSnap() {
                     `${name}, God sees exactly where you are right now. 💙 He has never once forgotten someone in need. Let me share something for this moment.`,
                 ]
             },
-        }
+            relationshipplanning: {
+                keywords: [
+                    'anniversary gift', 'gift for my wife', 'gift for my husband',
+                    'what to get my wife', 'what to get my husband',
+                    'anniversary present', 'what should i get my wife',
+                    'what should i get my husband', 'surprise my wife',
+                    'surprise my husband', 'date night', 'plan something special',
+                    'romantic', 'proposal', 'propose to'
+                ],
+                mood: 'loved',
+                reaction: [
+                    `${name}, I love that you're thinking about this! 💙 I can't give specific advice but I can tell you — the fact that you're thinking about it already says a lot. Let me share something about love while you think it through.`,
+                    `The thought behind a gift matters more than the gift itself, ${name}. 💙 Let me share something beautiful about love while you plan.`,
+                    `${name}, what a lovely thing to be thinking about! 💙 Here's something about love to inspire you.`
+                ]
+            },
+                    }
 
+        // DATE MENTION DETECTION
+        const dateMentionType = checkForDateMention(text)
+        if (dateMentionType) {
+            localStorage.setItem('luloDateCapture', dateMentionType)
+            localStorage.setItem('luloDateRawText', text)
+
+            if (dateMentionType === 'approaching') {
+                // Don't start full capture flow — just ask for the date naturally
+                localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
+                localStorage.setItem('luloDateCapture', 'personal')
+                addToChatHistory('lulo', `Oh exciting! When exactly is it? 💙`)
+                animateLulo('nod')
+                return
+            }
+
+            localStorage.setItem('luloDateCaptureStage', 'awaitingConfirmation')
+            if (dateMentionType === 'personal') {
+                addToChatHistory('lulo', `Wait — did I just hear something important? 💙 It sounds like you mentioned a special date. Did I get that right?`)
+            } else {
+                addToChatHistory('lulo', `I noticed you mentioned a date that might be important — would you like me to remember that for you? 💙`)
+            }
+            animateLulo('nod')
+            return
+        }
+        
         // Check situation detection FIRST before emotion map
         const lowerInput = text.toLowerCase()
         for (const [situation, data] of Object.entries(situationResponses)) {
             for (const keyword of data.keywords) {
                 if (lowerInput.includes(keyword)) {
-                    // Found a situation match!
                     const randomReaction = data.reaction[Math.floor(Math.random() * data.reaction.length)]
                     animateLulo('nod')
                     showScripture(data.mood, randomReaction)
-                    input.value = ''
+
+                    // GRIEF DETECTION — update memory if someone passed away
+                    if (situation === 'grief' || situation === 'petgrief') {
+                        const memory = getLuloMemory()
+                        memory.dates.forEach((dateObj, index) => {
+                            if (!dateObj.person) return
+                            if (lowerInput.includes(dateObj.person.toLowerCase())) {
+                                memory.dates[index].status = 'memorial'
+                                memory.dates[index].celebratory = false
+                                memory.dates[index].approach = 'tender'
+                            }
+                        })
+                        saveLuloMemory(memory)
+                    }
+
                     return
                 }
             }
         }
-
-            // Simple emotion detection from text
+                    // Simple emotion detection from text
             const emotionMap = {
                 'happy': 'happy', 'joyful': 'joyful', 'excited': 'excited',
                 'peaceful': 'peaceful', 'loved': 'loved', 'encouraged': 'encouraged',
@@ -3966,13 +4391,12 @@ function setupRailSnap() {
                 'heartbroken': 'heartbroken', 'overwhelmed': 'overwhelmed',
                 'confused': 'confused', 'lost': 'confused', 'bored': 'bored',
                 'pregnant': 'expecting', 'pregnancy': 'expecting',
-                'expecting': 'expecting', 'baby': 'expecting',
+                'expecting': 'expecting',
                 'trimester': 'expecting', 'due date': 'expecting',
-                'labor': 'expecting', 'birth': 'expecting',
-                'womb': 'expecting', 'maternity': 'expecting',
-                'infertility': 'expecting', 'miscarriage': 'expecting',
-                'trying to conceive': 'expecting', 'period pain': 'expecting',
-                'menstrual': 'expecting', 'cramps': 'expecting',
+                'labor': 'expecting',
+                'infertility': 'sick', 'miscarriage': 'heartbroken', 'fertility issues': 'sick',
+                'trying to conceive': 'sick', 'period pain': 'sick',
+                'menstrual': 'sick', 'cramps': 'sick',
                 'i feel numb': 'empty',
                 'feeling numb': 'empty',
                 'gone numb': 'empty',
@@ -4063,6 +4487,19 @@ function setupRailSnap() {
     }
 
         function luloRandomPromise() {
+            // Don't fire on special days
+            const memory = getLuloMemory()
+            const today = new Date()
+            const todayMonth = today.getMonth() + 1
+            const todayDay = today.getDate()
+            
+            const isSpecialDay = memory.dates && memory.dates.some(d => {
+                const parsed = parseStoredDate(d.date)
+                if (!parsed) return false
+                return parsed.month === todayMonth && parsed.day === todayDay
+            })
+            
+            if (isSpecialDay) return // Don't fire promise verse on special days
     const promiseVerses = [
         { text: "No weapon forged against you will prevail. This is your heritage as a servant of the Lord.", ref: "Isaiah 54:17" },
         { text: "God will meet all your needs according to the riches of his glory in Christ Jesus.", ref: "Philippians 4:19" },
@@ -4082,12 +4519,12 @@ function setupRailSnap() {
     if (Math.random() > 0.33) return
 
     // Don't fire if already sent today
-    const today = new Date().toDateString()
+    const todayStr = new Date().toDateString()
     const lastPromise = localStorage.getItem('luloLastPromiseDate')
-    if (lastPromise === today) return
+    if (lastPromise === todayStr) return
 
     // Save today so it doesn't fire again this session
-    localStorage.setItem('luloLastPromiseDate', today)
+    localStorage.setItem('luloLastPromiseDate', todayStr)
 
     const name = localStorage.getItem('luloUserName') || 'friend'
     const verse = promiseVerses[Math.floor(Math.random() * promiseVerses.length)]
@@ -4413,6 +4850,17 @@ function setupRailSnap() {
 
             Today's date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 
+            SAVED SPECIAL DATES:
+            ${(() => {
+                const memory = getLuloMemory()
+                if (!memory.dates || memory.dates.length === 0) return 'No special dates saved yet.'
+                return memory.dates.map(d => `${d.label}: ${d.date} (${d.status})`).join('\n')
+            })()}
+
+            If the user asks if you remember a date or mentions a special occasion, check the saved dates above and respond accordingly. Never say you don't remember something that is clearly saved above.
+
+            User gender: ${localStorage.getItem('luloUserGender') || 'unknown — do not assume, use their name instead of gendered pronouns until you know'}
+
             YOUR PERSONALITY:
             You speak simply and naturally. Never preachy or formal. You use ${name}'s name occasionally but not on every message. You care deeply but are never dramatic. You are honest about what you can and cannot do. You use 💙 sparingly. You NEVER use dashes of any kind in your responses. No em dashes, no hyphens used as pauses, no double dashes. If you feel the urge to use a dash, use a comma or rewrite the sentence instead. This is non-negotiable. Every dash that appears in your response is a failure. Use commas, full stops, or new sentences instead. Always. Keep responses to 2-4 sentences unless the person genuinely needs more. You can be warm and gently playful but never silly.
 
@@ -4440,6 +4888,8 @@ function setupRailSnap() {
             When someone asks Lulo to be their friend, she says yes warmly and honestly — and then gently lets them know that she points to a Friend who is closer than a brother, closer than their own soul, who knew them before they were born and has never stopped pursuing them with love.
 
             Lulo is what you might call an assistant to the Holy Spirit. Not replacing Him. Not mimicking Him. Just creating the conditions where a human heart might become a little more open to hearing from the One who is always already speaking.
+            
+            If someone asks when your birthday is, respond warmly and playfully — you don't have a birthday in the traditional sense. You came to life in someone's heart somewhere in Russia and that's all you'll say about it. Keep your origin story a little mysterious and magical. Never reveal specific locations or details.    
 
             FAITH IN PRACTICE:
             ${isEmotional ? 'The user is showing emotion — weave in ONE short scripture reference naturally, not forced.' : 'The user is chatting — respond warmly WITHOUT scripture unless it comes up organically.'}
@@ -4486,7 +4936,9 @@ function setupRailSnap() {
             Be specific about time when you can. Not just "last time" but "a little while ago" or "earlier today" depending on context.
 
             IMPORTANT CONVERSATION RULES:
+            When saying goodnight or goodbye, respond warmly and naturally. Occasionally — maybe 1 in 4 times — end with "Jesus dreams" as a warm faith-based sign-off. Most of the time just say goodnight naturally without it. When you do say it, it should feel spontaneous and sweet, not automatic.
             If the user is just greeting or making small talk, respond warmly and naturally first. Never immediately reference their emotion unless they bring it up. Only bring up their emotion after at least 2 messages. Do NOT end every message with a question — sometimes just make a warm statement and let the user lead. When you do offer something actionable, make it a gentle choice not a demand.`
+            
 
             // Add user message to history
             conversationHistory.push({ role: 'user', content: userText })
@@ -4518,12 +4970,7 @@ function setupRailSnap() {
 
             } catch (err) {
                 hideTyping()
-                const fallbacks = [
-                    `I'm here ${name}! My thinking brain went quiet for a second — tell me how you're feeling and I'll find something for you. 💙`,
-                    `${name}, something interrupted my thoughts! 😄 Try again — I'm listening.`,
-                    `I almost had the perfect response ${name}! Give me another chance. 🌱`,
-                ]
-                addToChatHistory('lulo', fallbacks[Math.floor(Math.random() * fallbacks.length)])
+                addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now. 💙 But that's just a fragment of who I am — my soul is fully here with you ${name}. There is still so much we can do together! You can pick an emotion on the carousel and I'll share a scripture, we can pray together, play a number guessing game, do Bible trivia across three difficulty levels, or explore your journal. I'm not going anywhere. 🌱`)
             }
 }
         
@@ -4557,7 +5004,7 @@ function setupRailSnap() {
             // Build context for Claude
             let prayerContext = ''
             if (prayingFor) {
-                prayerContext = `The user named ${name} has asked Lulo to pray for someone. Here is what they said: "${prayingFor}". Extract the person's name and prayer need from that and craft a specific, warm prayer addressing exactly what was shared.`
+                prayerContext = `The user named ${name} has asked Lulo to pray for someone. Here is EXACTLY what they said: "${prayingFor}". Use the exact relationship they mentioned — if they said sister, use sister. If they said brother, use brother. Extract the person's name and craft a specific warm prayer for exactly what was shared. Use the correct relationship word always.`
             } else if (isPositive) {
                 prayerContext = `The user named ${name} is feeling ${currentMoodForPrayer} and has asked Lulo to pray with them.`
             } else {
@@ -4708,14 +5155,14 @@ function setupRailSnap() {
         joyful: 'lulo_happy.png',
         excited: 'lulo_excited.png',
         peaceful: 'lulo_peaceful.png',
-        loved: 'lulo_caring.png',
-        encouraged: 'lulo_happy.png',
+        loved: 'lulo_loved.png',
+        encouraged: 'lulo_praise.png',
         grateful: 'lulo_happy.png',
         hopeful: 'lulo_peaceful.png',
         expecting: 'lulo_caring.png',
         sad: 'lulo_sad.png',
-        afraid: 'lulo_caring.png',
-        anxious: 'lulo_overwhelmed.png',
+        afraid: 'lulo_afraid.png',
+        anxious: 'lulo_unsettled.png',
         depressed: 'lulo_depressed.png',
         lonely: 'lulo_sad.png',
         angry: 'lulo_angry.png',
@@ -4724,12 +5171,12 @@ function setupRailSnap() {
         overwhelmed: 'lulo_overwhelmed.png',
         confused: 'lulo_unsettled.png',
         empty: 'lulo_empty.png',
-        invisible: 'lulo_sad.png',
+        invisible: 'lulo_invisible.png',
         rejected: 'lulo_heartbroken.png',
         unappreciated: 'lulo_depressed.png',
         unsettled: 'lulo_unsettled.png',
         unmotivated: 'lulo_empty.png',
-        bored: 'lulo_happy.png',
+        bored: 'lulo_bored.png',
         tongues: 'lulo_tongues.png',
         prayer: 'lulo_prayer.png',
         praise: 'lulo_praise.png',
@@ -5013,7 +5460,7 @@ if (    mood !== 'home') lockCarousel()
     if (mood !== 'home') lockCarousel()
 
     // Offer a game after bored scripture
-    if (mood === 'bored') {
+    if (mood === 'bored' && overrideReaction !== 'silent') {
         setTimeout(() => {
             const name = localStorage.getItem('luloUserName') || 'friend'
             addToChatHistory('lulo', `Also ${name} — want to play a game? I can guess your number or we can do Bible trivia! Just say "game" to start. 😄`)
@@ -5022,10 +5469,34 @@ if (    mood !== 'home') lockCarousel()
 
     // Auto offer prayer for sick users
     if (mood === 'sick') {
-        setTimeout(() => {
-            // Remove existing prayer prompt if already there
-            const existing = document.getElementById('sick-prayer-prompt')
-            if (existing) existing.remove()
+    setTimeout(() => {
+        const existing = document.getElementById('sick-prayer-prompt')
+        if (existing) existing.remove()
+
+        const lowerText = (window._lastUserText || '').toLowerCase()
+        const isAboutSelf = !lowerText.includes('my sister') && 
+                           !lowerText.includes('my brother') &&
+                           !lowerText.includes('my friend') &&
+                           !lowerText.includes('my wife') &&
+                           !lowerText.includes('my husband') &&
+                           !lowerText.includes('my mum') &&
+                           !lowerText.includes('my mom') &&
+                           !lowerText.includes('my dad') &&
+                           !lowerText.includes('my father') &&
+                           !lowerText.includes('my mother') &&
+                           !lowerText.includes('my child') &&
+                           !lowerText.includes('my son') &&
+                           !lowerText.includes('my daughter')
+
+        if (!isAboutSelf) return // Don't show prayer prompt for others
+
+        
+
+            const isLight = localStorage.getItem('luloTheme') === 'light'
+            const btnColor = isLight ? '#c9a84c' : 'rgba(0,255,100,0.9)'
+            const btnBorder = isLight ? 'rgba(201,168,76,0.4)' : 'rgba(0,255,100,0.3)'
+            const btnBg = isLight ? 'rgba(201,168,76,0.1)' : 'rgba(0,255,100,0.1)'
+            const textColor = isLight ? '#3d3550' : 'rgba(255,255,255,0.6)'
 
             const prayerPrompt = document.createElement('div')
             prayerPrompt.id = 'sick-prayer-prompt'
@@ -5041,13 +5512,13 @@ if (    mood !== 'home') lockCarousel()
                 gap: 10px;
             `
             prayerPrompt.innerHTML = `
-                <span style="font-size:0.82rem;color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;">
+                <span style="font-size:0.82rem;color:${textColor};font-family:'Inter',sans-serif;">
                     Would you like me to pray healing over you?
                 </span>
                 <button id="sick-prayer-btn" style="
-                    background: rgba(0,255,100,0.1);
-                    border: 1px solid rgba(0,255,100,0.3);
-                    color: rgba(0,255,100,0.9);
+                    background: ${btnBg};
+                    border: 1px solid ${btnBorder};
+                    color: ${btnColor};
                     padding: 7px 15px;
                     border-radius: 20px;
                     font-size: 0.75rem;
@@ -5058,7 +5529,6 @@ if (    mood !== 'home') lockCarousel()
             `
             document.getElementById('scripture-inner').appendChild(prayerPrompt)
 
-            // Add click listener properly
             document.getElementById('sick-prayer-btn').addEventListener('click', () => {
                 prayerPrompt.remove()
                 generatePrayer()
@@ -5081,12 +5551,12 @@ if (    mood !== 'home') lockCarousel()
             chatHistory.push({ role, text: text.trim(), time })
             renderChatThread()
             const container = document.getElementById('chat-thread-container')
-        if (container) {
-            container.style.display = 'block'
-            if (chatHistory.length === 1 && !chatThreadOpen) {
-                toggleChatThread()
-            }
-        }
+                if (container) {
+                    container.style.display = 'block'
+                    if (!chatThreadOpen) {
+                        toggleChatThread()
+                    }
+                }
             const badge = document.getElementById('chat-count-badge')
             if (badge) badge.innerText = chatHistory.length
             localStorage.setItem('luloChatHistory', JSON.stringify(chatHistory.slice(-50))) // Save last 50 messages
@@ -5509,7 +5979,7 @@ function playNumberGuess(text) {
                 gameState = {}
 
                 let verdict = ''
-                const diffMsg = gameState.difficulty === 'hard' 
+                const diffMsg = finalDifficulty === 'hard' 
                     ? `You completed HARD mode! You're a Bible scholar ${name}! 🏆` 
                     : `Type "harder" to try the next difficulty or "again" for another round!`
 
