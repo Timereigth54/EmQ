@@ -1,4 +1,4 @@
-const CACHE = 'emq-v14'
+const CACHE = 'emq-v15'
 const ASSETS = [
     '/EmQ/',
     '/EmQ/index.html',
@@ -32,6 +32,22 @@ self.addEventListener('install', e => {
             )
         })
     )
+})
+
+self.addEventListener('activate', e => {
+    e.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cache => {
+                    if (cache !== CACHE) {
+                        console.log('Deleting old cache:', cache)
+                        return caches.delete(cache)
+                    }
+                })
+            )
+        })
+    )
+    self.clients.claim()
 })
 
 self.addEventListener('fetch', e => {
