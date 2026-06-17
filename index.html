@@ -1601,6 +1601,80 @@
         firebase.initializeApp(firebaseConfig)
         const db = firebase.firestore()
 
+        function getLuloCode() {
+            let code = localStorage.getItem('luloSyncCode')
+            if (!code) {
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+                let random = ''
+                for (let i = 0; i < 4; i++) {
+                    random += chars[Math.floor(Math.random() * chars.length)]
+                }
+                code = `LULO-${random}`
+                localStorage.setItem('luloSyncCode', code)
+            }
+            return code
+        }
+
+        async function saveToCloud() {
+            const code = getLuloCode()
+            const data = {
+                luloMemory: localStorage.getItem('luloMemory') || '{}',
+                luloUserName: localStorage.getItem('luloUserName') || '',
+                luloUserGender: localStorage.getItem('luloUserGender') || '',
+                luloJournal: localStorage.getItem('luloJournal') || '[]',
+                luloFavourites: localStorage.getItem('luloFavourites') || '[]',
+                luloChatHistory: localStorage.getItem('luloChatHistory') || '[]',
+                luloConversationHistory: localStorage.getItem('luloConversationHistory') || '[]',
+                luloLastMood: localStorage.getItem('luloLastMood') || '',
+                luloLastRef: localStorage.getItem('luloLastRef') || '',
+                luloLastVerseText: localStorage.getItem('luloLastVerseText') || '',
+                luloLastVisitTimestamp: localStorage.getItem('luloLastVisitTimestamp') || '',
+                luloSpeaksInTongues: localStorage.getItem('luloSpeaksInTongues') || '',
+                luloSessionCount: localStorage.getItem('luloSessionCount') || '0',
+                luloAskedAboutDates: localStorage.getItem('luloAskedAboutDates') || '',
+                updatedAt: new Date().toISOString()
+            }
+
+            try {
+                await db.collection('users').doc(code).set(data)
+                console.log('Synced to cloud:', code)
+            } catch (err) {
+                console.error('Cloud save failed:', err)
+            }
+        }
+
+        async function loadFromCloud(code) {
+            try {
+                const doc = await db.collection('users').doc(code).get()
+                if (!doc.exists) {
+                    return false // Code doesn't exist
+                }
+                const data = doc.data()
+
+                // Restore everything into localStorage
+                localStorage.setItem('luloSyncCode', code)
+                localStorage.setItem('luloMemory', data.luloMemory || '{}')
+                localStorage.setItem('luloUserName', data.luloUserName || '')
+                localStorage.setItem('luloUserGender', data.luloUserGender || '')
+                localStorage.setItem('luloJournal', data.luloJournal || '[]')
+                localStorage.setItem('luloFavourites', data.luloFavourites || '[]')
+                localStorage.setItem('luloChatHistory', data.luloChatHistory || '[]')
+                localStorage.setItem('luloConversationHistory', data.luloConversationHistory || '[]')
+                localStorage.setItem('luloLastMood', data.luloLastMood || '')
+                localStorage.setItem('luloLastRef', data.luloLastRef || '')
+                localStorage.setItem('luloLastVerseText', data.luloLastVerseText || '')
+                localStorage.setItem('luloLastVisitTimestamp', data.luloLastVisitTimestamp || '')
+                localStorage.setItem('luloSpeaksInTongues', data.luloSpeaksInTongues || '')
+                localStorage.setItem('luloSessionCount', data.luloSessionCount || '0')
+                localStorage.setItem('luloAskedAboutDates', data.luloAskedAboutDates || '')
+
+                return true
+            } catch (err) {
+                console.error('Cloud load failed:', err)
+                return false
+            }
+        }
+
     // BUILD EMOTION BUTTONS DYNAMICALLY
         const emotionList = [
             { mood: 'happy', emoji: '😊', label: 'Happy' },
