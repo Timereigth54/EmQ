@@ -3439,6 +3439,7 @@ function setupRailSnap() {
 
             // Save name forever
             localStorage.setItem('luloUserName', name)
+            saveToCloud()
 
             // Hide name screen
             document.getElementById('name-screen').style.display = 'none'
@@ -3558,6 +3559,7 @@ function setupRailSnap() {
                 memory.dates.push(dateObj)
             }
             saveLuloMemory(memory)
+            saveToCloud()
         }
 
         function updateMemoryDate(label, updates) {
@@ -3566,6 +3568,7 @@ function setupRailSnap() {
             if (index >= 0) {
                 memory.dates[index] = { ...memory.dates[index], ...updates }
                 saveLuloMemory(memory)
+                 saveToCloud()
             }
         }
 
@@ -3664,6 +3667,7 @@ function setupRailSnap() {
             }
 
             saveLuloMemory(memory)
+            saveToCloud()
         }
         
         function checkForDateMention(text) {
@@ -3939,6 +3943,8 @@ function setupRailSnap() {
                 const hint = document.getElementById('scroll-hint')
                 if (hint) hint.style.display = 'none'
             }, 4000)
+                // Sync to cloud every 30 seconds while app is open
+                setInterval(saveToCloud, 30000)
         }
 
         async function luloListen() {
