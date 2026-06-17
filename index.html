@@ -1427,6 +1427,7 @@
             <div class="top-icon" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</div>
             <div class="top-icon" onclick="showJournal()" title="My Journey">📔</div>
             <div class="top-icon" id="theme-btn" onclick="toggleThemePanel()" title="Themes">🎨</div>
+            <div class="top-icon" onclick="toggleSyncPanel()" title="Sync">🔗</div>
             <div class="top-icon" onclick="showEmergencyKit()" title="Emergency">🆘</div>
         </div>
     </div>
@@ -1578,6 +1579,25 @@
     <p id="theme-panel-sublabel" style="font-size:0.65rem;color:rgba(255,255,255,0.2);text-align:center;margin-top:10px;letter-spacing:1px;">More themes coming soon</p>
 </div>
 
+<div id="sync-panel" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:90%;max-width:380px;border-radius:24px;padding:20px;z-index:9999;backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,0.25);background:rgba(15,15,35,0.95);border:1px solid rgba(255,255,255,0.1);">
+    <p style="font-size:0.7rem;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;text-align:center;">Sync Lulo across devices</p>
+    
+    <div style="text-align:center;margin-bottom:18px;">
+        <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:8px;">Your Lulo Code</p>
+        <div style="font-size:1.3rem;font-weight:700;letter-spacing:2px;color:#00d4ff;margin-bottom:10px;" id="sync-code-display"></div>
+        <button onclick="copySyncCode()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:rgba(0,212,255,0.9);padding:8px 18px;border-radius:50px;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;">Copy Code</button>
+    </div>
+
+    <div style="height:1px;background:rgba(255,255,255,0.08);margin:16px 0;"></div>
+
+    <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:10px;text-align:center;">Already have a code from another device?</p>
+    <div style="display:flex;gap:8px;">
+        <input type="text" id="sync-code-input" placeholder="LULO-XXXX" maxlength="9" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:white;padding:10px 14px;border-radius:50px;font-size:0.85rem;text-align:center;outline:none;font-family:'Inter',sans-serif;text-transform:uppercase;"/>
+        <button onclick="useSyncCode()" style="background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:10px 18px;border-radius:50px;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Sync</button>
+    </div>
+    <p id="sync-status" style="font-size:0.7rem;text-align:center;margin-top:10px;min-height:16px;"></p>
+</div>
+
 <!-- BOTTOM BAR -->
 <div id="bottom-bar" style="display:none;">
     <div id="input-row">
@@ -1672,6 +1692,54 @@
             } catch (err) {
                 console.error('Cloud load failed:', err)
                 return false
+            }
+        }
+
+        function toggleSyncPanel() {
+            const panel = document.getElementById('sync-panel')
+            if (!panel) return
+            const isOpening = panel.style.display !== 'block'
+            panel.style.display = isOpening ? 'block' : 'none'
+            if (isOpening) {
+                const codeDisplay = document.getElementById('sync-code-display')
+                if (codeDisplay) codeDisplay.innerText = getLuloCode()
+            }
+        }
+
+        function copySyncCode() {
+            const code = getLuloCode()
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target
+                const original = btn.innerText
+                btn.innerText = '✓ Copied!'
+                setTimeout(() => { btn.innerText = original }, 1500)
+            })
+        }
+
+        async function useSyncCode() {
+            const input = document.getElementById('sync-code-input')
+            const status = document.getElementById('sync-status')
+            let code = input.value.trim().toUpperCase()
+            if (!code) return
+
+            if (!code.startsWith('LULO-')) {
+                code = 'LULO-' + code
+            }
+
+            status.innerText = 'Connecting...'
+            status.style.color = 'rgba(255,255,255,0.4)'
+
+            const success = await loadFromCloud(code)
+
+            if (success) {
+                status.innerText = 'Synced! Reloading...'
+                status.style.color = 'rgba(0,255,150,0.8)'
+                setTimeout(() => {
+                    location.reload()
+                }, 1200)
+            } else {
+                status.innerText = 'Code not found. Check and try again.'
+                status.style.color = 'rgba(255,100,100,0.8)'
             }
         }
 
@@ -3943,6 +4011,10 @@ function setupRailSnap() {
                 const hint = document.getElementById('scroll-hint')
                 if (hint) hint.style.display = 'none'
             }, 4000)
+                
+                // Make sure this device's data exists in the cloud immediately
+                saveToCloud()
+            
                 // Sync to cloud every 30 seconds while app is open
                 setInterval(saveToCloud, 30000)
         }
