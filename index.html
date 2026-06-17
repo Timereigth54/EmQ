@@ -1026,9 +1026,14 @@
             transition: all 0.2s ease;
         }
 
+        .theme-option {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
         .theme-option:hover, .theme-option.active {
-            border-color: white;
+            border-color: rgba(0,212,255,0.6);
             transform: scale(1.1);
+            box-shadow: 0 0 0 3px rgba(0,212,255,0.15), 0 2px 8px rgba(0,0,0,0.2);
         }
 
         /* RESPONSIVE */
@@ -1151,8 +1156,9 @@
             0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
             30% { transform: translateY(-6px); opacity: 1; }
         }
-
     </style>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -1561,15 +1567,15 @@
 </div>
 </div>
 
-<div id="theme-panel" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:90%;max-width:380px;background:rgba(15,15,35,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:16px;z-index:9999;backdrop-filter:blur(20px);">
-    <p style="font-size:0.7rem;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;text-align:center;">Choose a theme</p>
+<div id="theme-panel" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);width:90%;max-width:380px;border-radius:24px;padding:18px;z-index:9999;backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+    <p id="theme-panel-label" style="font-size:0.7rem;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;text-align:center;">Choose a theme</p>
     <div style="display:flex;gap:10px;justify-content:center;">
         <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="setTheme('dark');toggleThemePanel()" title="Dark"></div>
         <div class="theme-option" style="background:linear-gradient(135deg,#faf8ff,#f0eaff);" onclick="setTheme('light');toggleThemePanel()" title="Cloud of Angels"></div>
         <div class="theme-option" style="background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:2px solid rgba(255,200,200,0.5);" onclick="setTheme('soft');toggleThemePanel()" title="Soft"></div>
         <div class="theme-option" style="background:linear-gradient(135deg,#080818,#1a0a0a);border:2px solid rgba(255,255,255,0.15);" onclick="setTheme('midnight');toggleThemePanel()" title="Midnight Egg"></div>
     </div>
-    <p style="font-size:0.65rem;color:rgba(255,255,255,0.2);text-align:center;margin-top:10px;letter-spacing:1px;">More themes coming soon</p>
+    <p id="theme-panel-sublabel" style="font-size:0.65rem;color:rgba(255,255,255,0.2);text-align:center;margin-top:10px;letter-spacing:1px;">More themes coming soon</p>
 </div>
 
 <!-- BOTTOM BAR -->
@@ -1582,6 +1588,19 @@
 </div>
 
 <script>
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAiUXWpcqpysOouq-2CWUQQ2GaCUANLzRk",
+            authDomain: "emq-companion.firebaseapp.com",
+            projectId: "emq-companion",
+            storageBucket: "emq-companion.firebasestorage.app",
+            messagingSenderId: "614794322310",
+            appId: "1:614794322310:web:ffff5ee266b1f17e898c07"
+        }
+
+        firebase.initializeApp(firebaseConfig)
+        const db = firebase.firestore()
+
     // BUILD EMOTION BUTTONS DYNAMICALLY
         const emotionList = [
             { mood: 'happy', emoji: '😊', label: 'Happy' },
@@ -2072,9 +2091,21 @@ function setTheme(theme) {
     const lockMsg = document.getElementById('lock-message')
     if (lockMsg) lockMsg.style.color = t.textMuted
 
-    // THEME PANEL background stays dark always — it's a control panel
+    // THEME PANEL — soft gradient that adapts to current theme
     const themePanel = document.getElementById('theme-panel')
-    if (themePanel) themePanel.style.background = 'rgba(15,15,35,0.97)'
+    if (themePanel) {
+        themePanel.style.background = isLight
+            ? 'linear-gradient(160deg, rgba(255,255,255,0.85), rgba(250,245,255,0.75))'
+            : 'linear-gradient(160deg, rgba(30,30,55,0.85), rgba(15,15,30,0.75))'
+        themePanel.style.border = isLight
+            ? '1px solid rgba(201,168,76,0.18)'
+            : '1px solid rgba(255,255,255,0.08)'
+    }
+
+    const themeLabel = document.getElementById('theme-panel-label')
+    const themeSublabel = document.getElementById('theme-panel-sublabel')
+    if (themeLabel) themeLabel.style.color = isLight ? 'rgba(61,53,80,0.45)' : 'rgba(255,255,255,0.3)'
+    if (themeSublabel) themeSublabel.style.color = isLight ? 'rgba(61,53,80,0.3)' : 'rgba(255,255,255,0.2)'
 
     // Update active theme circle
     document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'))
