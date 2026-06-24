@@ -3542,6 +3542,43 @@ function setupRailSnap() {
             showFirstTimeWelcome(name)
         }
 
+        function showCodeEntrySection() {
+            document.getElementById('name-entry-section').style.display = 'none'
+            document.getElementById('code-entry-section').style.display = 'block'
+        }
+
+        function showNameEntrySection() {
+            document.getElementById('code-entry-section').style.display = 'none'
+            document.getElementById('name-entry-section').style.display = 'block'
+        }
+
+        async function connectWithCode() {
+            const input = document.getElementById('returning-code-input')
+            const status = document.getElementById('returning-code-status')
+            let code = input.value.trim().toUpperCase()
+            if (!code) return
+
+            if (!code.startsWith('LULO-')) {
+                code = 'LULO-' + code
+            }
+
+            status.innerText = 'Connecting...'
+            status.style.color = 'rgba(255,255,255,0.4)'
+
+            const success = await loadFromCloud(code)
+
+            if (success) {
+                status.innerText = 'Found you! Welcome back...'
+                status.style.color = 'rgba(0,255,150,0.8)'
+                setTimeout(() => {
+                    location.reload()
+                }, 1200)
+            } else {
+                status.innerText = 'Code not found. Check and try again.'
+                status.style.color = 'rgba(255,100,100,0.8)'
+            }
+        }
+        
         function showFirstTimeWelcome(name) {
             const welcomeScreen = document.getElementById('welcome-screen')
             const welcomeMessage = document.getElementById('welcome-message')
