@@ -4969,18 +4969,38 @@ function setupRailSnap() {
             }
 
             if (detectedMood) {
-            showScripture(detectedMood)
-        } else {
-            // Open thread and show typing indicator
-            if (!chatThreadOpen) toggleChatThread()
-            showTyping()
-            animateLulo('nod')
-            // Send to Claude
-            await luloThink(text)
-        }
+                // Ask Claude whether this is genuinely the user's own current state
+                if (!chatThreadOpen) toggleChatThread()
+                showTyping()
+                const intent = await classifyIntent(text)
+                hideTyping()
+
+                if (intent === 'OTHER' || intent === 'REQUEST') {
+                    animateLulo('nod')
+                    await luloThink(text)
+                } else {
+                    const isMidConversation = window._lastFreeChatTimestamp &&
+                        (Date.now() - window._lastFreeChatTimestamp < 5 * 60 * 1000) &&
+                        currentMood && currentMood !== 'home' && currentMood !== ''
+
+                    if (isMidConversation) {
+                        localStorage.setItem('luloPendingScriptureOffer', JSON.stringify({ mood: detectedMood }))
+                        addToChatHistory('lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
+                    } else {
+                        showScripture(detectedMood)
+                    }
+                }
+            } else {
+                // Open thread and show typing indicator
+                if (!chatThreadOpen) toggleChatThread()
+                showTyping()
+                animateLulo('nod')
+                // Send to Claude
+                await luloThink(text)
+            }
 
             input.value = ''
-    }
+            }
 
         function luloRandomPromise() {
             // Don't fire on special days
