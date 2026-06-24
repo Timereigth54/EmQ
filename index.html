@@ -4241,6 +4241,28 @@ function setupRailSnap() {
                 return
             }
             
+            // PENDING SCRIPTURE OFFER RESPONSE
+            const pendingScriptureOffer = localStorage.getItem('luloPendingScriptureOffer')
+            if (pendingScriptureOffer) {
+                const lower = text.toLowerCase()
+                const offerData = JSON.parse(pendingScriptureOffer)
+                const wantsScripture = lower.includes('yes') || lower.includes('scripture') || 
+                                    lower.includes('now') || lower.includes('show me') ||
+                                    lower.includes('sure') || lower.includes('please')
+
+                localStorage.removeItem('luloPendingScriptureOffer')
+
+                if (wantsScripture) {
+                    showScripture(offerData.mood, 'silent')
+                } else {
+                    // Continue the conversation naturally — let it flow to Claude
+                    if (!chatThreadOpen) toggleChatThread()
+                    showTyping()
+                    await luloThink(text)
+                }
+                return
+            }
+            
             // ACTIVE GAME — intercept input if game is running
             if (activeGame === 'numberGuess') {
                 playNumberGuess(text)
