@@ -1779,7 +1779,7 @@
             if (sync) sync.style.display = 'none'
             if (more) more.style.display = 'none'
         }
-        
+
         function copySyncCode() {
             const code = getLuloCode()
             navigator.clipboard.writeText(code).then(() => {
@@ -3888,6 +3888,43 @@ function setupRailSnap() {
             saveToCloud()
         }
         
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) return
+            if (Notification.permission === 'granted' || Notification.permission === 'denied') return
+            
+            // Only ask after some genuine engagement, not on first visit
+            const sessionCount = parseInt(localStorage.getItem('luloSessionCount') || '0')
+            const alreadyAsked = localStorage.getItem('luloAskedNotificationPermission')
+            
+            if (sessionCount >= 2 && !alreadyAsked) {
+                localStorage.setItem('luloAskedNotificationPermission', 'true')
+                setTimeout(() => {
+                    const name = localStorage.getItem('luloUserName') || 'friend'
+                    addToChatHistory('lulo', `${name}, would it be okay if I sent you a gentle scripture reminder sometimes when you haven't checked in for a while? You can always turn it off later. 💙`)
+                    
+                    const promptDiv = document.createElement('div')
+                    promptDiv.id = 'notification-prompt'
+                    promptDiv.style.cssText = `margin-top:10px;display:flex;gap:8px;justify-content:center;`
+                    promptDiv.innerHTML = `
+                        <button onclick="grantNotificationPermission()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:rgba(0,212,255,0.9);padding:8px 18px;border-radius:50px;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;">Yes, remind me 💙</button>
+                        <button onclick="document.getElementById('notification-prompt').remove()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);padding:8px 18px;border-radius:50px;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;">Not now</button>
+                    `
+                    const thread = document.getElementById('chat-thread')
+                    if (thread) thread.appendChild(promptDiv)
+                }, 2000)
+            }
+        }
+
+        function grantNotificationPermission() {
+            Notification.requestPermission().then(permission => {
+                const prompt = document.getElementById('notification-prompt')
+                if (prompt) prompt.remove()
+                if (permission === 'granted') {
+                    addToChatHistory('lulo', `Thank you 💙 I'll check in gently when I notice you've been away a while.`)
+                }
+            })
+        }
+        
         async function classifyIntent(text) {
             const prompt = `A user of a faith companion app just typed this message: "${text}"
 
@@ -4050,6 +4087,44 @@ function setupRailSnap() {
             })
         }
 
+        function checkDailyScripture() {
+            const lastVisit = localStorage.getItem('luloLastVisitTimestamp')
+            const lastMood = localStorage.getItem('luloLastMood')
+            if (!lastVisit) return // First time ever, no catch up needed
+
+            const hoursSince = (Date.now() - parseInt(lastVisit)) / (1000 * 60 * 60)
+            
+            // If it's been more than 20 hours since their last visit, treat this as a new day
+            if (hoursSince >= 20) {
+                const name = localStorage.getItem('luloUserName') || 'friend'
+                setTimeout(() => {
+                    addToChatHistory('lulo', `Good to see you again, ${name} 💙 I saved something for you today.`)
+                    setTimeout(() => {
+                        showScripture(lastMood && lastMood !== 'home' ? lastMood : 'hopeful', 'silent')
+                    }, 1200)
+                }, 1500)
+
+                // If notifications are granted, also fire a real browser notification for next time
+                if (Notification.permission === 'granted') {
+                    scheduleNextNotification()
+                }
+            }
+        }
+
+        function scheduleNextNotification() {
+            // Browsers don't support true scheduled notifications without a service worker push server,
+            // so this fires a gentle reminder the next time the service worker wakes up, if supported
+            if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification('Em_Q', {
+                        body: 'Lulo saved something for you today 💙',
+                        icon: '/EmQ/favicon-96x96.png',
+                        tag: 'daily-scripture'
+                    })
+                })
+            }
+        }
+        
         async function triggerDateCelebration(dateObj, name) {
             // Mark as celebrated this year so it doesn't fire again
             const thisYear = new Date().getFullYear()
@@ -4090,7 +4165,9 @@ function setupRailSnap() {
             loadSavedTheme()
             preloadLuloFaces()
             checkSpecialDates()
-
+            checkDailyScripture()
+            requestNotificationPermission()
+            
             // SESSION COUNTER
             const sessionCount = parseInt(localStorage.getItem('luloSessionCount') || '0')
             localStorage.setItem('luloSessionCount', sessionCount + 1)
