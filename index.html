@@ -4827,6 +4827,31 @@ function setupRailSnap() {
         for (const [situation, data] of Object.entries(situationResponses)) {
             for (const keyword of data.keywords) {
                 if (lowerInput.includes(keyword)) {
+
+                    // Ask Claude whether this is genuinely about the user's own state
+                    if (!chatThreadOpen) toggleChatThread()
+                    showTyping()
+                    const intent = await classifyIntent(text)
+                    hideTyping()
+
+                    if (intent === 'OTHER' || intent === 'REQUEST') {
+                        // Not the user's own current emotion — let Claude respond naturally
+                        await luloThink(text)
+                        return
+                    }
+
+                    // intent === SELF — check if user is already mid an active conversation
+                    const isMidConversation = window._lastFreeChatTimestamp &&
+                        (Date.now() - window._lastFreeChatTimestamp < 5 * 60 * 1000) &&
+                        currentMood && currentMood !== 'home' && currentMood !== ''
+
+                    if (isMidConversation) {
+                        localStorage.setItem('luloPendingScriptureOffer', JSON.stringify({ mood: data.mood }))
+                        addToChatHistory('lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
+                        return
+                    }
+
+                    // Not mid-conversation — behave exactly as before
                     const randomReaction = data.reaction[Math.floor(Math.random() * data.reaction.length)]
                     animateLulo('nod')
                     showScripture(data.mood, randomReaction)
@@ -5262,6 +5287,7 @@ function setupRailSnap() {
 
         // LULO BRAIN — Claude conversation layer
         async function luloThink(userText) {
+            window._lastFreeChatTimestamp = Date.now()
             const name = localStorage.getItem('luloUserName') || 'friend'
             const mood = currentMood || localStorage.getItem('luloLastMood') || ''
             const lastMood = localStorage.getItem('luloLastMood') || ''
