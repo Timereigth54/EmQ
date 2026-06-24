@@ -3538,7 +3538,34 @@ function setupRailSnap() {
             // Hide name screen
             document.getElementById('name-screen').style.display = 'none'
 
-            // Show first time welcome
+            // Show the code reveal screen first, then welcome
+            showCodeRevealScreen(name)
+        }
+
+        function showCodeRevealScreen(name) {
+            const code = getLuloCode()
+            const screen = document.createElement('div')
+            screen.id = 'code-reveal-screen'
+            screen.style.cssText = `
+                position:fixed;top:0;left:0;width:100%;height:100%;
+                background:#080818;display:flex;flex-direction:column;
+                align-items:center;justify-content:center;z-index:2001;padding:30px;
+            `
+            screen.innerHTML = `
+                <div style="margin-bottom:25px;animation:float 3s ease-in-out infinite;">
+                    <img src="lulo.png" style="width:160px;height:160px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
+                </div>
+                <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:10px;text-align:center;">One thing before we begin, ${name} 💙</h2>
+                <p style="font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:25px;text-align:center;max-width:320px;line-height:1.6;">This is your Lulo Code. Save it somewhere safe, it's how I'll recognise you again on another device, or if you ever clear your browser.</p>
+                <div style="font-size:1.6rem;font-weight:700;letter-spacing:3px;color:#00d4ff;margin-bottom:20px;">${code}</div>
+                <button onclick="confirmCodeSaved('${name}')" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;">I've saved it →</button>
+            `
+            document.body.appendChild(screen)
+        }
+
+        function confirmCodeSaved(name) {
+            const screen = document.getElementById('code-reveal-screen')
+            if (screen) screen.remove()
             showFirstTimeWelcome(name)
         }
 
