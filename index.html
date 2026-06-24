@@ -1184,7 +1184,7 @@
     <div style="margin-bottom:20px;margin-top:60px;animation:float 3s ease-in-out infinite;">
         <img src="lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
     </div>
-    <div id="name-entry-section">
+    <div id="name-entry-section" style="display:flex;flex-direction:column;align-items:center;width:100%;">
         <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Before we begin...</h2>
         <p style="font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:25px;text-align:center;white-space:nowrap;">I'd love to know your name 💙</p>
         <input type="text" id="name-input" placeholder="Your name..." maxlength="30" onkeypress="if(event.key==='Enter')saveName()"/>
@@ -1194,7 +1194,7 @@
         <p onclick="showCodeEntrySection()" style="font-size:0.78rem;color:rgba(255,255,255,0.3);margin-top:20px;text-align:center;cursor:pointer;text-decoration:underline;">I already know Lulo</p>
     </div>
 
-    <div id="code-entry-section" style="display:none;">
+    <div id="code-entry-section" style="display:none;flex-direction:column;align-items:center;width:100%;">
         <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Welcome back 💙</h2>
         <p style="font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:25px;text-align:center;">Enter your Lulo Code from another device</p>
         <input type="text" id="returning-code-input" placeholder="LULO-XXXX" maxlength="9" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:white;padding:14px 24px;border-radius:50px;font-size:1rem;text-align:center;outline:none;width:100%;max-width:300px;margin-bottom:15px;font-family:'Inter',sans-serif;text-transform:uppercase;" onkeypress="if(event.key==='Enter')connectWithCode()"/>
@@ -3571,12 +3571,12 @@ function setupRailSnap() {
 
         function showCodeEntrySection() {
             document.getElementById('name-entry-section').style.display = 'none'
-            document.getElementById('code-entry-section').style.display = 'block'
+            document.getElementById('code-entry-section').style.display = 'flex'
         }
 
         function showNameEntrySection() {
             document.getElementById('code-entry-section').style.display = 'none'
-            document.getElementById('name-entry-section').style.display = 'block'
+            document.getElementById('name-entry-section').style.display = 'flex'
         }
 
         async function connectWithCode() {
