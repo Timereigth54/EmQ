@@ -1675,6 +1675,23 @@
             }
         }
 
+        function mergeArraysByTime(localArr, cloudArr, timeKey) {
+            const combined = [...localArr, ...cloudArr]
+            const seen = new Set()
+            const deduped = combined.filter(item => {
+                const key = JSON.stringify(item)
+                if (seen.has(key)) return false
+                seen.add(key)
+                return true
+            })
+            deduped.sort((a, b) => {
+                const aTime = a[timeKey] || a.timestamp || 0
+                const bTime = b[timeKey] || b.timestamp || 0
+                return new Date(aTime) - new Date(bTime)
+            })
+            return deduped
+        }
+        
         async function loadFromCloud(code) {
             try {
                 const doc = await db.collection('users').doc(code).get()
