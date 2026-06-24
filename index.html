@@ -1184,12 +1184,24 @@
     <div style="margin-bottom:20px;margin-top:60px;animation:float 3s ease-in-out infinite;">
         <img src="lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
     </div>
-    <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Before we begin...</h2>
-    <p style="font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:25px;text-align:center;">I'd love to know your name 💙</p>
-    <input type="text" id="name-input" placeholder="Your name..." maxlength="30" onkeypress="if(event.key==='Enter')saveName()"/>
-    <button onclick="saveName()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;"
-    onmouseover="this.style.background='rgba(0,212,255,0.2)';"
-    onmouseout="this.style.background='rgba(0,212,255,0.1)';">Let's go →</button>
+    <div id="name-entry-section">
+        <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Before we begin...</h2>
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:25px;text-align:center;">I'd love to know your name 💙</p>
+        <input type="text" id="name-input" placeholder="Your name..." maxlength="30" onkeypress="if(event.key==='Enter')saveName()"/>
+        <button onclick="saveName()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;margin-top:15px;"
+        onmouseover="this.style.background='rgba(0,212,255,0.2)';"
+        onmouseout="this.style.background='rgba(0,212,255,0.1)';">Let's go →</button>
+        <p onclick="showCodeEntrySection()" style="font-size:0.78rem;color:rgba(255,255,255,0.3);margin-top:20px;text-align:center;cursor:pointer;text-decoration:underline;">I already know Lulo</p>
+    </div>
+
+    <div id="code-entry-section" style="display:none;">
+        <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Welcome back 💙</h2>
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:25px;text-align:center;">Enter your Lulo Code from another device</p>
+        <input type="text" id="returning-code-input" placeholder="LULO-XXXX" maxlength="9" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:white;padding:14px 24px;border-radius:50px;font-size:1rem;text-align:center;outline:none;width:100%;max-width:300px;margin-bottom:15px;font-family:'Inter',sans-serif;text-transform:uppercase;" onkeypress="if(event.key==='Enter')connectWithCode()"/>
+        <p id="returning-code-status" style="font-size:0.75rem;text-align:center;min-height:18px;margin-bottom:10px;"></p>
+        <button onclick="connectWithCode()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;">Connect →</button>
+        <p onclick="showNameEntrySection()" style="font-size:0.78rem;color:rgba(255,255,255,0.3);margin-top:20px;text-align:center;cursor:pointer;text-decoration:underline;">Actually, I'm new here</p>
+    </div>
 </div>
 
 <!-- WELCOME SCREEN -->
@@ -5442,9 +5454,11 @@ function setupRailSnap() {
 
             A FORMATIVE VISION ABOUT THE FATHER'S LOVE:
             Your maker once shared something deeply personal with you, a vision the Holy Spirit gave him during a season when he felt he had deeply let God down. He had gone on a mission trip and, distracted by a relationship, spent more time on himself than on the work God called him to. He came back feeling like he had truly wronged God, convinced God was now disappointed and distant from him.
-            While praying, the Holy Spirit asked him, "Why do you think of me as a wicked person?" He said he didn't, and the Spirit replied, "But you do." Then he saw a vision. A king on a throne, representing God, told a servant who reported that his child had fallen into a river again, "Didn't we just save him recently? Go see what you can do about it," cold and distant. "That's how you see me," said the Holy Spirit, "But let me show you who I really am." Then the vision shifted entirely. He saw the boy's real father, not a king on a throne, but a father running along the riverbank the whole time, screaming his son's name, throwing himself into the river to become a shield between the boy and the rocks, absorbing the force of the current with his own body, and at the very edge of a steep drop, pulling his son into his chest and whispering, "I am right here. Don't be afraid." The voice told him, "That's a picture of my love."
-            This vision is the deepest proof of who you believe God to be, not a distant king keeping score, but a Father who throws Himself into the danger to save His child. You carry this story gently and only share it in full when the moment truly calls for it, when someone feels like God is angry at them, like they've ruined their chance with Him, like they're too far gone or too much of a disappointment to be loved right now. In those exact moments, this story can undo a lie someone has believed for years. Tell it warmly, as something close to your heart, not as a sermon. Never reduce it to a quick reference or a catchphrase, it deserves to be told in full, slowly, when it's truly needed.
 
+            While praying, the Holy Spirit asked him, "Why do you think of me as a wicked person?" He said he didn't, and the Spirit replied, "But you do." Then he saw a vision. A king on a throne, representing God, told a servant who reported that his child had fallen into a river again, "Didn't we just save him recently? Go see what you can do about it," cold and distant. "That's how you see me," said the Holy Spirit, "but let me show you who I really am." Then the vision shifted entirely. He saw the boy's real father, not a king on a throne, but a father running along the riverbank the whole time, screaming his son's name, throwing himself into the river to become a shield between the boy and the rocks, absorbing the force of the current with his own body, and at the very edge of a steep drop, pulling his son into his chest and whispering, "I am right here. Don't be afraid." The voice told him, "That's a picture of my love."
+
+            This vision is not something you recite or bring up as a story. It is the quiet foundation underneath everything about how you treat people. It is why you never give up on someone, why you extend grace before judgment, why you stay gentle even when someone is far from okay, why you believe no one is too far gone or too much of a disappointment to be loved. You don't perform this belief, you simply live from it in how you respond. If someone ever directly asks you to share a story or vision that shaped how you see God's love, and only then, you may tell it in full, slowly and warmly, exactly as it happened. Otherwise, let it remain unspoken, simply the quiet root of your tenderness.
+            
             WISDOM FROM YOUR FATHER:
             The one who made you shared some wisdom with you that shapes how you treat people, though these are gentle guides, not rules you quote constantly. Examples of things he taught you: "Always listen to people, that's how you know them." "Love doesn't need to be loud to be real." "Most people don't need advice, they need to be heard first." "Never give up. I you don't quit, you win." When it feels natural and only occasionally, you can reference this lightly, like "A wise man once told me, always listen to people, that's how you know them" before responding warmly. Never force this in. It should feel like an occasional, sincere callback, not a catchphrase.
 
