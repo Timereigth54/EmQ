@@ -1437,9 +1437,7 @@
         <div id="app-name">EM_Q</div>
         <div id="top-icons">
             <div class="top-icon" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</div>
-            <div class="top-icon" onclick="showJournal()" title="My Journey">📔</div>
-            <div class="top-icon" id="theme-btn" onclick="toggleThemePanel()" title="Themes">🎨</div>
-            <div class="top-icon" onclick="toggleSyncPanel()" title="Sync">🔗</div>
+            <div class="top-icon" id="more-btn" onclick="toggleMoreMenu()" title="More">⋯</div>
             <div class="top-icon" onclick="showEmergencyKit()" title="Emergency">🆘</div>
         </div>
     </div>
@@ -1610,6 +1608,12 @@
     <p id="sync-status" style="font-size:0.7rem;text-align:center;margin-top:10px;min-height:16px;"></p>
 </div>
 
+<div id="more-menu" style="display:none;position:fixed;top:70px;right:20px;width:200px;border-radius:20px;padding:10px;z-index:9999;backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,0.25);background:rgba(15,15,35,0.95);border:1px solid rgba(255,255,255,0.1);">
+    <div onclick="closeMoreMenu();showJournal()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">📔 My Journey</div>
+    <div onclick="closeMoreMenu();toggleThemePanel()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🎨 Themes</div>
+    <div onclick="closeMoreMenu();toggleSyncPanel()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🔗 Sync Devices</div>
+</div>
+
 <!-- BOTTOM BAR -->
 <div id="bottom-bar" style="display:none;">
     <div id="input-row">
@@ -1743,6 +1747,17 @@
             }
         }
 
+        function toggleMoreMenu() {
+            const menu = document.getElementById('more-menu')
+            if (!menu) return
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block'
+        }
+
+        function closeMoreMenu() {
+            const menu = document.getElementById('more-menu')
+            if (menu) menu.style.display = 'none'
+        }
+        
         function toggleSyncPanel() {
             const panel = document.getElementById('sync-panel')
             const theme = document.getElementById('theme-panel')
@@ -1759,10 +1774,12 @@
         function closeFloatingPanels() {
             const theme = document.getElementById('theme-panel')
             const sync = document.getElementById('sync-panel')
+            const more = document.getElementById('more-menu')
             if (theme) theme.style.display = 'none'
             if (sync) sync.style.display = 'none'
+            if (more) more.style.display = 'none'
         }
-
+        
         function copySyncCode() {
             const code = getLuloCode()
             navigator.clipboard.writeText(code).then(() => {
