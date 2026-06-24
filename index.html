@@ -3699,8 +3699,15 @@ function setupRailSnap() {
         // LULO MEMORY SYSTEM
         function getLuloMemory() {
             try {
-                return JSON.parse(localStorage.getItem('luloMemory')) || { dates: [], userPreferences: {} }
-            } catch { return { dates: [], userPreferences: {} } }
+                const parsed = JSON.parse(localStorage.getItem('luloMemory'))
+                if (!parsed || typeof parsed !== 'object') return { dates: [], userPreferences: {} }
+                return {
+                    dates: Array.isArray(parsed.dates) ? parsed.dates : [],
+                    userPreferences: parsed.userPreferences || {}
+                }
+            } catch {
+                return { dates: [], userPreferences: {} }
+            }
         }
 
         function saveLuloMemory(memory) {
