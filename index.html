@@ -1700,14 +1700,30 @@
                 }
                 const data = doc.data()
 
+                // Grab what's currently on THIS device before we overwrite anything
+                let localChat = []
+                let localJournal = []
+                try { localChat = JSON.parse(localStorage.getItem('luloChatHistory')) || [] } catch {}
+                try { localJournal = JSON.parse(localStorage.getItem('luloJournal')) || [] } catch {}
+
+                let cloudChat = []
+                let cloudJournal = []
+                try { cloudChat = JSON.parse(data.luloChatHistory) || [] } catch {}
+                try { cloudJournal = JSON.parse(data.luloJournal) || [] } catch {}
+
+                // Merge chat history and journal entries instead of overwriting
+                const mergedChat = mergeArraysByTime(localChat, cloudChat, 'time').slice(-50)
+                const mergedJournal = mergeArraysByTime(localJournal, cloudJournal, 'timestamp').slice(-90)
+
                 // Restore everything into localStorage
                 localStorage.setItem('luloSyncCode', code)
                 localStorage.setItem('luloMemory', data.luloMemory || '{}')
                 localStorage.setItem('luloUserName', data.luloUserName || '')
                 localStorage.setItem('luloUserGender', data.luloUserGender || '')
-                localStorage.setItem('luloJournal', data.luloJournal || '[]')
+                localStorage.setItem('luloJournal', JSON.stringify(mergedJournal))
                 localStorage.setItem('luloFavourites', data.luloFavourites || '[]')
-                localStorage.setItem('luloChatHistory', data.luloChatHistory || '[]')
+                localStorage.setItem('luloChatHistory', JSON.stringify(mergedChat))
+                chatHistory = mergedChat
                 localStorage.setItem('luloConversationHistory', data.luloConversationHistory || '[]')
                 localStorage.setItem('luloLastMood', data.luloLastMood || '')
                 localStorage.setItem('luloLastRef', data.luloLastRef || '')
@@ -1716,6 +1732,9 @@
                 localStorage.setItem('luloSpeaksInTongues', data.luloSpeaksInTongues || '')
                 localStorage.setItem('luloSessionCount', data.luloSessionCount || '0')
                 localStorage.setItem('luloAskedAboutDates', data.luloAskedAboutDates || '')
+
+                // Push the merged result back up so the cloud reflects both devices combined
+                await saveToCloud()
 
                 return true
             } catch (err) {
