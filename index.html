@@ -556,6 +556,11 @@
             min-width: 0;
             word-break: break-word;
             overflow-wrap: break-word;
+            resize: none;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.4;
+            padding: 8px 0;
         }
 
         #lulo-input::placeholder {
@@ -1618,7 +1623,7 @@
 <div id="bottom-bar" style="display:none;">
     <div id="input-row">
         <span style="font-size:1rem;opacity:0.4;">✦</span>
-        <input type="text" id="lulo-input" placeholder="Tell Lulo how you're feeling..." autocomplete="off" onkeypress="if(event.key==='Enter')luloListen()"/>
+        <textarea id="lulo-input" placeholder="Tell Lulo how you're feeling..." autocomplete="off" rows="1" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();luloListen()}" oninput="autoGrowInput(this)"></textarea>
         <button id="send-btn" onclick="luloListen()">→</button>
     </div>
 </div>
@@ -4287,6 +4292,7 @@ function setupRailSnap() {
             const text = input.value.trim()
             if (!text) return
             input.value = '' // Clear immediately — don't wait for response
+            input.style.height = 'auto'
             document.getElementById('scripture-card').style.display = 'none'
             addToChatHistory('user', text)
             window._lastUserText = text
@@ -4332,10 +4338,17 @@ function setupRailSnap() {
             }
 
             if (dateCaptureStage === 'awaitingDate') {
-            localStorage.setItem('luloDateCaptureDate', text)
-            
-            const presetLabel = localStorage.getItem('luloDateLabel')
-            if (presetLabel) {
+                // Validate before accepting — make sure this is actually a date
+                const parsedCheck = parseStoredDate(text)
+                if (!parsedCheck) {
+                    addToChatHistory('lulo', `Hmm, I don't think I caught a date in that 💙 Could you tell me the date again? Something like "March 14" or "the 22nd of June" works well.`)
+                    return // Stay in this same stage, don't accept the bad input
+                }
+
+                localStorage.setItem('luloDateCaptureDate', text)
+                
+                const presetLabel = localStorage.getItem('luloDateLabel')
+                if (presetLabel) {
                 localStorage.removeItem('luloDateLabel')
                 const captureDate = text
                 const label = presetLabel
@@ -6877,6 +6890,12 @@ function toggleSound() {
     if (btn) btn.innerText = LuloSound.enabled ? '🔊' : '🔇'
     if (LuloSound.enabled) LuloSound.response()
 }
+
+function autoGrowInput(el) {
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const card = document.getElementById('welcome-history-card')
     if (card) card.addEventListener('touchend', (e) => {
