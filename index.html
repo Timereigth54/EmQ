@@ -4105,7 +4105,7 @@ function setupRailSnap() {
                 setTimeout(() => {
                     addToChatHistory('lulo', `Good to see you again, ${name} 💙 I saved something for you today.`)
                     setTimeout(() => {
-                        showScripture(lastMood && lastMood !== 'home' ? lastMood : 'hopeful', 'silent')
+                        showScripture(lastMood && lastMood !== 'home' ? lastMood : 'hopeful', 'silent', true)
                     }, 1200)
                 }, 1500)
 
@@ -4472,13 +4472,23 @@ function setupRailSnap() {
             if (pendingScriptureOffer) {
                 const lower = text.toLowerCase()
                 const offerData = JSON.parse(pendingScriptureOffer)
-                const wantsScripture = lower.includes('yes') || lower.includes('scripture') || 
+
+                const wantsBoth = lower.includes('both') || lower.includes('and also') || lower.includes('as well')
+                const wantsScripture = !wantsBoth && (lower.includes('yes') || lower.includes('scripture') || 
                                     lower.includes('now') || lower.includes('show me') ||
-                                    lower.includes('sure') || lower.includes('please')
+                                    lower.includes('sure') || lower.includes('please'))
 
                 localStorage.removeItem('luloPendingScriptureOffer')
 
-                if (wantsScripture) {
+                if (wantsBoth) {
+                    // Give them the scripture, then keep the conversation going right after
+                    showScripture(offerData.mood, 'silent')
+                    setTimeout(async () => {
+                        if (!chatThreadOpen) toggleChatThread()
+                        showTyping()
+                        await luloThink(text)
+                    }, 1000)
+                } else if (wantsScripture) {
                     showScripture(offerData.mood, 'silent')
                 } else {
                     // Continue the conversation naturally — let it flow to Claude
@@ -5072,7 +5082,14 @@ function setupRailSnap() {
                         currentMood && currentMood !== 'home' && currentMood !== ''
 
                     if (isMidConversation) {
+                        const offerCooldownUntil = parseInt(localStorage.getItem('luloOfferCooldownUntil') || '0')
+                        if (Date.now() < offerCooldownUntil) {
+                            // Already asked recently — just keep the conversation flowing naturally
+                            await luloThink(text)
+                            return
+                        }
                         localStorage.setItem('luloPendingScriptureOffer', JSON.stringify({ mood: data.mood }))
+                        localStorage.setItem('luloOfferCooldownUntil', String(Date.now() + 5 * 60 * 1000))
                         addToChatHistory('lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
                         return
                     }
@@ -5210,8 +5227,14 @@ function setupRailSnap() {
                         currentMood && currentMood !== 'home' && currentMood !== ''
 
                     if (isMidConversation) {
-                        localStorage.setItem('luloPendingScriptureOffer', JSON.stringify({ mood: detectedMood }))
-                        addToChatHistory('lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
+                        const offerCooldownUntil = parseInt(localStorage.getItem('luloOfferCooldownUntil') || '0')
+                        if (Date.now() < offerCooldownUntil) {
+                            await luloThink(text)
+                        } else {
+                            localStorage.setItem('luloPendingScriptureOffer', JSON.stringify({ mood: detectedMood }))
+                            localStorage.setItem('luloOfferCooldownUntil', String(Date.now() + 5 * 60 * 1000))
+                            addToChatHistory('lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
+                        }
                     } else {
                         showScripture(detectedMood)
                     }
@@ -6085,33 +6108,35 @@ function setupRailSnap() {
             return moodPhrases[mood] || mood
         }
 
-        function showScripture(mood, overrideReaction = null) {
-    currentMood = mood
-    // Change input placeholder to "Tell me more"
-    const input = document.getElementById('lulo-input')
-    if (input) input.placeholder = 'Tell me more...'
-    const list = specialVerses[mood]
+        function showScripture(mood, overrideReaction = null, passive = false) {
+            if (!passive) {
+                currentMood = mood
+                // Change input placeholder to "Tell me more"
+                const input = document.getElementById('lulo-input')
+                if (input) input.placeholder = 'Tell me more...'
+            }
+            const list = specialVerses[mood]
 
-    // Smart shuffle - no repeats until all verses shown
-    if (!window.shownVerses) window.shownVerses = {}
-    if (!window.shownVerses[mood] || window.shownVerses[mood].length === 0) {
-        window.shownVerses[mood] = [...Array(list.length).keys()]
-    }
-    const randomIndex = Math.floor(Math.random() * window.shownVerses[mood].length)
-    const verseIndex = window.shownVerses[mood].splice(randomIndex, 1)[0]
-    const verse = list[verseIndex]
+            // Smart shuffle - no repeats until all verses shown
+            if (!window.shownVerses) window.shownVerses = {}
+            if (!window.shownVerses[mood] || window.shownVerses[mood].length === 0) {
+                window.shownVerses[mood] = [...Array(list.length).keys()]
+            }
+            const randomIndex = Math.floor(Math.random() * window.shownVerses[mood].length)
+            const verseIndex = window.shownVerses[mood].splice(randomIndex, 1)[0]
+            const verse = list[verseIndex]
 
-    const reactionList = reactions[mood]
-    const randomReaction = Math.floor(Math.random() * reactionList.length)
+            const reactionList = reactions[mood]
+            const randomReaction = Math.floor(Math.random() * reactionList.length)
 
-    // Update Lulo's glow colour based on mood
-    updateLuloMood(mood)
-    animateLulo('nod')
+            // Update Lulo's glow colour based on mood
+            updateLuloMood(mood)
+            animateLulo('nod')
 
-    // Check last emotion and craft Lulo's reaction
-    const lastMood = localStorage.getItem('luloLastMood')
-    const name = localStorage.getItem('luloUserName') || 'friend'
-    let reactionText = overrideReaction === 'silent' ? null : (overrideReaction || reactionList[randomReaction])
+            // Check last emotion and craft Lulo's reaction
+            const lastMood = localStorage.getItem('luloLastMood')
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            let reactionText = overrideReaction === 'silent' ? null : (overrideReaction || reactionList[randomReaction])
 
     if (mood === 'praise') {
         reactionText = reactions['praise'][Math.floor(Math.random() * reactions['praise'].length)]
@@ -6219,15 +6244,16 @@ if (    mood !== 'home') lockCarousel()
     // Keep this for subtle display only
     document.getElementById('lulo-reaction').innerText = ''
 
-    // Save this visit to memory
-    localStorage.setItem('luloLastMood', mood)
-    localStorage.setItem('luloLastRef', verse.ref)
-    localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
+    // Save this visit to memory — skip mood/ref/verse in passive mode so a
+    // silent daily catch-up never overwrites the user's real last-chosen emotion
+    if (!passive) {
+        localStorage.setItem('luloLastMood', mood)
+        localStorage.setItem('luloLastRef', verse.ref)
+        localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
+        logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
+    }
     localStorage.setItem('luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
     localStorage.setItem('luloLastVisitTimestamp', new Date().getTime())
-
-    // Log to journal
-    logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
 
     // Show unified response card
     const box = document.getElementById('scripture-card')
@@ -6271,8 +6297,8 @@ if (    mood !== 'home') lockCarousel()
         box.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 100)
 
-    // Lock carousel after emotion is selected
-    if (mood !== 'home') lockCarousel()
+    // Lock carousel after emotion is selected — never lock for a passive daily scripture
+    if (!passive && mood !== 'home') lockCarousel()
 
     // Offer a game after bored scripture
     if (mood === 'bored' && overrideReaction !== 'silent') {
