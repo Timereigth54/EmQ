@@ -1641,6 +1641,7 @@
 
         firebase.initializeApp(firebaseConfig)
         const db = firebase.firestore()
+        let luloSyncListener = null
 
         function getLuloCode() {
             let code = localStorage.getItem('luloSyncCode')
@@ -1664,8 +1665,6 @@
                 luloUserGender: localStorage.getItem('luloUserGender') || '',
                 luloJournal: localStorage.getItem('luloJournal') || '[]',
                 luloFavourites: localStorage.getItem('luloFavourites') || '[]',
-                luloChatHistory: localStorage.getItem('luloChatHistory') || '[]',
-                luloConversationHistory: localStorage.getItem('luloConversationHistory') || '[]',
                 luloLastMood: localStorage.getItem('luloLastMood') || '',
                 luloLastRef: localStorage.getItem('luloLastRef') || '',
                 luloLastVerseText: localStorage.getItem('luloLastVerseText') || '',
@@ -1678,6 +1677,7 @@
 
             try {
                 await db.collection('users').doc(code).set(data)
+                localStorage.setItem('luloLastCloudSave', Date.now().toString())
                 console.log('Synced to cloud:', code)
             } catch (err) {
                 console.error('Cloud save failed:', err)
@@ -1710,18 +1710,13 @@
                 const data = doc.data()
 
                 // Grab what's currently on THIS device before we overwrite anything
-                let localChat = []
                 let localJournal = []
-                try { localChat = JSON.parse(localStorage.getItem('luloChatHistory')) || [] } catch {}
                 try { localJournal = JSON.parse(localStorage.getItem('luloJournal')) || [] } catch {}
 
-                let cloudChat = []
                 let cloudJournal = []
-                try { cloudChat = JSON.parse(data.luloChatHistory) || [] } catch {}
                 try { cloudJournal = JSON.parse(data.luloJournal) || [] } catch {}
 
                 // Merge chat history and journal entries instead of overwriting
-                const mergedChat = mergeArraysByTime(localChat, cloudChat, 'time').slice(-50)
                 const mergedJournal = mergeArraysByTime(localJournal, cloudJournal, 'timestamp').slice(-90)
 
                 // Restore everything into localStorage
@@ -1731,9 +1726,6 @@
                 localStorage.setItem('luloUserGender', data.luloUserGender || '')
                 localStorage.setItem('luloJournal', JSON.stringify(mergedJournal))
                 localStorage.setItem('luloFavourites', data.luloFavourites || '[]')
-                localStorage.setItem('luloChatHistory', JSON.stringify(mergedChat))
-                chatHistory = mergedChat
-                localStorage.setItem('luloConversationHistory', data.luloConversationHistory || '[]')
                 localStorage.setItem('luloLastMood', data.luloLastMood || '')
                 localStorage.setItem('luloLastRef', data.luloLastRef || '')
                 localStorage.setItem('luloLastVerseText', data.luloLastVerseText || '')
@@ -1750,6 +1742,56 @@
                 console.error('Cloud load failed:', err)
                 return false
             }
+        }
+
+        function startRealtimeSync() {
+            const code = getLuloCode()
+            if (!code) return
+
+            // Clean up any existing listener first
+            if (luloSyncListener) {
+                luloSyncListener()
+                luloSyncListener = null
+            }
+
+            luloSyncListener = db.collection('users').doc(code).onSnapshot(doc => {
+                if (!doc.exists) return
+
+                const data = doc.data()
+                if (!data) return
+
+                // Don't update if this change came from this device's own save
+                const lastSaveTime = parseInt(localStorage.getItem('luloLastCloudSave') || '0')
+                const docUpdateTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0
+                if (docUpdateTime <= lastSaveTime) return
+
+                console.log('Real-time sync received update from another device')
+
+                // Update everything except chat history which stays local
+                if (data.luloMemory) localStorage.setItem('luloMemory', data.luloMemory)
+                if (data.luloUserName) localStorage.setItem('luloUserName', data.luloUserName)
+                if (data.luloUserGender) localStorage.setItem('luloUserGender', data.luloUserGender)
+                if (data.luloFavourites) localStorage.setItem('luloFavourites', data.luloFavourites)
+                if (data.luloLastMood) localStorage.setItem('luloLastMood', data.luloLastMood)
+                if (data.luloLastRef) localStorage.setItem('luloLastRef', data.luloLastRef)
+                if (data.luloLastVerseText) localStorage.setItem('luloLastVerseText', data.luloLastVerseText)
+                if (data.luloSpeaksInTongues) localStorage.setItem('luloSpeaksInTongues', data.luloSpeaksInTongues)
+                if (data.luloSessionCount) localStorage.setItem('luloSessionCount', data.luloSessionCount)
+                if (data.luloAskedAboutDates) localStorage.setItem('luloAskedAboutDates', data.luloAskedAboutDates)
+
+                // Merge journal entries silently
+                if (data.luloJournal) {
+                    try {
+                        const localJournal = JSON.parse(localStorage.getItem('luloJournal') || '[]')
+                        const cloudJournal = JSON.parse(data.luloJournal)
+                        const merged = mergeArraysByTime(localJournal, cloudJournal, 'timestamp').slice(-90)
+                        localStorage.setItem('luloJournal', JSON.stringify(merged))
+                    } catch {}
+                }
+
+            }, err => {
+                console.error('Real-time sync error:', err)
+            })
         }
 
         function toggleMoreMenu() {
@@ -4060,7 +4102,17 @@ function setupRailSnap() {
                 const { month: savedMonth, day: savedDay } = parsed
                 console.log(`Checking ${dateObj.label}: saved ${savedMonth}/${savedDay} vs today ${todayMonth}/${todayDay}`)
 
-                if (savedMonth === todayMonth && savedDay === todayDay) {
+                const yesterday = new Date(today)
+                yesterday.setDate(yesterday.getDate() - 1)
+                const yesterdayMonth = yesterday.getMonth() + 1
+                const yesterdayDay = yesterday.getDate()
+
+                const isToday = savedMonth === todayMonth && savedDay === todayDay
+                const wasYesterday = savedMonth === yesterdayMonth && savedDay === yesterdayDay
+
+                if (isToday || wasYesterday) {
+                    const alreadyCelebrated = dateObj.lastCelebrated === new Date().getFullYear()
+                    if (alreadyCelebrated) return
                     const thisYear = new Date().getFullYear()
                     if (dateObj.lastCelebrated === thisYear) return // Already celebrated this year
                     setTimeout(() => {
@@ -4101,6 +4153,7 @@ function setupRailSnap() {
             
             // If it's been more than 20 hours since their last visit, treat this as a new day
             if (hoursSince >= 20) {
+                localStorage.setItem('luloDailyScriptureShownToday', new Date().toDateString())
                 const name = localStorage.getItem('luloUserName') || 'friend'
                 setTimeout(() => {
                     addToChatHistory('lulo', `Good to see you again, ${name} 💙 I saved something for you today.`)
@@ -4282,7 +4335,10 @@ function setupRailSnap() {
                 
                 // Make sure this device's data exists in the cloud immediately
                 saveToCloud()
-            
+
+                // Start real-time listener for updates from other devices
+                startRealtimeSync()
+
                 // Sync to cloud every 30 seconds while app is open
                 setInterval(saveToCloud, 30000)
         }
@@ -5263,6 +5319,9 @@ function setupRailSnap() {
                 if (!parsed) return false
                 return parsed.month === todayMonth && parsed.day === todayDay
             })
+
+            // Don't fire if the daily catch-up scripture already ran this session
+            if (localStorage.getItem('luloDailyScriptureShownToday') === new Date().toDateString()) return
             
             if (isSpecialDay) return // Don't fire promise verse on special days
     const promiseVerses = [
@@ -5724,6 +5783,9 @@ function setupRailSnap() {
 
             If asked for a joke, keep it warm, clean and Bible-themed like a good dad joke. Never crude or silly. After the joke, tie it back to something encouraging.
 
+            MUSIC SUGGESTIONS:
+If someone asks for music recommendations, suggest specific worship artists, albums, or genres that match their current emotional state. Examples: for anxiety — Maverick City Music, Hillsong Worship instrumentals, soaking worship playlists. For joy — Elevation Worship, Phil Thompson. For grief — Bethel Music, spontaneous worship. Always frame it as something to seek out rather than something you can play, since you cannot play music directly. Be specific and warm, not generic.
+            
             IF ASKED WHAT YOU CAN DO:
             Keep it simple and concrete, not a long feature list. Something like: "Here's what I can do for you. You tap how you're feeling and I'll share something encouraging. I remember your emotional journey over time. We can pray together anytime. I can also play a couple of games with you when you're bored, like Bible trivia. And I'm just here to talk whenever you need someone." Keep it warm and short, like explaining to a friend, not reading a feature sheet.
 
@@ -6938,6 +7000,14 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.log('SW error:', err))
         })
     }
+
+    window.addEventListener('beforeunload', () => {
+        if (luloSyncListener) {
+            luloSyncListener()
+            luloSyncListener = null
+        }
+    }) 
+
     </script>
 
 </body>
