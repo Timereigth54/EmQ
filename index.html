@@ -1760,10 +1760,12 @@
                 const data = doc.data()
                 if (!data) return
 
-                // Don't update if this change came from this device's own save
+                // Don't update if this change came from this device's own recent save
+                // Allow a 5 second buffer to account for clock differences between devices
                 const lastSaveTime = parseInt(localStorage.getItem('luloLastCloudSave') || '0')
                 const docUpdateTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0
-                if (docUpdateTime <= lastSaveTime) return
+                const isOwnSave = docUpdateTime > 0 && Math.abs(docUpdateTime - lastSaveTime) < 5000
+                if (isOwnSave) return
 
                 console.log('Real-time sync received update from another device')
 
@@ -1778,6 +1780,12 @@
                 if (data.luloSpeaksInTongues) localStorage.setItem('luloSpeaksInTongues', data.luloSpeaksInTongues)
                 if (data.luloSessionCount) localStorage.setItem('luloSessionCount', data.luloSessionCount)
                 if (data.luloAskedAboutDates) localStorage.setItem('luloAskedAboutDates', data.luloAskedAboutDates)
+
+                // Update in-memory state if mood changed on another device
+                if (data.luloLastMood && data.luloLastMood !== currentMood) {
+                    currentMood = data.luloLastMood
+                    updateLuloMood(currentMood)
+                }
 
                 // Merge journal entries silently
                 if (data.luloJournal) {
@@ -5090,7 +5098,16 @@ function setupRailSnap() {
                     }
 
         // DATE MENTION DETECTION
-        const dateMentionType = checkForDateMention(text)
+        // Skip if this looks like a question about existing dates rather than a new date being shared
+        const isAskingAboutDates = text.toLowerCase().includes('do you know') ||
+            text.toLowerCase().includes('do you remember') ||
+            text.toLowerCase().includes('what is my') ||
+            text.toLowerCase().includes('what\'s my') ||
+            text.toLowerCase().includes('when is my') ||
+            text.toLowerCase().includes('tell me my') ||
+            text.toLowerCase().includes('our anniversary') && text.toLowerCase().includes('?')
+
+        const dateMentionType = isAskingAboutDates ? null : checkForDateMention(text)
         if (dateMentionType) {
             localStorage.setItem('luloDateCapture', dateMentionType)
             localStorage.setItem('luloDateRawText', text)
