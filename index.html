@@ -4118,8 +4118,6 @@ function setupRailSnap() {
                 const wasYesterday = savedMonth === yesterdayMonth && savedDay === yesterdayDay
 
                 if (isToday || wasYesterday) {
-                    const alreadyCelebrated = dateObj.lastCelebrated === new Date().getFullYear()
-                    if (alreadyCelebrated) return
                     const thisYear = new Date().getFullYear()
                     if (dateObj.lastCelebrated === thisYear) return // Already celebrated this year
                     setTimeout(() => {
@@ -6365,8 +6363,8 @@ if (    mood !== 'home') lockCarousel()
     document.getElementById('scripture-ref').innerText = '— ' + verse.ref
     document.getElementById('another-btn').style.display = 'block'
     LuloSound.response()
-    box.style.display = 'block'
 
+    box.style.display = 'block'
     box.style.animation = 'none'
     void box.offsetHeight
     box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
@@ -6374,6 +6372,37 @@ if (    mood !== 'home') lockCarousel()
     setTimeout(() => {
         box.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }, 100)
+    
+    // Claude-generated meditation prompt tailored to the specific verse and mood
+    if (!passive && Math.random() < 0.33) {
+        setTimeout(async () => {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            try {
+                const response = await fetch('https://em1-prayer.kayuso2011.workers.dev', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'claude-sonnet-4-6',
+                        system: 'You are Lulo, a warm faith companion. Generate one short, warm, personally directed meditation question (1-2 sentences maximum) that helps the person sit with and apply a specific Bible verse to their real life right now. No preamble, no explanation, just the question itself. Never use dashes. End with 💙',
+                        messages: [{
+                            role: 'user',
+                            content: `The person just received this scripture: "${verse.text}" — ${verse.ref}. They are feeling ${mood} today. Their name is ${name}. Generate one short warm meditation question tailored specifically to this verse and their current emotional state. Address them by name.`
+                        }]
+                    })
+                })
+                const data = await response.json()
+                if (data.content && data.content[0]) {
+                    const prompt = data.content[0].text
+                    addToChatHistory('lulo', prompt)
+                    conversationHistory.push({ role: 'assistant', content: prompt })
+                    localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+                }
+            } catch (err) {
+                // Silently fail — meditation prompt is a nice-to-have, not critical
+                console.log('Meditation prompt skipped:', err)
+            }
+        }, 6000)
+    }
 
     // Lock carousel after emotion is selected — never lock for a passive daily scripture
     if (!passive && mood !== 'home') lockCarousel()
