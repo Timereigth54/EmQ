@@ -1672,6 +1672,7 @@
                 luloSpeaksInTongues: localStorage.getItem('luloSpeaksInTongues') || '',
                 luloSessionCount: localStorage.getItem('luloSessionCount') || '0',
                 luloAskedAboutDates: localStorage.getItem('luloAskedAboutDates') || '',
+                savedBy: getLuloCode(),
                 updatedAt: new Date().toISOString()
             }
 
@@ -1757,12 +1758,10 @@
                 const data = doc.data()
                 if (!data) return
 
-                // Don't update if this change came from this device's own recent save
-                // Allow a 5 second buffer to account for clock differences between devices
-                const lastSaveTime = parseInt(localStorage.getItem('luloLastCloudSave') || '0')
-                const docUpdateTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0
-                const isOwnSave = docUpdateTime > 0 && Math.abs(docUpdateTime - lastSaveTime) < 10000
-                if (isOwnSave) return
+                // Ignore updates that came from this exact device
+                const thisDeviceCode = getLuloCode()
+                const savedBy = data.savedBy || ''
+                if (savedBy === thisDeviceCode) return
 
                 // Never save to cloud from inside the listener — breaks the loop
                 // The 30-second interval and explicit saves handle keeping cloud updated
