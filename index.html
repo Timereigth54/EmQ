@@ -1734,9 +1734,6 @@
                 localStorage.setItem('luloSessionCount', data.luloSessionCount || '0')
                 localStorage.setItem('luloAskedAboutDates', data.luloAskedAboutDates || '')
 
-                // Push the merged result back up so the cloud reflects both devices combined
-                await saveToCloud()
-
                 return true
             } catch (err) {
                 console.error('Cloud load failed:', err)
@@ -1764,8 +1761,11 @@
                 // Allow a 5 second buffer to account for clock differences between devices
                 const lastSaveTime = parseInt(localStorage.getItem('luloLastCloudSave') || '0')
                 const docUpdateTime = data.updatedAt ? new Date(data.updatedAt).getTime() : 0
-                const isOwnSave = docUpdateTime > 0 && Math.abs(docUpdateTime - lastSaveTime) < 5000
+                const isOwnSave = docUpdateTime > 0 && Math.abs(docUpdateTime - lastSaveTime) < 10000
                 if (isOwnSave) return
+
+                // Never save to cloud from inside the listener — breaks the loop
+                // The 30-second interval and explicit saves handle keeping cloud updated
 
                 console.log('Real-time sync received update from another device')
 
