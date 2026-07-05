@@ -4363,14 +4363,14 @@ function setupRailSnap() {
             const text_el = document.getElementById('scripture-text')
             const loading = document.getElementById('loading-text')
             const anotherBtn = document.getElementById('another-btn')
-            const luloMessageSection = document.getElementById('images/lulo-message-section')
-            const luloMessageText = document.getElementById('images/lulo-message-text')
+            const luloMessageSection = document.getElementById('lulo-message-section')
+            const luloMessageText = document.getElementById('lulo-message-text')
             const cardDivider = document.getElementById('card-divider')
 
             box.style.display = 'block'
             if (loading) {
                 loading.style.display = 'block'
-                loading.innerText = 'images/lulo is praying with you... 🙏'
+                loading.innerText = 'lulo is praying with you... 🙏'
             }
             if (text_el) text_el.innerText = ''
             if (anotherBtn) anotherBtn.style.display = 'none'
@@ -4380,7 +4380,7 @@ function setupRailSnap() {
             // Update Lulo's face and reaction
             updateLuloMood('prayer')
             LuloSound.prayer()
-            document.getElementById('images/lulo-reaction').innerText = `Of course, ${name}. Let me pray with you... 💙`
+            document.getElementById('lulo-reaction').innerText = `Of course, ${name}. Let me pray with you... 💙`
             animateLulo('nod')
 
             // Scroll to prayer box
@@ -4436,19 +4436,19 @@ function setupRailSnap() {
                     if (loading) loading.style.display = 'none'
                     if (text_el) text_el.innerText = prayer
                     box.style.display = 'block'
-                    addToChatHistory('images/lulo', '🙏 Praying with you...')
+                    addToChatHistory('lulo', '🙏 Praying with you...')
                     if (anotherBtn) anotherBtn.style.display = 'none'
 
                     // Show Lulo prayer header
                     if (luloMessageSection && luloMessageText) {
-                        luloMessageText.innerText = 'images/lulo is praying with you... 🙏'
+                        luloMessageText.innerText = 'lulo is praying with you... 🙏'
                         luloMessageSection.style.display = 'block'
                         if (cardDivider) cardDivider.style.display = 'block'
                     }
 
                     // Update Lulo's reaction after prayer
                     setTimeout(() => {
-                        document.getElementById('images/lulo-reaction').innerText = `I'm always here to pray with you, ${name}. 💙`
+                        document.getElementById('lulo-reaction').innerText = `I'm always here to pray with you, ${name}. 💙`
                     }, 1000)
 
                     // Reset animation
@@ -4457,7 +4457,7 @@ function setupRailSnap() {
                     box.style.animation = 'fadeIn 0.8s ease'
 
                     // Save that we prayed together
-                    localStorage.setItem('images/luloLastPrayer', new Date().toLocaleDateString())
+                    localStorage.setItem('luloLastPrayer', new Date().toLocaleDateString())
 
                     // Log prayer to journal
                     logJournalEntry('prayer', 'Prayer', 'Prayed together with Lulo 🙏')
@@ -4486,17 +4486,18 @@ function setupRailSnap() {
             }
         }
 
-        function animateLulo(type) {
-            const luloFace = document.getElementById('images/lulo-face')
+       function animateLulo(type) {
+            const luloFace = document.getElementById('lulo-face')
+            if (!luloFace) return
             luloFace.classList.remove('nod', 'shake')
             void luloFace.offsetWidth
             luloFace.classList.add(type)
         }
 
         function updateLuloMood(mood) {
-        const img = document.getElementById('images/lulo-img')
-        const luloGlow = document.getElementById('images/lulo-glow')
-        const currentTheme = localStorage.getItem('images/luloTheme') || 'dark'
+        const img = document.getElementById('lulo-img')
+        const luloGlow = document.getElementById('lulo-glow')
+        const currentTheme = localStorage.getItem('luloTheme') || 'dark'
         const isT2 = currentTheme === 'soft' || currentTheme === 'midnight'
 
         const moodFaces = {
