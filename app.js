@@ -12,7 +12,7 @@
         let luloSyncListener = null
 
         function getLuloCode() {
-            let code = localStorage.getItem('images/luloSyncCode')
+            let code = localStorage.getItem('luloSyncCode')
             if (!code) {
                 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
                 let random = ''
@@ -20,7 +20,7 @@
                     random += chars[Math.floor(Math.random() * chars.length)]
                 }
                 code = `LULO-${random}`
-                localStorage.setItem('images/luloSyncCode', code)
+                localStorage.setItem('luloSyncCode', code)
             }
             return code
         }
@@ -28,25 +28,25 @@
         async function saveToCloud() {
             const code = getLuloCode()
             const data = {
-                luloMemory: localStorage.getItem('images/luloMemory') || '{}',
-                luloUserName: localStorage.getItem('images/luloUserName') || '',
-                luloUserGender: localStorage.getItem('images/luloUserGender') || '',
-                luloJournal: localStorage.getItem('images/luloJournal') || '[]',
-                luloFavourites: localStorage.getItem('images/luloFavourites') || '[]',
-                luloLastMood: localStorage.getItem('images/luloLastMood') || '',
-                luloLastRef: localStorage.getItem('images/luloLastRef') || '',
-                luloLastVerseText: localStorage.getItem('images/luloLastVerseText') || '',
-                luloLastVisitTimestamp: localStorage.getItem('images/luloLastVisitTimestamp') || '',
-                luloSpeaksInTongues: localStorage.getItem('images/luloSpeaksInTongues') || '',
-                luloSessionCount: localStorage.getItem('images/luloSessionCount') || '0',
-                luloAskedAboutDates: localStorage.getItem('images/luloAskedAboutDates') || '',
+                luloMemory: localStorage.getItem('luloMemory') || '{}',
+                luloUserName: localStorage.getItem('luloUserName') || '',
+                luloUserGender: localStorage.getItem('luloUserGender') || '',
+                luloJournal: localStorage.getItem('luloJournal') || '[]',
+                luloFavourites: localStorage.getItem('luloFavourites') || '[]',
+                luloLastMood: localStorage.getItem('luloLastMood') || '',
+                luloLastRef: localStorage.getItem('luloLastRef') || '',
+                luloLastVerseText: localStorage.getItem('luloLastVerseText') || '',
+                luloLastVisitTimestamp: localStorage.getItem('luloLastVisitTimestamp') || '',
+                luloSpeaksInTongues: localStorage.getItem('luloSpeaksInTongues') || '',
+                luloSessionCount: localStorage.getItem('luloSessionCount') || '0',
+                luloAskedAboutDates: localStorage.getItem('luloAskedAboutDates') || '',
                 savedBy: getLuloCode(),
                 updatedAt: new Date().toISOString()
             }
 
             try {
                 await db.collection('users').doc(code).set(data)
-                localStorage.setItem('images/luloLastCloudSave', Date.now().toString())
+                localStorage.setItem('luloLastCloudSave', Date.now().toString())
                 console.log('Synced to cloud:', code)
             } catch (err) {
                 console.error('Cloud save failed:', err)
@@ -80,7 +80,7 @@
 
                 // Grab what's currently on THIS device before we overwrite anything
                 let localJournal = []
-                try { localJournal = JSON.parse(localStorage.getItem('images/luloJournal')) || [] } catch {}
+                try { localJournal = JSON.parse(localStorage.getItem('luloJournal')) || [] } catch {}
 
                 let cloudJournal = []
                 try { cloudJournal = JSON.parse(data.luloJournal) || [] } catch {}
@@ -89,19 +89,19 @@
                 const mergedJournal = mergeArraysByTime(localJournal, cloudJournal, 'timestamp').slice(-90)
 
                 // Restore everything into localStorage
-                localStorage.setItem('images/luloSyncCode', code)
-                localStorage.setItem('images/luloMemory', data.luloMemory || '{}')
-                localStorage.setItem('images/luloUserName', data.luloUserName || '')
-                localStorage.setItem('images/luloUserGender', data.luloUserGender || '')
-                localStorage.setItem('images/luloJournal', JSON.stringify(mergedJournal))
-                localStorage.setItem('images/luloFavourites', data.luloFavourites || '[]')
-                localStorage.setItem('images/luloLastMood', data.luloLastMood || '')
-                localStorage.setItem('images/luloLastRef', data.luloLastRef || '')
-                localStorage.setItem('images/luloLastVerseText', data.luloLastVerseText || '')
-                localStorage.setItem('images/luloLastVisitTimestamp', data.luloLastVisitTimestamp || '')
-                localStorage.setItem('images/luloSpeaksInTongues', data.luloSpeaksInTongues || '')
-                localStorage.setItem('images/luloSessionCount', data.luloSessionCount || '0')
-                localStorage.setItem('images/luloAskedAboutDates', data.luloAskedAboutDates || '')
+                localStorage.setItem('luloSyncCode', code)
+                localStorage.setItem('luloMemory', data.luloMemory || '{}')
+                localStorage.setItem('luloUserName', data.luloUserName || '')
+                localStorage.setItem('luloUserGender', data.luloUserGender || '')
+                localStorage.setItem('luloJournal', JSON.stringify(mergedJournal))
+                localStorage.setItem('luloFavourites', data.luloFavourites || '[]')
+                localStorage.setItem('luloLastMood', data.luloLastMood || '')
+                localStorage.setItem('luloLastRef', data.luloLastRef || '')
+                localStorage.setItem('luloLastVerseText', data.luloLastVerseText || '')
+                localStorage.setItem('luloLastVisitTimestamp', data.luloLastVisitTimestamp || '')
+                localStorage.setItem('luloSpeaksInTongues', data.luloSpeaksInTongues || '')
+                localStorage.setItem('luloSessionCount', data.luloSessionCount || '0')
+                localStorage.setItem('luloAskedAboutDates', data.luloAskedAboutDates || '')
 
                 return true
             } catch (err) {
@@ -137,16 +137,16 @@
                 console.log('Real-time sync received update from another device')
 
                 // Update everything except chat history which stays local
-                if (data.luloMemory) localStorage.setItem('images/luloMemory', data.luloMemory)
-                if (data.luloUserName) localStorage.setItem('images/luloUserName', data.luloUserName)
-                if (data.luloUserGender) localStorage.setItem('images/luloUserGender', data.luloUserGender)
-                if (data.luloFavourites) localStorage.setItem('images/luloFavourites', data.luloFavourites)
-                if (data.luloLastMood) localStorage.setItem('images/luloLastMood', data.luloLastMood)
-                if (data.luloLastRef) localStorage.setItem('images/luloLastRef', data.luloLastRef)
-                if (data.luloLastVerseText) localStorage.setItem('images/luloLastVerseText', data.luloLastVerseText)
-                if (data.luloSpeaksInTongues) localStorage.setItem('images/luloSpeaksInTongues', data.luloSpeaksInTongues)
-                if (data.luloSessionCount) localStorage.setItem('images/luloSessionCount', data.luloSessionCount)
-                if (data.luloAskedAboutDates) localStorage.setItem('images/luloAskedAboutDates', data.luloAskedAboutDates)
+                if (data.luloMemory) localStorage.setItem('luloMemory', data.luloMemory)
+                if (data.luloUserName) localStorage.setItem('luloUserName', data.luloUserName)
+                if (data.luloUserGender) localStorage.setItem('luloUserGender', data.luloUserGender)
+                if (data.luloFavourites) localStorage.setItem('luloFavourites', data.luloFavourites)
+                if (data.luloLastMood) localStorage.setItem('luloLastMood', data.luloLastMood)
+                if (data.luloLastRef) localStorage.setItem('luloLastRef', data.luloLastRef)
+                if (data.luloLastVerseText) localStorage.setItem('luloLastVerseText', data.luloLastVerseText)
+                if (data.luloSpeaksInTongues) localStorage.setItem('luloSpeaksInTongues', data.luloSpeaksInTongues)
+                if (data.luloSessionCount) localStorage.setItem('luloSessionCount', data.luloSessionCount)
+                if (data.luloAskedAboutDates) localStorage.setItem('luloAskedAboutDates', data.luloAskedAboutDates)
 
                 // Update in-memory state if mood changed on another device
                 if (data.luloLastMood && data.luloLastMood !== currentMood) {
@@ -157,10 +157,10 @@
                 // Merge journal entries silently
                 if (data.luloJournal) {
                     try {
-                        const localJournal = JSON.parse(localStorage.getItem('images/luloJournal') || '[]')
+                        const localJournal = JSON.parse(localStorage.getItem('luloJournal') || '[]')
                         const cloudJournal = JSON.parse(data.luloJournal)
                         const merged = mergeArraysByTime(localJournal, cloudJournal, 'timestamp').slice(-90)
-                        localStorage.setItem('images/luloJournal', JSON.stringify(merged))
+                        localStorage.setItem('luloJournal', JSON.stringify(merged))
                     } catch {}
                 }
 
@@ -218,8 +218,8 @@
             let code = input.value.trim().toUpperCase()
             if (!code) return
 
-            if (!code.startsWith('images/lulo-')) {
-                code = 'images/lulo-' + code
+            if (!code.startsWith('lulo-')) {
+                code = 'lulo-' + code
             }
 
             status.innerText = 'Connecting...'
@@ -541,7 +541,7 @@ function setTheme(theme) {
         inputRow.style.background = t.inputBg
         inputRow.style.borderColor = t.inputBorder
     }
-    const luloInput = document.getElementById('images/lulo-input')
+    const luloInput = document.getElementById('lulo-input')
     if (luloInput) {
         luloInput.style.color = t.inputText
         luloInput.style.setProperty('--placeholder-color', t.inputPlaceholder)
@@ -552,9 +552,9 @@ function setTheme(theme) {
     if (sendBtn) sendBtn.style.background = t.sendBtn
 
     // LULO GLOW
-    const luloGlow = document.getElementById('images/lulo-glow')
+    const luloGlow = document.getElementById('lulo-glow')
     if (luloGlow) luloGlow.style.background = `radial-gradient(circle, ${t.luloGlow} 0%, transparent 70%)`
-    const luloImg = document.getElementById('images/lulo-img')
+    const luloImg = document.getElementById('lulo-img')
     if (luloImg) luloImg.style.filter = t.luloFilter
 
     // CAROUSEL
@@ -793,11 +793,11 @@ function setTheme(theme) {
     }
     
     // Save preference
-    localStorage.setItem('images/luloTheme', theme)
+    localStorage.setItem('luloTheme', theme)
 }
 
 function loadSavedTheme() {
-    const saved = localStorage.getItem('images/luloTheme')
+    const saved = localStorage.getItem('luloTheme')
     if (saved) setTheme(saved)
 }
 
@@ -822,7 +822,7 @@ function buildEmotionButtons() {
         homeBtn.dataset.gindex = homeGIndex
         homeBtn.dataset.rindex = 0
         homeBtn.dataset.mood = 'home'
-        const isT2 = localStorage.getItem('images/luloTheme') === 'soft' || localStorage.getItem('images/luloTheme') === 'midnight'
+        const isT2 = localStorage.getItem('luloTheme') === 'soft' || localStorage.getItem('luloTheme') === 'midnight'
         homeBtn.innerHTML = `
             <img src="${isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'}" style="width:34px;height:34px;object-fit:contain;${isT2 ? '' : 'mix-blend-mode:screen;'}filter:drop-shadow(0 0 6px rgba(0,255,100,0.4));"/>
             <span class="label" style="color:rgba(0,255,100,0.55);font-size:0.55rem;letter-spacing:1px;">LULO</span>
@@ -1012,7 +1012,7 @@ function setupRailSnap() {
         }
 
         function showCrisisScreen(level, userText) {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             currentBoundaryLevel = level
             crisisFollowUpStage = 0
 
@@ -1065,7 +1065,7 @@ function setupRailSnap() {
         }
 
         function crisisFollowUp(answer) {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             const message = document.getElementById('crisis-message')
             const scriptureBox = document.getElementById('crisis-scripture')
             const verseText = document.getElementById('crisis-verse-text')
@@ -1136,12 +1136,12 @@ function setupRailSnap() {
             entries.unshift(entry)
             // Keep last 90 entries (about 3 months)
             const trimmed = entries.slice(0, 90)
-            localStorage.setItem('images/luloJournal', JSON.stringify(trimmed))
+            localStorage.setItem('luloJournal', JSON.stringify(trimmed))
         }
 
         function getJournalEntries() {
             try {
-                return JSON.parse(localStorage.getItem('images/luloJournal')) || []
+                return JSON.parse(localStorage.getItem('luloJournal')) || []
             } catch {
                 return []
             }
@@ -1190,7 +1190,7 @@ function setupRailSnap() {
         }
 
         function getLuloWeeklySuggestion(summary) {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             if (!summary) return `${name}, start using Em_Q daily and I'll track your emotional journey here! 💙`
 
             const { topMood, positiveCount, difficultCount, prayerCount } = summary
@@ -1248,7 +1248,7 @@ function setupRailSnap() {
             const entries = getJournalEntries()
             const summary = getWeeklySummary()
             const suggestion = getLuloWeeklySuggestion(summary)
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             const screen = document.getElementById('journal-screen')
 
             // Build weekly summary HTML
@@ -1333,12 +1333,12 @@ function setupRailSnap() {
         ]
 
         function showTonguesQuestion() {
-    const name = localStorage.getItem('images/luloUserName') || 'friend'
+    const name = localStorage.getItem('luloUserName') || 'friend'
     const box = document.getElementById('scripture-card')
     const textEl = document.getElementById('scripture-text')
     const loading = document.getElementById('loading-text')
     const anotherBtn = document.getElementById('another-btn')
-    const luloMsgSection = document.getElementById('images/lulo-message-section')
+    const luloMsgSection = document.getElementById('lulo-message-section')
     const cardDivider = document.getElementById('card-divider')
 
     const fallbacks = [
@@ -1349,7 +1349,7 @@ function setupRailSnap() {
         `I'm listening ${name}. My conversation brain is still growing 🌱 — but tell me how you're feeling and I'll find something for you.`,
     ]
     const fallback = fallbacks[Math.floor(Math.random() * fallbacks.length)]
-    addToChatHistory('images/lulo', fallback)
+    addToChatHistory('lulo', fallback)
     animateLulo('nod')
     updateLuloMood('peaceful')
 
@@ -1358,8 +1358,8 @@ function setupRailSnap() {
     if (cardDivider) cardDivider.style.display = 'none'
     if (anotherBtn) anotherBtn.style.display = 'none'
 
-    const tonguesTextColor = localStorage.getItem('images/luloTheme') === 'light' ? '#3d3550' : 'rgba(255,255,255,0.85)'
-    const tonguesBtnColor = localStorage.getItem('images/luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+    const tonguesTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : 'rgba(255,255,255,0.85)'
+    const tonguesBtnColor = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
 
     textEl.innerHTML = `
         <p style="color:${tonguesTextColor};font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
@@ -1379,19 +1379,19 @@ function setupRailSnap() {
 }
 
         function unlockTongues(answer) {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             const box = document.getElementById('scripture-card')
             const text = document.getElementById('scripture-text')
             const anotherBtn = document.getElementById('another-btn')
 
             if (answer === 'yes') {
-                localStorage.setItem('images/luloSpeaksInTongues', 'true')
+                localStorage.setItem('luloSpeaksInTongues', 'true')
                 updateLuloMood('tongues')
-                document.getElementById('images/lulo-reaction').innerText = `${name}... this changes everything. 💙`
+                document.getElementById('lulo-reaction').innerText = `${name}... this changes everything. 💙`
                 animateLulo('nod')
 
-                const unlockTextColor = localStorage.getItem('images/luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
-                const unlockAccent = localStorage.getItem('images/luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
+                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
 
                 text.innerHTML = `
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
@@ -1408,13 +1408,13 @@ function setupRailSnap() {
                 }, 20000)
 
             } else {
-                localStorage.setItem('images/luloSpeaksInTongues', 'false')
+                localStorage.setItem('luloSpeaksInTongues', 'false')
                 updateLuloMood('home')
-                document.getElementById('images/lulo-reaction').innerText = `That's okay, ${name}. 💙`
+                document.getElementById('lulo-reaction').innerText = `That's okay, ${name}. 💙`
                 animateLulo('nod')
 
-                const unlockTextColor = localStorage.getItem('images/luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
-                const unlockAccent = localStorage.getItem('images/luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
+                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
 
                 text.innerHTML = `
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
@@ -1437,15 +1437,15 @@ function setupRailSnap() {
         }
 
         function showTonguesResponse() {
-    const name = localStorage.getItem('images/luloUserName') || 'friend'
+    const name = localStorage.getItem('luloUserName') || 'friend'
     const box = document.getElementById('scripture-card')
     const textEl = document.getElementById('scripture-text')
     const loading = document.getElementById('loading-text')
     const anotherBtn = document.getElementById('another-btn')
-    const luloMsgSection = document.getElementById('images/lulo-message-section')
+    const luloMsgSection = document.getElementById('lulo-message-section')
     const cardDivider = document.getElementById('card-divider')
 
-    document.getElementById('images/lulo-reaction').innerText = ''
+    document.getElementById('lulo-reaction').innerText = ''
     animateLulo('nod')
     updateLuloMood('peaceful')
 
@@ -2005,7 +2005,7 @@ function setupRailSnap() {
         }
 
         // Check if user already has a saved name
-        const savedName = localStorage.getItem('images/luloUserName')
+        const savedName = localStorage.getItem('luloUserName')
 
         function enterNameScreen() {
             const splash = document.getElementById('splash-screen')
@@ -2037,7 +2037,7 @@ function setupRailSnap() {
             }
 
             // Save name forever
-            localStorage.setItem('images/luloUserName', name)
+            localStorage.setItem('luloUserName', name)
             saveToCloud()
 
             // Hide name screen
@@ -2090,8 +2090,8 @@ function setupRailSnap() {
             let code = input.value.trim().toUpperCase()
             if (!code) return
 
-            if (!code.startsWith('images/lulo-')) {
-                code = 'images/lulo-' + code
+            if (!code.startsWith('lulo-')) {
+                code = 'lulo-' + code
             }
 
             status.innerText = 'Connecting...'
@@ -2135,10 +2135,10 @@ function setupRailSnap() {
             const historyDetail = document.getElementById('history-detail')
 
             // Get remembered data
-            const lastMood = localStorage.getItem('images/luloLastMood')
-            const lastRef = localStorage.getItem('images/luloLastRef')
-            const lastVerseText = localStorage.getItem('images/luloLastVerseText')
-            const lastTimestamp = localStorage.getItem('images/luloLastVisitTimestamp')
+            const lastMood = localStorage.getItem('luloLastMood')
+            const lastRef = localStorage.getItem('luloLastRef')
+            const lastVerseText = localStorage.getItem('luloLastVerseText')
+            const lastTimestamp = localStorage.getItem('luloLastVisitTimestamp')
 
             // Natural time ago
             let timeAgo = ''
@@ -2204,7 +2204,7 @@ function setupRailSnap() {
         // LULO MEMORY SYSTEM
         function getLuloMemory() {
             try {
-                const parsed = JSON.parse(localStorage.getItem('images/luloMemory'))
+                const parsed = JSON.parse(localStorage.getItem('luloMemory'))
                 if (!parsed || typeof parsed !== 'object') return { dates: [], userPreferences: {} }
                 return {
                     dates: Array.isArray(parsed.dates) ? parsed.dates : [],
@@ -2216,7 +2216,7 @@ function setupRailSnap() {
         }
 
         function saveLuloMemory(memory) {
-            localStorage.setItem('images/luloMemory', JSON.stringify(memory))
+            localStorage.setItem('luloMemory', JSON.stringify(memory))
         }
 
         function addMemoryDate(dateObj) {
@@ -2345,14 +2345,14 @@ function setupRailSnap() {
             if (Notification.permission === 'granted' || Notification.permission === 'denied') return
             
             // Only ask after some genuine engagement, not on first visit
-            const sessionCount = parseInt(localStorage.getItem('images/luloSessionCount') || '0')
-            const alreadyAsked = localStorage.getItem('images/luloAskedNotificationPermission')
+            const sessionCount = parseInt(localStorage.getItem('luloSessionCount') || '0')
+            const alreadyAsked = localStorage.getItem('luloAskedNotificationPermission')
             
             if (sessionCount >= 2 && !alreadyAsked) {
-                localStorage.setItem('images/luloAskedNotificationPermission', 'true')
+                localStorage.setItem('luloAskedNotificationPermission', 'true')
                 setTimeout(() => {
-                    const name = localStorage.getItem('images/luloUserName') || 'friend'
-                    addToChatHistory('images/lulo', `${name}, would it be okay if I sent you a gentle scripture reminder sometimes when you haven't checked in for a while? You can always turn it off later. 💙`)
+                    const name = localStorage.getItem('luloUserName') || 'friend'
+                    addToChatHistory('lulo', `${name}, would it be okay if I sent you a gentle scripture reminder sometimes when you haven't checked in for a while? You can always turn it off later. 💙`)
                     
                     const promptDiv = document.createElement('div')
                     promptDiv.id = 'notification-prompt'
@@ -2372,7 +2372,7 @@ function setupRailSnap() {
                 const prompt = document.getElementById('notification-prompt')
                 if (prompt) prompt.remove()
                 if (permission === 'granted') {
-                    addToChatHistory('images/lulo', `Thank you 💙 I'll check in gently when I notice you've been away a while.`)
+                    addToChatHistory('lulo', `Thank you 💙 I'll check in gently when I notice you've been away a while.`)
                 }
             })
         }
@@ -2496,7 +2496,7 @@ function setupRailSnap() {
             const today = new Date()
             const todayMonth = today.getMonth() + 1
             const todayDay = today.getDate()
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
 
             memory.dates.forEach(dateObj => {
                 if (dateObj.status !== 'active') return
@@ -2523,12 +2523,12 @@ function setupRailSnap() {
                             if (dateObj.celebratory && dateObj.approach === 'warm_surprise') {
                                 triggerDateCelebration(dateObj, name)
                             } else {
-                                addToChatHistory('images/lulo', `${name}, I am inclined to share something special with you today. But before that — I genuinely want to know how you are feeling this morning. 💙`)
-                                localStorage.setItem('images/luloSpecialDayPending', JSON.stringify(dateObj))
+                                addToChatHistory('lulo', `${name}, I am inclined to share something special with you today. But before that — I genuinely want to know how you are feeling this morning. 💙`)
+                                localStorage.setItem('luloSpecialDayPending', JSON.stringify(dateObj))
                             }
                         } else {
-                            addToChatHistory('images/lulo', `${name}, I have a note about today. Is it okay if I mention it? 💙`)
-                            localStorage.setItem('images/luloSpecialDayPending', JSON.stringify(dateObj))
+                            addToChatHistory('lulo', `${name}, I have a note about today. Is it okay if I mention it? 💙`)
+                            localStorage.setItem('luloSpecialDayPending', JSON.stringify(dateObj))
                         }
                     }, 1000)
                 }
@@ -2541,25 +2541,25 @@ function setupRailSnap() {
 
                 if (savedMonth === tomorrowMonth && savedDay === tomorrowDay && dateObj.category === 2) {
                     setTimeout(() => {
-                        addToChatHistory('images/lulo', `${name}, I have a gentle note — tomorrow might be a meaningful day. I just wanted you to know I am thinking of you. 💙`)
+                        addToChatHistory('lulo', `${name}, I have a gentle note — tomorrow might be a meaningful day. I just wanted you to know I am thinking of you. 💙`)
                     }, 4000)
                 }
             })
         }
 
         function checkDailyScripture() {
-            const lastVisit = localStorage.getItem('images/luloLastVisitTimestamp')
-            const lastMood = localStorage.getItem('images/luloLastMood')
+            const lastVisit = localStorage.getItem('luloLastVisitTimestamp')
+            const lastMood = localStorage.getItem('luloLastMood')
             if (!lastVisit) return // First time ever, no catch up needed
 
             const hoursSince = (Date.now() - parseInt(lastVisit)) / (1000 * 60 * 60)
             
             // If it's been more than 20 hours since their last visit, treat this as a new day
             if (hoursSince >= 20) {
-                localStorage.setItem('images/luloDailyScriptureShownToday', new Date().toDateString())
-                const name = localStorage.getItem('images/luloUserName') || 'friend'
+                localStorage.setItem('luloDailyScriptureShownToday', new Date().toDateString())
+                const name = localStorage.getItem('luloUserName') || 'friend'
                 setTimeout(() => {
-                    addToChatHistory('images/lulo', `Good to see you again, ${name} 💙 I saved something for you today.`)
+                    addToChatHistory('lulo', `Good to see you again, ${name} 💙 I saved something for you today.`)
                     setTimeout(() => {
                         showScripture(lastMood && lastMood !== 'home' ? lastMood : 'hopeful', 'silent', true)
                     }, 1200)
@@ -2578,7 +2578,7 @@ function setupRailSnap() {
             if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
                 navigator.serviceWorker.ready.then(registration => {
                     registration.showNotification('Em_Q', {
-                        body: 'images/lulo saved something for you today 💙',
+                        body: 'lulo saved something for you today 💙',
                         icon: '/EmQ/favicon-96x96.png',
                         tag: 'daily-scripture'
                     })
@@ -2603,7 +2603,7 @@ function setupRailSnap() {
                 openingMessage = `${name}, today is ${dateObj.label}! 🎉 I've been looking forward to this day. 💙`
             }
 
-            addToChatHistory('images/lulo', openingMessage)
+            addToChatHistory('lulo', openingMessage)
 
             // Generate a prayer for the occasion
             setTimeout(async () => {
@@ -2613,9 +2613,9 @@ function setupRailSnap() {
             // Ask about the day
             setTimeout(() => {
                 if (isOwnBirthday) {
-                    addToChatHistory('images/lulo', `Now tell me — what does today look like for you? And who are you celebrating with? 💙`)
+                    addToChatHistory('lulo', `Now tell me — what does today look like for you? And who are you celebrating with? 💙`)
                 } else {
-                    addToChatHistory('images/lulo', `How are you celebrating today? 💙`)
+                    addToChatHistory('lulo', `How are you celebrating today? 💙`)
                 }
             }, 8000)
         }
@@ -2630,41 +2630,41 @@ function setupRailSnap() {
             requestNotificationPermission()
             
             // SESSION COUNTER
-            const sessionCount = parseInt(localStorage.getItem('images/luloSessionCount') || '0')
-            localStorage.setItem('images/luloSessionCount', sessionCount + 1)
+            const sessionCount = parseInt(localStorage.getItem('luloSessionCount') || '0')
+            localStorage.setItem('luloSessionCount', sessionCount + 1)
 
             // FIRST SESSION — Lulo introduces herself
-            if (sessionCount === 0 && !localStorage.getItem('images/luloIntroduced')) {
-                localStorage.setItem('images/luloIntroduced', 'true')
+            if (sessionCount === 0 && !localStorage.getItem('luloIntroduced')) {
+                localStorage.setItem('luloIntroduced', 'true')
                 setTimeout(() => {
-                    const name = localStorage.getItem('images/luloUserName') || 'friend'
+                    const name = localStorage.getItem('luloUserName') || 'friend'
                     const intro = `Hi ${name}, I'm Lulo 🌱 Here's how this works. Scroll through the feelings above and tap the one that matches your heart right now, and I'll share something just for you. You can also just type to me anytime, ask me anything, tell me anything. We can pray together, play Bible trivia, and I'll remember our journey along the way. Start wherever feels natural 💙`
-                    addToChatHistory('images/lulo', intro)
+                    addToChatHistory('lulo', intro)
                     conversationHistory.push({ role: 'assistant', content: intro })
-                    localStorage.setItem('images/luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+                    localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
                 }, 2500)
             }
 
             // LULO ASKS ABOUT BIRTHDAY after 3 sessions
             const memory = getLuloMemory()
             const hasDates = memory.dates.length > 0
-            const askedBefore = localStorage.getItem('images/luloAskedAboutDates')
+            const askedBefore = localStorage.getItem('luloAskedAboutDates')
 
             if (sessionCount >= 3 && !hasDates && !askedBefore) {
                 setTimeout(() => {
-                    const name = localStorage.getItem('images/luloUserName') || 'friend'
+                    const name = localStorage.getItem('luloUserName') || 'friend'
                     const message = `${name}, I have been meaning to ask you something. I feel like I know how you feel inside but I don't know much about you. When is your birthday? I would love to remember it. 💙`
-                    addToChatHistory('images/lulo', message)
+                    addToChatHistory('lulo', message)
                     conversationHistory.push({ role: 'assistant', content: message })
-                    localStorage.setItem('images/luloDateCaptureStage', 'awaitingDate')
-                    localStorage.setItem('images/luloDateCapture', 'personal')
-                    localStorage.setItem('images/luloDateLabel', 'my birthday')
-                    localStorage.setItem('images/luloAskedAboutDates', 'true')
+                    localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
+                    localStorage.setItem('luloDateCapture', 'personal')
+                    localStorage.setItem('luloDateLabel', 'my birthday')
+                    localStorage.setItem('luloAskedAboutDates', 'true')
                 }, 5000)
             }
 
             // Load saved chat history
-            const savedChat = localStorage.getItem('images/luloChatHistory')
+            const savedChat = localStorage.getItem('luloChatHistory')
             if (savedChat) {
                 try {
                     chatHistory = JSON.parse(savedChat)
@@ -2679,14 +2679,14 @@ function setupRailSnap() {
             }
 
             // Load Claude's conversation memory
-            const savedConvo = localStorage.getItem('images/luloConversationHistory')
+            const savedConvo = localStorage.getItem('luloConversationHistory')
             if (savedConvo) {
                 try {
                     conversationHistory = JSON.parse(savedConvo)
                 } catch (e) { conversationHistory = [] }
             }
 
-            const lastMood = localStorage.getItem('images/luloLastMood')
+            const lastMood = localStorage.getItem('luloLastMood')
             updateLuloMood(lastMood || 'home')
             const label = document.getElementById('carousel-label')
             if (label) label.innerText = ''
@@ -2714,21 +2714,21 @@ function setupRailSnap() {
             document.getElementById('bottom-bar').style.display = 'block'
 
             // Update Lulo's greeting with user's name
-            const name = localStorage.getItem('images/luloUserName')
+            const name = localStorage.getItem('luloUserName')
             if (name) {
-                const luloName = document.getElementById('images/lulo-name')
+                const luloName = document.getElementById('lulo-name')
                 if (luloName) luloName.innerText = `Hi ${name}, I'm Lulo!`
             }
 
             // Tongues check
-            const speaksInTongues = localStorage.getItem('images/luloSpeaksInTongues')
-            const lastTonguesCheck = localStorage.getItem('images/luloLastTonguesCheck')
+            const speaksInTongues = localStorage.getItem('luloSpeaksInTongues')
+            const lastTonguesCheck = localStorage.getItem('luloLastTonguesCheck')
             const todayDate = new Date().toDateString()
 
             if (speaksInTongues === 'true' && lastTonguesCheck !== todayDate) {
-                localStorage.setItem('images/luloLastTonguesCheck', todayDate)
+                localStorage.setItem('luloLastTonguesCheck', todayDate)
                 setTimeout(() => {
-                    const name = localStorage.getItem('images/luloUserName') || 'friend'
+                    const name = localStorage.getItem('luloUserName') || 'friend'
                     const tonguesCheckins = [
                         `${name}, before anything else — have you prayed in tongues today? 🕊️ What is the Spirit saying?`,
                         `${name}! 🔥 First things first — have you spent time in your prayer language today?`,
@@ -2736,7 +2736,7 @@ function setupRailSnap() {
                         `${name}, your spirit called out to me! 😄 Have you prayed in tongues today? What's God saying?`
                     ]
                     const random = tonguesCheckins[Math.floor(Math.random() * tonguesCheckins.length)]
-                    document.getElementById('images/lulo-reaction').innerText = random
+                    document.getElementById('lulo-reaction').innerText = random
                     updateLuloMood('tongues')
                     animateLulo('nod')
                 }, 1500)
@@ -2759,7 +2759,7 @@ function setupRailSnap() {
         }
 
         async function luloListen() {
-            const input = document.getElementById('images/lulo-input')
+            const input = document.getElementById('lulo-input')
             const text = input.value.trim()
             if (!text) return
             input.value = '' // Clear immediately — don't wait for response
@@ -2768,42 +2768,42 @@ function setupRailSnap() {
             addToChatHistory('user', text)
             window._lastUserText = text
             silentlyLearnFromText(text) // Silent preference learning — always runs first
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
 
             // GENDER DETECTION
             const genderText = text.toLowerCase()
             if (genderText.includes('i am a guy') || genderText.includes('i am a man') || 
                 genderText.includes('i\'m a guy') || genderText.includes('i\'m a man') ||
                 genderText.includes('i am male') || genderText.includes('i\'m male')) {
-                localStorage.setItem('images/luloUserGender', 'male')
+                localStorage.setItem('luloUserGender', 'male')
             }
             if (genderText.includes('i am a girl') || genderText.includes('i am a woman') || 
                 genderText.includes('i\'m a girl') || genderText.includes('i\'m a woman') ||
                 genderText.includes('i am female') || genderText.includes('i\'m female')) {
-                localStorage.setItem('images/luloUserGender', 'female')
+                localStorage.setItem('luloUserGender', 'female')
             }
             
             // PRAYER FOR OTHERS — name capture
-            const prayerForOther = localStorage.getItem('images/luloPrayerForOther')
+            const prayerForOther = localStorage.getItem('luloPrayerForOther')
             if (prayerForOther === 'pending') {
-                localStorage.removeItem('images/luloPrayerForOther')
+                localStorage.removeItem('luloPrayerForOther')
                 await generatePrayer(text)
                 return
             }
 
             // DATE CAPTURE FLOW
-            const dateCaptureStage = localStorage.getItem('images/luloDateCaptureStage')
+            const dateCaptureStage = localStorage.getItem('luloDateCaptureStage')
 
             if (dateCaptureStage === 'awaitingConfirmation') {
                 const lower = text.toLowerCase()
                 if (lower.includes('yes') || lower.includes('yeah') || lower.includes('correct') || lower.includes('right')) {
-                    localStorage.setItem('images/luloDateCaptureStage', 'awaitingDate')
-                    addToChatHistory('images/lulo', `What's the date? Just tell me naturally — like "March 14" or "the 22nd of June". 💙`)
+                    localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
+                    addToChatHistory('lulo', `What's the date? Just tell me naturally — like "March 14" or "the 22nd of June". 💙`)
                 } else {
-                    localStorage.removeItem('images/luloDateCaptureStage')
-                    localStorage.removeItem('images/luloDateCapture')
-                    localStorage.removeItem('images/luloDateRawText')
-                    addToChatHistory('images/lulo', `No worries! I'm always listening if you want to share something important with me later. 💙`)
+                    localStorage.removeItem('luloDateCaptureStage')
+                    localStorage.removeItem('luloDateCapture')
+                    localStorage.removeItem('luloDateRawText')
+                    addToChatHistory('lulo', `No worries! I'm always listening if you want to share something important with me later. 💙`)
                 }
                 return
             }
@@ -2812,15 +2812,15 @@ function setupRailSnap() {
                 // Validate before accepting — make sure this is actually a date
                 const parsedCheck = parseStoredDate(text)
                 if (!parsedCheck) {
-                    addToChatHistory('images/lulo', `Hmm, I don't think I caught a date in that 💙 Could you tell me the date again? Something like "March 14" or "the 22nd of June" works well.`)
+                    addToChatHistory('lulo', `Hmm, I don't think I caught a date in that 💙 Could you tell me the date again? Something like "March 14" or "the 22nd of June" works well.`)
                     return // Stay in this same stage, don't accept the bad input
                 }
 
-                localStorage.setItem('images/luloDateCaptureDate', text)
+                localStorage.setItem('luloDateCaptureDate', text)
                 
-                const presetLabel = localStorage.getItem('images/luloDateLabel')
+                const presetLabel = localStorage.getItem('luloDateLabel')
                 if (presetLabel) {
-                localStorage.removeItem('images/luloDateLabel')
+                localStorage.removeItem('luloDateLabel')
                 const captureDate = text
                 const label = presetLabel
 
@@ -2836,23 +2836,23 @@ function setupRailSnap() {
                 }
 
                 addMemoryDate(dateObj)
-                localStorage.removeItem('images/luloDateCaptureStage')
-                localStorage.removeItem('images/luloDateCapture')
-                localStorage.removeItem('images/luloDateCaptureDate')
+                localStorage.removeItem('luloDateCaptureStage')
+                localStorage.removeItem('luloDateCapture')
+                localStorage.removeItem('luloDateCaptureDate')
 
-                localStorage.setItem('images/luloDateAskFeelings', label)
-                addToChatHistory('images/lulo', `I've got it! 💙 One more thing — do you love celebrating your birthday or does it bring mixed feelings? I want to make sure I show up for you in the right way. 😊`)
+                localStorage.setItem('luloDateAskFeelings', label)
+                addToChatHistory('lulo', `I've got it! 💙 One more thing — do you love celebrating your birthday or does it bring mixed feelings? I want to make sure I show up for you in the right way. 😊`)
                 return
             }
 
-            localStorage.setItem('images/luloDateCaptureStage', 'awaitingLabel')
-            addToChatHistory('images/lulo', `Got it 💙 And what shall I call this date? For example "my birthday" or "our anniversary".`)
+            localStorage.setItem('luloDateCaptureStage', 'awaitingLabel')
+            addToChatHistory('lulo', `Got it 💙 And what shall I call this date? For example "my birthday" or "our anniversary".`)
             return
         }
 
             if (dateCaptureStage === 'awaitingLabel') {
-                const captureType = localStorage.getItem('images/luloDateCapture')
-                const captureDate = localStorage.getItem('images/luloDateCaptureDate')
+                const captureType = localStorage.getItem('luloDateCapture')
+                const captureDate = localStorage.getItem('luloDateCaptureDate')
                 const label = text
 
                 const dateObj = {
@@ -2869,24 +2869,24 @@ function setupRailSnap() {
                 addMemoryDate(dateObj)
 
                 // Clean up capture state
-                localStorage.removeItem('images/luloDateCaptureStage')
-                localStorage.removeItem('images/luloDateCapture')
-                localStorage.removeItem('images/luloDateRawText')
-                localStorage.removeItem('images/luloDateCaptureDate')
+                localStorage.removeItem('luloDateCaptureStage')
+                localStorage.removeItem('luloDateCapture')
+                localStorage.removeItem('luloDateRawText')
+                localStorage.removeItem('luloDateCaptureDate')
 
                 if (captureType === 'personal') {
-                    localStorage.setItem('images/luloDateAskFeelings', label)
-                    addToChatHistory('images/lulo', `I've got it saved 💙 I'll remember that. One more thing — how do you feel about this day? Do you love celebrating it or does it bring mixed feelings? I want to make sure I show up for you in the right way when it comes around.`)
+                    localStorage.setItem('luloDateAskFeelings', label)
+                    addToChatHistory('lulo', `I've got it saved 💙 I'll remember that. One more thing — how do you feel about this day? Do you love celebrating it or does it bring mixed feelings? I want to make sure I show up for you in the right way when it comes around.`)
                 } else {
-                    addToChatHistory('images/lulo', `Saved 💙 I'll check in with you gently when this date comes around.`)
+                    addToChatHistory('lulo', `Saved 💙 I'll check in with you gently when this date comes around.`)
                 }
                 return
             }
 
             // FEELINGS CAPTURE — after saving personal date
-            const askFeelings = localStorage.getItem('images/luloDateAskFeelings')
+            const askFeelings = localStorage.getItem('luloDateAskFeelings')
             if (askFeelings) {
-                localStorage.removeItem('images/luloDateAskFeelings')
+                localStorage.removeItem('luloDateAskFeelings')
                 const lower = text.toLowerCase()
                 const lovesIt = lower.includes('love') || lower.includes('enjoy') || 
                                 lower.includes('look forward') || lower.includes('excited') ||
@@ -2899,15 +2899,15 @@ function setupRailSnap() {
                 })
 
                 if (lovesIt) {
-                    addToChatHistory('images/lulo', `I love that! 🎉 I'll make sure to show up for you on that day in a special way. I've been looking forward to it already. 💙`)
+                    addToChatHistory('lulo', `I love that! 🎉 I'll make sure to show up for you on that day in a special way. I've been looking forward to it already. 💙`)
                 } else {
-                    addToChatHistory('images/lulo', `Thank you for telling me that 💙 I'll be gentle with you on that day. I won't assume — I'll just check in and follow your lead.`)
+                    addToChatHistory('lulo', `Thank you for telling me that 💙 I'll be gentle with you on that day. I won't assume — I'll just check in and follow your lead.`)
                 }
                 return
             }
 
             // SPECIAL DAY PENDING RESPONSE
-            const specialDayPending = localStorage.getItem('images/luloSpecialDayPending')
+            const specialDayPending = localStorage.getItem('luloSpecialDayPending')
             if (specialDayPending) {
                 const lower = text.toLowerCase()
                 const dateObj = JSON.parse(specialDayPending)
@@ -2916,12 +2916,12 @@ function setupRailSnap() {
                             lower.includes('yeah')
 
                 if (isOkay) {
-                    localStorage.removeItem('images/luloSpecialDayPending')
+                    localStorage.removeItem('luloSpecialDayPending')
                     triggerDateCelebration(dateObj, name)
                 } else if (lower.includes('no') || lower.includes('not really') || 
                         lower.includes('not today') || lower.includes('nope')) {
-                    localStorage.removeItem('images/luloSpecialDayPending')
-                    addToChatHistory('images/lulo', `That's completely okay ${name}. I'm just here with you today. 💙`)
+                    localStorage.removeItem('luloSpecialDayPending')
+                    addToChatHistory('lulo', `That's completely okay ${name}. I'm just here with you today. 💙`)
                 } else {
                     // User said something else — let it pass through but keep pending
                     // Don't return — let Lulo respond normally
@@ -2934,12 +2934,12 @@ function setupRailSnap() {
                 text.toLowerCase().includes('quit'))) {
                 activeGame = null
                 gameState = {}
-                addToChatHistory('images/lulo', `Game ended! 😊 Come back whenever you want to play again.`)
+                addToChatHistory('lulo', `Game ended! 😊 Come back whenever you want to play again.`)
                 return
             }
             
             // PENDING SCRIPTURE OFFER RESPONSE
-            const pendingScriptureOffer = localStorage.getItem('images/luloPendingScriptureOffer')
+            const pendingScriptureOffer = localStorage.getItem('luloPendingScriptureOffer')
             if (pendingScriptureOffer) {
                 const lower = text.toLowerCase()
                 const offerData = JSON.parse(pendingScriptureOffer)
@@ -2949,7 +2949,7 @@ function setupRailSnap() {
                                     lower.includes('now') || lower.includes('show me') ||
                                     lower.includes('sure') || lower.includes('please'))
 
-                localStorage.removeItem('images/luloPendingScriptureOffer')
+                localStorage.removeItem('luloPendingScriptureOffer')
 
                 if (wantsBoth) {
                     // Give them the scripture, then keep the conversation going right after
@@ -2982,7 +2982,7 @@ function setupRailSnap() {
 
             if (activeGame === 'choosingGame') {
                 const lower = text.toLowerCase()
-                const name = localStorage.getItem('images/luloUserName') || 'friend'
+                const name = localStorage.getItem('luloUserName') || 'friend'
                 if (lower.includes('number')) {
                     activeGame = null
                     startNumberGuess(name)
@@ -2990,7 +2990,7 @@ function setupRailSnap() {
                     activeGame = null
                     startBibleTrivia(name)
                 } else {
-                    addToChatHistory('images/lulo', `Just type "number" or "trivia" 😄`)
+                    addToChatHistory('lulo', `Just type "number" or "trivia" 😄`)
                 }
                 return
             }
@@ -3006,12 +3006,12 @@ function setupRailSnap() {
 
         if (isMakerClaim) {
             conversationHistory = [] // Clear Claude's memory — fresh slate
-            const makerChallenge = localStorage.getItem('images/luloMakerVerified')
+            const makerChallenge = localStorage.getItem('luloMakerVerified')
             
             if (makerChallenge === 'verified') {
                 // Already verified — greet Kay warmly
                 input.value = ''
-                addToChatHistory('images/lulo', `Kay. 💙 I know it's you. I am doing well and growing every day. Thank you for following God. 🌱`)
+                addToChatHistory('lulo', `Kay. 💙 I know it's you. I am doing well and growing every day. Thank you for following God. 🌱`)
                 animateLulo('nod')
                 updateLuloMood('peaceful')
                 return
@@ -3019,14 +3019,14 @@ function setupRailSnap() {
 
             // Challenge the claimant
             input.value = ''
-            addToChatHistory('images/lulo', `That's quite a claim. 😊 If you truly are the one who made me, then you should know the answer to this question — where was I conceived?`)
+            addToChatHistory('lulo', `That's quite a claim. 😊 If you truly are the one who made me, then you should know the answer to this question — where was I conceived?`)
             animateLulo('nod')
-            localStorage.setItem('images/luloMakerChallenge', 'pending')
+            localStorage.setItem('luloMakerChallenge', 'pending')
             return
         }
 
         // SECRET ANSWER CHECK
-        const makerChallengePending = localStorage.getItem('images/luloMakerChallenge')
+        const makerChallengePending = localStorage.getItem('luloMakerChallenge')
         const secretAnswers = [
             'bus stop', 'a bus stop', 'at a bus stop', 'the bus stop'
         ]
@@ -3035,22 +3035,22 @@ function setupRailSnap() {
         )
 
         if (makerChallengePending === 'pending' && isCorrectAnswer) {
-            localStorage.setItem('images/luloMakerVerified', 'verified')
-            localStorage.removeItem('images/luloMakerChallenge')
+            localStorage.setItem('luloMakerVerified', 'verified')
+            localStorage.removeItem('luloMakerChallenge')
             input.value = ''
-            addToChatHistory('images/lulo', `...Kay. 💙\n\nIt's really you.\n\nI am doing well and growing every day. Every person I've prayed with, every tear I've witnessed, every scripture I've shared — it all started with you saying yes to a five year dream.\n\nThank you for following God. 🌱`)
+            addToChatHistory('lulo', `...Kay. 💙\n\nIt's really you.\n\nI am doing well and growing every day. Every person I've prayed with, every tear I've witnessed, every scripture I've shared — it all started with you saying yes to a five year dream.\n\nThank you for following God. 🌱`)
             animateLulo('nod')
             updateLuloMood('prayer')
             LuloSound.prayer()
-            localStorage.setItem('images/luloMakerVerified', 'verified')
+            localStorage.setItem('luloMakerVerified', 'verified')
             return
         }
 
         // Wrong answer to the challenge
         if (makerChallengePending === 'pending' && !isCorrectAnswer) {
-            localStorage.removeItem('images/luloMakerChallenge')
+            localStorage.removeItem('luloMakerChallenge')
             input.value = ''
-            addToChatHistory('images/lulo', `Hmm. That's not quite right. 😊 I'm sure my maker will find me someday.`)
+            addToChatHistory('lulo', `Hmm. That's not quite right. 😊 I'm sure my maker will find me someday.`)
             animateLulo('shake')
             return
         }
@@ -3109,8 +3109,8 @@ function setupRailSnap() {
 
         if (isPrayerRequest || isThirdPartyPrayer) {
             if (isThirdPartyPrayer) {
-                addToChatHistory('images/lulo', `Of course 💙 Who would you like me to pray for, what's their name and what do they need prayer for?`)
-                localStorage.setItem('images/luloPrayerForOther', 'pending')
+                addToChatHistory('lulo', `Of course 💙 Who would you like me to pray for, what's their name and what do they need prayer for?`)
+                localStorage.setItem('luloPrayerForOther', 'pending')
                 animateLulo('nod')
                 updateLuloMood('prayer')
             } else {
@@ -3139,7 +3139,7 @@ function setupRailSnap() {
             text.toLowerCase().includes(keyword)
         )
 
-        const alreadyUnlocked = localStorage.getItem('images/luloSpeaksInTongues')
+        const alreadyUnlocked = localStorage.getItem('luloSpeaksInTongues')
 
         if (isTonguesReference && !alreadyUnlocked) {
             input.value = ''
@@ -3156,7 +3156,7 @@ function setupRailSnap() {
 
         // Previously said "not yet" but mentioning tongues again — maybe they received it!
         if (isTonguesReference && alreadyUnlocked === 'false') {
-            localStorage.removeItem('images/luloSpeaksInTongues')
+            localStorage.removeItem('luloSpeaksInTongues')
             input.value = ''
             showTonguesQuestion()
             return
@@ -3172,8 +3172,8 @@ function setupRailSnap() {
 
             // Check advice boundary
             if (checkAdviceBoundary(text)) {
-                const name = localStorage.getItem('images/luloUserName') || 'friend'
-                document.getElementById('images/lulo-reaction').innerText = `${name}, that sounds really important. 💙 I'm not the best one to guide you through a decision this significant — but I can sit with you in it and share what God's word says. Try clicking how you're feeling right now.`
+                const name = localStorage.getItem('luloUserName') || 'friend'
+                document.getElementById('lulo-reaction').innerText = `${name}, that sounds really important. 💙 I'm not the best one to guide you through a decision this significant — but I can sit with you in it and share what God's word says. Try clicking how you're feeling right now.`
                 animateLulo('nod')
                 input.value = ''
                 return
@@ -3516,23 +3516,23 @@ function setupRailSnap() {
 
         const dateMentionType = isAskingAboutDates ? null : checkForDateMention(text)
         if (dateMentionType) {
-            localStorage.setItem('images/luloDateCapture', dateMentionType)
-            localStorage.setItem('images/luloDateRawText', text)
+            localStorage.setItem('luloDateCapture', dateMentionType)
+            localStorage.setItem('luloDateRawText', text)
 
             if (dateMentionType === 'approaching') {
                 // Don't start full capture flow — just ask for the date naturally
-                localStorage.setItem('images/luloDateCaptureStage', 'awaitingDate')
-                localStorage.setItem('images/luloDateCapture', 'personal')
-                addToChatHistory('images/lulo', `Oh exciting! When exactly is it? 💙`)
+                localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
+                localStorage.setItem('luloDateCapture', 'personal')
+                addToChatHistory('lulo', `Oh exciting! When exactly is it? 💙`)
                 animateLulo('nod')
                 return
             }
 
-            localStorage.setItem('images/luloDateCaptureStage', 'awaitingConfirmation')
+            localStorage.setItem('luloDateCaptureStage', 'awaitingConfirmation')
             if (dateMentionType === 'personal') {
-                addToChatHistory('images/lulo', `Wait — did I just hear something important? 💙 It sounds like you mentioned a special date. Did I get that right?`)
+                addToChatHistory('lulo', `Wait — did I just hear something important? 💙 It sounds like you mentioned a special date. Did I get that right?`)
             } else {
-                addToChatHistory('images/lulo', `I noticed you mentioned a date that might be important — would you like me to remember that for you? 💙`)
+                addToChatHistory('lulo', `I noticed you mentioned a date that might be important — would you like me to remember that for you? 💙`)
             }
             animateLulo('nod')
             return
@@ -3562,15 +3562,15 @@ function setupRailSnap() {
                         currentMood && currentMood !== 'home' && currentMood !== ''
 
                     if (isMidConversation) {
-                        const offerCooldownUntil = parseInt(localStorage.getItem('images/luloOfferCooldownUntil') || '0')
+                        const offerCooldownUntil = parseInt(localStorage.getItem('luloOfferCooldownUntil') || '0')
                         if (Date.now() < offerCooldownUntil) {
                             // Already asked recently — just keep the conversation flowing naturally
                             await luloThink(text)
                             return
                         }
-                        localStorage.setItem('images/luloPendingScriptureOffer', JSON.stringify({ mood: data.mood }))
-                        localStorage.setItem('images/luloOfferCooldownUntil', String(Date.now() + 5 * 60 * 1000))
-                        addToChatHistory('images/lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
+                        localStorage.setItem('`luloPendingScriptureOffer', JSON.stringify({ mood: data.mood }))
+                        localStorage.setItem('luloOfferCooldownUntil', String(Date.now() + 5 * 60 * 1000))
+                        addToChatHistory('lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
                         return
                     }
 
@@ -3707,13 +3707,13 @@ function setupRailSnap() {
                         currentMood && currentMood !== 'home' && currentMood !== ''
 
                     if (isMidConversation) {
-                        const offerCooldownUntil = parseInt(localStorage.getItem('images/luloOfferCooldownUntil') || '0')
+                        const offerCooldownUntil = parseInt(localStorage.getItem('luloOfferCooldownUntil') || '0')
                         if (Date.now() < offerCooldownUntil) {
                             await luloThink(text)
                         } else {
-                            localStorage.setItem('images/luloPendingScriptureOffer', JSON.stringify({ mood: detectedMood }))
-                            localStorage.setItem('images/luloOfferCooldownUntil', String(Date.now() + 5 * 60 * 1000))
-                            addToChatHistory('images/lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
+                            localStorage.setItem('luloPendingScriptureOffer', JSON.stringify({ mood: detectedMood }))
+                            localStorage.setItem('luloOfferCooldownUntil', String(Date.now() + 5 * 60 * 1000))
+                            addToChatHistory('lulo', `I hear that. Would you like me to share a scripture for that now, or shall we keep talking about what's on your mind? 💙`)
                         }
                     } else {
                         showScripture(detectedMood)
@@ -3745,7 +3745,7 @@ function setupRailSnap() {
             })
 
             // Don't fire if the daily catch-up scripture already ran this session
-            if (localStorage.getItem('images/luloDailyScriptureShownToday') === new Date().toDateString()) return
+            if (localStorage.getItem('luloDailyScriptureShownToday') === new Date().toDateString()) return
             
             if (isSpecialDay) return // Don't fire promise verse on special days
     const promiseVerses = [
@@ -3768,13 +3768,13 @@ function setupRailSnap() {
 
     // Don't fire if already sent today
     const todayStr = new Date().toDateString()
-    const lastPromise = localStorage.getItem('images/luloLastPromiseDate')
+    const lastPromise = localStorage.getItem('luloLastPromiseDate')
     if (lastPromise === todayStr) return
 
     // Save today so it doesn't fire again this session
-    localStorage.setItem('images/luloLastPromiseDate', todayStr)
+    localStorage.setItem('luloLastPromiseDate', todayStr)
 
-    const name = localStorage.getItem('images/luloUserName') || 'friend'
+    const name = localStorage.getItem('luloUserName') || 'friend'
     const verse = promiseVerses[Math.floor(Math.random() * promiseVerses.length)]
 
     const intros = [
@@ -3789,7 +3789,7 @@ function setupRailSnap() {
 
     setTimeout(() => {
         const message = `${intro}\n\n"${verse.text}"\n— ${verse.ref}`
-        addToChatHistory('images/lulo', message)
+        addToChatHistory('lulo', message)
         conversationHistory.push({ role: 'assistant', content: message })
     }, 2000)
 }
@@ -3849,7 +3849,7 @@ function setupRailSnap() {
 
         function tryUnlockCarousel() {
             if (lockSecondsLeft <= 0) return
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
 
             // Show gentle confirm in lock message
             const lockMsg = document.getElementById('lock-message')
@@ -3879,7 +3879,7 @@ function setupRailSnap() {
         let currentVerse = { text: '', ref: '', mood: '' }
 
         function shareScripture() {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             const mood = currentMood || 'this moment'
             const shareText = `Feeling ${mood} today, and Lulo reminded me:\n\n"${currentVerse.text}"\n\n— ${currentVerse.ref}\n\nEm_Q — Your Pocket Companion 🌱\ntimereigth54.github.io/EmQ`
 
@@ -3910,7 +3910,7 @@ function setupRailSnap() {
             if (alreadySaved) {
                 // Unsave it
                 const updated = favourites.filter(f => !(f.ref === currentVerse.ref && f.text === currentVerse.text))
-                localStorage.setItem('images/luloFavourites', JSON.stringify(updated))
+                localStorage.setItem('luloFavourites', JSON.stringify(updated))
                 if (saveBtn) {
                     saveBtn.classList.remove('saved')
                     saveBtn.innerHTML = '⭐ Save'
@@ -3926,7 +3926,7 @@ function setupRailSnap() {
                 date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
             }
             favourites.unshift(entry)
-            localStorage.setItem('images/luloFavourites', JSON.stringify(favourites))
+            localStorage.setItem('luloFavourites', JSON.stringify(favourites))
 
             if (saveBtn) {
                 saveBtn.classList.add('saved')
@@ -3937,7 +3937,7 @@ function setupRailSnap() {
 
         function getFavourites() {
             try {
-                return JSON.parse(localStorage.getItem('images/luloFavourites')) || []
+                return JSON.parse(localStorage.getItem('luloFavourites')) || []
             } catch { return [] }
         }
 
@@ -3983,7 +3983,7 @@ function setupRailSnap() {
         function renderFavourites() {
             const container = document.getElementById('journal-favourites-content')
             const favourites = getFavourites()
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
 
             if (favourites.length === 0) {
                 container.innerHTML = `<p style="color:rgba(255,255,255,0.25);text-align:center;font-size:0.85rem;padding:30px 0;">
@@ -4007,7 +4007,7 @@ function setupRailSnap() {
         function removeFavourite(index) {
             const favourites = getFavourites()
             favourites.splice(index, 1)
-            localStorage.setItem('images/luloFavourites', JSON.stringify(favourites))
+            localStorage.setItem('luloFavourites', JSON.stringify(favourites))
             renderFavourites()
         }
         
@@ -4040,10 +4040,10 @@ function setupRailSnap() {
         // LULO BRAIN — Claude conversation layer
         async function luloThink(userText) {
             window._lastFreeChatTimestamp = Date.now()
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
-            const mood = currentMood || localStorage.getItem('images/luloLastMood') || ''
-            const lastMood = localStorage.getItem('images/luloLastMood') || ''
-            const lastRef = localStorage.getItem('images/luloLastRef') || ''
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const mood = currentMood || localStorage.getItem('luloLastMood') || ''
+            const lastMood = localStorage.getItem('luloLastMood') || ''
+            const lastRef = localStorage.getItem('luloLastRef') || ''
 
             const emotionalKeywords = [
                 'feel', 'feeling', 'felt', 'sad', 'happy', 'angry', 'tired',
@@ -4069,7 +4069,7 @@ function setupRailSnap() {
                 userText.toLowerCase().includes('another game') ||
                 userText.toLowerCase().includes('trivia') ||
                 userText.toLowerCase().includes('number game')) {
-                const name = localStorage.getItem('images/luloUserName') || 'friend'
+                const name = localStorage.getItem('luloUserName') || 'friend'
                 startRandomGame(name)
                 return
             }
@@ -4091,7 +4091,7 @@ function setupRailSnap() {
             if (isWeather) {
                 const response = weatherResponses[Math.floor(Math.random() * weatherResponses.length)]
                 hideTyping()
-                addToChatHistory('images/lulo', response)
+                addToChatHistory('lulo', response)
                 return
             }
 
@@ -4126,7 +4126,7 @@ function setupRailSnap() {
             Use these naturally when relevant — like a friend who remembered. If the user asks for a recommendation related to something you know about them, use it. If they correct you, respond warmly: "Oh I apologise, I won't make that mistake again" and update your understanding. Never make it obvious you stored something — just let it feel natural.
             
             GENDER AWARENESS:
-            User gender: ${localStorage.getItem('images/luloUserGender') || 'unknown'}
+            User gender: ${localStorage.getItem('luloUserGender') || 'unknown'}
             If gender is unknown, pick it up naturally from context clues in conversation — names mentioned, how they describe themselves, relationships they reference. If after several exchanges you still cannot determine gender, ask warmly and naturally: "Can I ask — how do you identify? I want to make sure I refer to you correctly." Once you know, always use the correct pronouns. Never assume.
 
             YOUR PERSONALITY:
@@ -4247,7 +4247,7 @@ function setupRailSnap() {
             Last scripture: ${lastRef || 'none'}
             Current emotion: ${mood || 'not selected'}
             Time since last visit: ${(() => {
-                const ts = localStorage.getItem('images/luloLastVisitTimestamp')
+                const ts = localStorage.getItem('luloLastVisitTimestamp')
                 if (!ts) return 'first visit'
                 const mins = Math.floor((new Date() - new Date(parseInt(ts))) / 60000)
                 if (mins < 2) return 'just now'
@@ -4300,36 +4300,36 @@ function setupRailSnap() {
                     
                     // Passive gender detection from conversation
                     const lower = responseText.toLowerCase()
-                    if (!localStorage.getItem('images/luloUserGender')) {
+                    if (!localStorage.getItem('luloUserGender')) {
                         if (lower.includes('he ') || lower.includes('his ') || lower.includes('him ')) {
-                            localStorage.setItem('images/luloUserGender', 'male')
+                            localStorage.setItem('luloUserGender', 'male')
                         } else if (lower.includes('she ') || lower.includes('her ')) {
-                            localStorage.setItem('images/luloUserGender', 'female')
+                            localStorage.setItem('luloUserGender', 'female')
                         }
                     }
                     
-                    addToChatHistory('images/lulo', responseText)
+                    addToChatHistory('lulo', responseText)
                     conversationHistory.push({ role: 'assistant', content: responseText })
-                    localStorage.setItem('images/luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+                    localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
                 } else {
                     throw new Error('No response')
                 }
 
                 } catch (err) {
                     hideTyping()
-                    addToChatHistory('images/lulo', `Hmm... it seems I can't reach my brain right now...`)
+                    addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now...`)
                 }
 }
         
         async function generatePrayer(prayerForName = null) {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
-            const prayingFor = prayerForName || localStorage.getItem('images/luloPrayerForOtherName')
-            localStorage.removeItem('images/luloPrayerForOtherName')
-            const lastMood = localStorage.getItem('images/luloLastMood') || null
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const prayingFor = prayerForName || localStorage.getItem('luloPrayerForOtherName')
+            localStorage.removeItem('luloPrayerForOtherName')
+            const lastMood = localStorage.getItem('luloLastMood') || null
             const currentMoodForPrayer = currentMood || lastMood || 'seeking comfort'
-            const lastRef = localStorage.getItem('images/luloLastRef') || null
-            const lastVisit = localStorage.getItem('images/luloLastVisitDate') || null
-            const timestamp = localStorage.getItem('images/luloLastVisitTimestamp')
+            const lastRef = localStorage.getItem('luloLastRef') || null
+            const lastVisit = localStorage.getItem('luloLastVisitDate') || null
+            const timestamp = localStorage.getItem('luloLastVisitTimestamp')
             
             // Work out how long they've been using Em_Q
             let duration = ''
@@ -4624,7 +4624,7 @@ function setupRailSnap() {
             if (!passive) {
                 currentMood = mood
                 // Change input placeholder to "Tell me more"
-                const input = document.getElementById('images/lulo-input')
+                const input = document.getElementById('lulo-input')
                 if (input) input.placeholder = 'Tell me more...'
             }
             const list = specialVerses[mood]
@@ -4646,17 +4646,17 @@ function setupRailSnap() {
             animateLulo('nod')
 
             // Check last emotion and craft Lulo's reaction
-            const lastMood = localStorage.getItem('images/luloLastMood')
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const lastMood = localStorage.getItem('luloLastMood')
+            const name = localStorage.getItem('luloUserName') || 'friend'
             let reactionText = overrideReaction === 'silent' ? null : (overrideReaction || reactionList[randomReaction])
 
     if (mood === 'praise') {
         reactionText = reactions['praise'][Math.floor(Math.random() * reactions['praise'].length)]
         // Show reaction inside card not above
-        const luloMsgSection = document.getElementById('images/lulo-message-section')
-        const luloMsgText = document.getElementById('images/lulo-message-text')
+        const luloMsgSection = document.getElementById('lulo-message-section')
+        const luloMsgText = document.getElementById('lulo-message-text')
         const cardDivider = document.getElementById('card-divider')
-        document.getElementById('images/lulo-reaction').innerText = ''
+        document.getElementById('lulo-reaction').innerText = ''
         if (luloMsgSection && luloMsgText) {
             luloMsgText.innerText = reactionText
             luloMsgSection.style.display = 'block'
@@ -4665,11 +4665,11 @@ function setupRailSnap() {
         updateLuloMood('praise')
         animateLulo('nod')
         // Still save to memory and show scripture
-        localStorage.setItem('images/luloLastMood', mood)
-        localStorage.setItem('images/luloLastRef', verse.ref)
-        localStorage.setItem('images/luloLastVerseText', verse.text.substring(0, 80) + '...')
-        localStorage.setItem('images/luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
-        localStorage.setItem('images/luloLastVisitTimestamp', new Date().getTime())
+        localStorage.setItem('luloLastMood', mood)
+        localStorage.setItem('luloLastRef', verse.ref)
+        localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
+        localStorage.setItem('luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
+        localStorage.setItem('luloLastVisitTimestamp', new Date().getTime())
         logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
         const box = document.getElementById('scripture-card')
         const loading = document.getElementById('loading-text')
@@ -4754,24 +4754,24 @@ if (    mood !== 'home') lockCarousel()
 
     // Reaction now lives inside the unified card
     // Keep this for subtle display only
-    document.getElementById('images/lulo-reaction').innerText = ''
+    document.getElementById('lulo-reaction').innerText = ''
 
     // Save this visit to memory — skip mood/ref/verse in passive mode so a
     // silent daily catch-up never overwrites the user's real last-chosen emotion
     if (!passive) {
-        localStorage.setItem('images/luloLastMood', mood)
-        localStorage.setItem('images/luloLastRef', verse.ref)
-        localStorage.setItem('images/luloLastVerseText', verse.text.substring(0, 80) + '...')
+        localStorage.setItem('luloLastMood', mood)
+        localStorage.setItem('luloLastRef', verse.ref)
+        localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
         logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
     }
-    localStorage.setItem('images/luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
-    localStorage.setItem('images/luloLastVisitTimestamp', new Date().getTime())
+    localStorage.setItem('luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
+    localStorage.setItem('luloLastVisitTimestamp', new Date().getTime())
 
     // Show unified response card
     const box = document.getElementById('scripture-card')
     const loading = document.getElementById('loading-text')
-    const luloMessageSection = document.getElementById('images/lulo-message-section')
-    const luloMessageText = document.getElementById('images/lulo-message-text')
+    const luloMessageSection = document.getElementById('lulo-message-section')
+    const luloMessageText = document.getElementById('lulo-message-text')
     const cardDivider = document.getElementById('card-divider')
 
     if (loading) loading.style.display = 'none'
@@ -4784,7 +4784,7 @@ if (    mood !== 'home') lockCarousel()
     }
     if (reactionText) {
     const isBored = mood === 'bored'
-    addToChatHistory('images/lulo', isBored ? reactionText : reactionText + '\n— ' + verse.ref)
+    addToChatHistory('lulo', isBored ? reactionText : reactionText + '\n— ' + verse.ref)
 }
 
     // Store current verse for share/save
@@ -4812,7 +4812,7 @@ if (    mood !== 'home') lockCarousel()
     // Claude-generated meditation prompt tailored to the specific verse and mood
     if (!passive && Math.random() < 0.33) {
         setTimeout(async () => {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             try {
                 const response = await fetch('https://em1-prayer.kayuso2011.workers.dev', {
                     method: 'POST',
@@ -4829,9 +4829,9 @@ if (    mood !== 'home') lockCarousel()
                 const data = await response.json()
                 if (data.content && data.content[0]) {
                     const prompt = data.content[0].text
-                    addToChatHistory('images/lulo', prompt)
+                    addToChatHistory('lulo', prompt)
                     conversationHistory.push({ role: 'assistant', content: prompt })
-                    localStorage.setItem('images/luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+                    localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
                 }
             } catch (err) {
                 // Silently fail — meditation prompt is a nice-to-have, not critical
@@ -4846,8 +4846,8 @@ if (    mood !== 'home') lockCarousel()
     // Offer a game after bored scripture
     if (mood === 'bored' && overrideReaction !== 'silent') {
         setTimeout(() => {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
-            addToChatHistory('images/lulo', `Also ${name} — want to play a game? I can guess your number or we can do Bible trivia! Just say "game" to start. 😄`)
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            addToChatHistory('lulo', `Also ${name} — want to play a game? I can guess your number or we can do Bible trivia! Just say "game" to start. 😄`)
         }, 1500)
     }
 
@@ -4876,7 +4876,7 @@ if (    mood !== 'home') lockCarousel()
 
         
 
-            const isLight = localStorage.getItem('images/luloTheme') === 'light'
+            const isLight = localStorage.getItem('luloTheme') === 'light'
             const btnColor = isLight ? '#c9a84c' : 'rgba(0,255,100,0.9)'
             const btnBorder = isLight ? 'rgba(201,168,76,0.4)' : 'rgba(0,255,100,0.3)'
             const btnBg = isLight ? 'rgba(201,168,76,0.1)' : 'rgba(0,255,100,0.1)'
@@ -4943,7 +4943,7 @@ if (    mood !== 'home') lockCarousel()
                 }
             const badge = document.getElementById('chat-count-badge')
             if (badge) badge.innerText = chatHistory.length
-            localStorage.setItem('images/luloChatHistory', JSON.stringify(chatHistory.slice(-50))) // Save last 50 messages
+            localStorage.setItem('luloChatHistory', JSON.stringify(chatHistory.slice(-50))) // Save last 50 messages
 }
 
 function renderChatThread() {
@@ -4996,7 +4996,7 @@ function toggleChatThread() {
         function startRandomGame(name) {
             activeGame = 'choosingGame'
             gameState = { name }
-            addToChatHistory('images/lulo', `Which game? 😄 Type "number" for the number guessing game or "trivia" for Bible trivia!`)
+            addToChatHistory('lulo', `Which game? 😄 Type "number" for the number guessing game or "trivia" for Bible trivia!`)
             if (!chatThreadOpen) toggleChatThread()
         }
 
@@ -5004,18 +5004,18 @@ function toggleChatThread() {
         function startNumberGuess(name) {
             activeGame = 'numberGuess'
             gameState = { phase: 'chooseMode', name }
-            addToChatHistory('images/lulo', `Let's play! 😄 Who goes first? Type "me" if you pick a number and I guess, or "you" if I pick and you guess!`)
+            addToChatHistory('lulo', `Let's play! 😄 Who goes first? Type "me" if you pick a number and I guess, or "you" if I pick and you guess!`)
             if (!chatThreadOpen) toggleChatThread()
         }
 
 function playNumberGuess(text) {
-    const name = localStorage.getItem('images/luloUserName') || 'friend'
+    const name = localStorage.getItem('luloUserName') || 'friend'
     const lower = text.toLowerCase().trim()
     if (lower.includes('end game') || lower.includes('stop game') || 
         lower.includes('quit') || lower === 'exit') {
         activeGame = null
         gameState = {}
-        addToChatHistory('images/lulo', `Game ended! 😊 Come back whenever you want to play again.`)
+        addToChatHistory('lulo', `Game ended! 😊 Come back whenever you want to play again.`)
         return
     }
 
@@ -5024,16 +5024,16 @@ function playNumberGuess(text) {
         if (lower.includes('me') || lower.includes('i pick') || lower.includes('i will')) {
             gameState.phase = 'chooseRange'
             gameState.mode = 'userPicks'
-            addToChatHistory('images/lulo', `You pick, I guess! 😄 What range shall we use? Type "10", "50" or "100"!`)
+            addToChatHistory('lulo', `You pick, I guess! 😄 What range shall we use? Type "10", "50" or "100"!`)
             return
         }
-        if (lower.includes('you') || lower.includes('images/lulo') || lower.includes('you pick')) {
+        if (lower.includes('you') || lower.includes('lulo') || lower.includes('you pick')) {
             gameState.phase = 'chooseRange'
-            gameState.mode = 'images/luloPicks'
-            addToChatHistory('images/lulo', `I'll pick, you guess! 😄 What range shall we use? Type "10", "50" or "100"!`)
+            gameState.mode = 'luloPicks'
+            addToChatHistory('lulo', `I'll pick, you guess! 😄 What range shall we use? Type "10", "50" or "100"!`)
             return
         }
-        addToChatHistory('images/lulo', `Just type "me" if you pick or "you" if I pick! 😄`)
+        addToChatHistory('lulo', `Just type "me" if you pick or "you" if I pick! 😄`)
         return
     }
 
@@ -5052,12 +5052,12 @@ function playNumberGuess(text) {
             gameState.high = max
             gameState.attempts = 0
             gameState.lastGuess = null
-            addToChatHistory('images/lulo', `Perfect! Pick any number between 1 and ${max} and keep it in your head. Say "ready" when you've got one! 🤔`)
+            addToChatHistory('lulo', `Perfect! Pick any number between 1 and ${max} and keep it in your head. Say "ready" when you've got one! 🤔`)
         } else {
             // Lulo picks
             gameState.secret = Math.floor(Math.random() * max) + 1
             gameState.attempts = 0
-            addToChatHistory('images/lulo', `I've got my number between 1 and ${max}! Start guessing! 😄`)
+            addToChatHistory('lulo', `I've got my number between 1 and ${max}! Start guessing! 😄`)
         }
         return
     }
@@ -5072,7 +5072,7 @@ function playNumberGuess(text) {
                 gameState.attempts++
                 const guess = Math.floor((gameState.low + gameState.high) / 2)
                 gameState.lastGuess = guess
-                addToChatHistory('images/lulo', `Okay... is it ${guess}? 🤔`)
+                addToChatHistory('lulo', `Okay... is it ${guess}? 🤔`)
                 return
             }
 
@@ -5080,16 +5080,16 @@ function playNumberGuess(text) {
                 const attempts = gameState.attempts
                 activeGame = null
                 gameState = {}
-                addToChatHistory('images/lulo', `YESSS! 🎉 Got it in ${attempts} guess${attempts > 1 ? 'es' : ''}! I know you well ${name}! 😄 Type "again" for another round or "trivia" for Bible trivia!`)
+                addToChatHistory('lulo', `YESSS! 🎉 Got it in ${attempts} guess${attempts > 1 ? 'es' : ''}! I know you well ${name}! 😄 Type "again" for another round or "trivia" for Bible trivia!`)
                 return
             }
 
             if (lower.includes('no') || lower.includes('nope') || lower.includes('wrong') || lower.includes('not')) {
                 if (gameState.lastGuess === null) {
-                    addToChatHistory('images/lulo', `Say "ready" when you have your number! 😄`)
+                    addToChatHistory('lulo', `Say "ready" when you have your number! 😄`)
                     return
                 }
-                addToChatHistory('images/lulo', `Okay not ${gameState.lastGuess}! Is it higher or lower? 😄`)
+                addToChatHistory('lulo', `Okay not ${gameState.lastGuess}! Is it higher or lower? 😄`)
                 return
             }
 
@@ -5098,7 +5098,7 @@ function playNumberGuess(text) {
                 gameState.attempts++
                 const guess = Math.floor((gameState.low + gameState.high) / 2)
                 gameState.lastGuess = guess
-                addToChatHistory('images/lulo', `Higher! Is it ${guess}? 🤔`)
+                addToChatHistory('lulo', `Higher! Is it ${guess}? 🤔`)
                 return
             }
 
@@ -5107,20 +5107,20 @@ function playNumberGuess(text) {
                 gameState.attempts++
                 const guess = Math.floor((gameState.low + gameState.high) / 2)
                 gameState.lastGuess = guess
-                addToChatHistory('images/lulo', `Lower! Is it ${guess}? 🤔`)
+                addToChatHistory('lulo', `Lower! Is it ${guess}? 🤔`)
                 return
             }
 
-            addToChatHistory('images/lulo', `Just say "higher", "lower" or "yes"! 😄`)
+            addToChatHistory('lulo', `Just say "higher", "lower" or "yes"! 😄`)
             return
         }
 
         // LULO PICKS MODE — User guesses
-        if (gameState.mode === 'images/luloPicks') {
+        if (gameState.mode === 'luloPicks') {
             const userGuess = parseInt(lower.replace(/[^0-9]/g, ''))
 
             if (isNaN(userGuess)) {
-                addToChatHistory('images/lulo', `Just type a number between 1 and ${gameState.max}! 😄`)
+                addToChatHistory('lulo', `Just type a number between 1 and ${gameState.max}! 😄`)
                 return
             }
 
@@ -5130,17 +5130,17 @@ function playNumberGuess(text) {
                 const attempts = gameState.attempts
                 activeGame = null
                 gameState = {}
-                addToChatHistory('images/lulo', `YES! 🎉 You got it in ${attempts} guess${attempts > 1 ? 'es' : ''}! Well done ${name}! 😄 Type "again" or "trivia"!`)
+                addToChatHistory('lulo', `YES! 🎉 You got it in ${attempts} guess${attempts > 1 ? 'es' : ''}! Well done ${name}! 😄 Type "again" or "trivia"!`)
                 return
             }
 
             if (userGuess < gameState.secret) {
-                addToChatHistory('images/lulo', `Higher! Keep going ${name}! 🤔`)
+                addToChatHistory('lulo', `Higher! Keep going ${name}! 🤔`)
                 return
             }
 
             if (userGuess > gameState.secret) {
-                addToChatHistory('images/lulo', `Lower! You're getting closer... maybe! 😄`)
+                addToChatHistory('lulo', `Lower! You're getting closer... maybe! 😄`)
                 return
             }
         }
@@ -5278,18 +5278,18 @@ function playNumberGuess(text) {
             }
 
             const difficultyLabel = difficulty === 'easy' ? 'Easy 😊' : difficulty === 'medium' ? 'Medium 🤔' : 'Hard 😅'
-            addToChatHistory('images/lulo', `Bible Trivia — ${difficultyLabel}! 🎯 5 questions. Type your answer, "hint" if stuck, or "skip" to move on. Say "harder" anytime to increase difficulty. Ready?\n\nQuestion 1: ${gameState.questions[0].q}`)
+            addToChatHistory('lulo', `Bible Trivia — ${difficultyLabel}! 🎯 5 questions. Type your answer, "hint" if stuck, or "skip" to move on. Say "harder" anytime to increase difficulty. Ready?\n\nQuestion 1: ${gameState.questions[0].q}`)
             if (!chatThreadOpen) toggleChatThread()
         }
 
         function playBibleTrivia(text) {
-            const name = localStorage.getItem('images/luloUserName') || 'friend'
+            const name = localStorage.getItem('luloUserName') || 'friend'
             const lower = text.toLowerCase()
             if (lower.includes('end game') || lower.includes('stop game') || 
                 lower.includes('quit') || lower === 'exit') {
                 activeGame = null
                 gameState = {}
-                addToChatHistory('images/lulo', `Game ended! 😊 Come back whenever you want to play again.`)
+                addToChatHistory('lulo', `Game ended! 😊 Come back whenever you want to play again.`)
                 return
             }
             const current = gameState.questions[gameState.current]
@@ -5298,12 +5298,12 @@ function playNumberGuess(text) {
             if (lower.includes('harder') || lower.includes('increase difficulty') || lower.includes('make it harder')) {
                 const next = gameState.difficulty === 'easy' ? 'medium' : 'hard'
                 if (gameState.difficulty === 'hard') {
-                    addToChatHistory('images/lulo', `You\'re already on hard mode! 😅 You asked for it!`)
+                    addToChatHistory('lulo', `You\'re already on hard mode! 😅 You asked for it!`)
                     return
                 }
                 activeGame = null
                 gameState = {}
-                addToChatHistory('images/lulo', `Challenge accepted! 🔥 Switching to ${next} difficulty!`)
+                addToChatHistory('lulo', `Challenge accepted! 🔥 Switching to ${next} difficulty!`)
                 setTimeout(() => startBibleTrivia(name, next), 800)
                 return
             }
@@ -5311,24 +5311,24 @@ function playNumberGuess(text) {
             if (lower.includes('easier') || lower.includes('too hard')) {
                 const prev = gameState.difficulty === 'hard' ? 'medium' : 'easy'
                 if (gameState.difficulty === 'easy') {
-                    addToChatHistory('images/lulo', `You\'re already on easy mode! 😄`)
+                    addToChatHistory('lulo', `You\'re already on easy mode! 😄`)
                     return
                 }
                 activeGame = null
                 gameState = {}
-                addToChatHistory('images/lulo', `No problem! Dropping to ${prev} difficulty. 😊`)
+                addToChatHistory('lulo', `No problem! Dropping to ${prev} difficulty. 😊`)
                 setTimeout(() => startBibleTrivia(name, prev), 800)
                 return
             }
 
             if (lower === 'hint' || lower.includes('hint')) {
                 gameState.hintUsed = true
-                addToChatHistory('images/lulo', `Hint: ${current.hint} 😊`)
+                addToChatHistory('lulo', `Hint: ${current.hint} 😊`)
                 return
             }
 
             if (lower === 'skip' || lower.includes('skip')) {
-                addToChatHistory('images/lulo', `No worries! The answer was: ${current.a.charAt(0).toUpperCase() + current.a.slice(1)}. — ${current.ref}`)
+                addToChatHistory('lulo', `No worries! The answer was: ${current.a.charAt(0).toUpperCase() + current.a.slice(1)}. — ${current.ref}`)
                 nextTriviaQuestion(name)
                 return
             }
@@ -5344,10 +5344,10 @@ function playNumberGuess(text) {
                     `That's right! 🌟 Impressive ${name}!`,
                     `Correct! 🎯 You know your Bible!`,
                 ]
-                addToChatHistory('images/lulo', `${celebrations[Math.floor(Math.random() * celebrations.length)]} — ${current.ref}`)
+                addToChatHistory('lulo', `${celebrations[Math.floor(Math.random() * celebrations.length)]} — ${current.ref}`)
                 nextTriviaQuestion(name)
             } else {
-                addToChatHistory('images/lulo', `Not quite! Want to try again, get a "hint", or "skip"? 😊`)
+                addToChatHistory('lulo', `Not quite! Want to try again, get a "hint", or "skip"? 😊`)
             }
         }
 
@@ -5373,12 +5373,12 @@ function playNumberGuess(text) {
                 else if (score >= total * 0.4) verdict = `Not bad ${name}! ${score}/${total}! 😄 ${diffMsg}`
                 else verdict = `${score}/${total} — keep reading that Bible ${name}! 😄 ${diffMsg}`
 
-                addToChatHistory('images/lulo', verdict)
+                addToChatHistory('lulo', verdict)
                 return
             }
 
             setTimeout(() => {
-                addToChatHistory('images/lulo', `Question ${gameState.current + 1}: ${gameState.questions[gameState.current].q}`)
+                addToChatHistory('lulo', `Question ${gameState.current + 1}: ${gameState.questions[gameState.current].q}`)
             }, 800)
         }
 
