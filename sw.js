@@ -1,4 +1,4 @@
-const CACHE = 'emq-v20'
+const CACHE = 'emq-v21'
 const ASSETS = [
     '/EmQ/',
     '/EmQ/index.html',

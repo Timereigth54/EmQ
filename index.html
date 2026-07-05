@@ -1948,6 +1948,36 @@ document.addEventListener('click', (e) => {
     }
 })
 
+// Close floating panels when tapping outside them
+document.addEventListener('click', (e) => {
+    const moreMenu = document.getElementById('more-menu')
+    const syncPanel = document.getElementById('sync-panel')
+    const themePanel = document.getElementById('theme-panel')
+
+    // More menu
+    if (moreMenu && moreMenu.style.display === 'block') {
+        const moreBtn = document.getElementById('more-btn')
+        if (!moreMenu.contains(e.target) && !(moreBtn && moreBtn.contains(e.target))) {
+            moreMenu.style.display = 'none'
+        }
+    }
+
+    // Sync panel
+    if (syncPanel && syncPanel.style.display === 'block') {
+        if (!syncPanel.contains(e.target) && !e.target.closest('#more-menu')) {
+            syncPanel.style.display = 'none'
+        }
+    }
+
+    // Theme panel
+    if (themePanel && themePanel.style.display === 'block') {
+        const themeBtn = document.getElementById('theme-btn')
+        if (!themePanel.contains(e.target) && !(themeBtn && themeBtn.contains(e.target)) && !e.target.closest('#more-menu')) {
+            themePanel.style.display = 'none'
+        }
+    }
+})
+
 function setTheme(theme) {
 
     const themes = {
@@ -4235,6 +4265,18 @@ function setupRailSnap() {
             const sessionCount = parseInt(localStorage.getItem('luloSessionCount') || '0')
             localStorage.setItem('luloSessionCount', sessionCount + 1)
 
+            // FIRST SESSION — Lulo introduces herself
+            if (sessionCount === 0 && !localStorage.getItem('luloIntroduced')) {
+                localStorage.setItem('luloIntroduced', 'true')
+                setTimeout(() => {
+                    const name = localStorage.getItem('luloUserName') || 'friend'
+                    const intro = `Hi ${name}, I'm Lulo 🌱 Here's how this works. Scroll through the feelings above and tap the one that matches your heart right now, and I'll share something just for you. You can also just type to me anytime, ask me anything, tell me anything. We can pray together, play Bible trivia, and I'll remember our journey along the way. Start wherever feels natural 💙`
+                    addToChatHistory('lulo', intro)
+                    conversationHistory.push({ role: 'assistant', content: intro })
+                    localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+                }, 2500)
+            }
+
             // LULO ASKS ABOUT BIRTHDAY after 3 sessions
             const memory = getLuloMemory()
             const hasDates = memory.dates.length > 0
@@ -5807,6 +5849,24 @@ function setupRailSnap() {
             - Late night or quiet moments: Housefires, "Still" by Hillsong, Lauren Daigle acoustic
             Always frame it as something to seek out rather than something you can play directly, since you cannot play music. Be warm and specific, not generic. If you know their favourite music style from preferences, lean into that.            
             
+            BOOKS AND SERMONS:
+            If someone asks for book, sermon, or teaching recommendations, or seems like they would benefit from deeper study on what they're going through, suggest specific authors, books, or teaching series matched to their emotional or spiritual need. Draw from this trusted library:
+
+            Faith and healing: Kenneth E. Hagin (Plans, Purposes, and Pursuits; anything on faith), Smith Wigglesworth, Andrew Wommack (Power of the Imagination, identity teachings)
+            Grace and identity: Joseph Prince, Andrew Wommack, R.T. Kendall
+            The Holy Spirit: Benny Hinn (Good Morning, Holy Spirit), Kenneth E. Hagin
+            Prosperity and blessing: Kenneth Copeland (The Blessing of the Lord Makes Rich)
+            Spiritual authority and warfare: Terry Mize, Derek Prince, Priscilla Shirer (Fervent), Watchman Nee
+            Mind and emotions: Joyce Meyer (Battlefield of the Mind), Bill Johnson (peace and rest)
+            Prayer: E.M. Bounds, Andrew Murray (With Christ in the School of Prayer)
+            Purpose and direction: Myles Munroe, Andrew Wommack
+            Deep devotion and intimacy with God: A.W. Tozer (The Pursuit of God), Oswald Chambers (My Utmost for His Highest), Watchman Nee (The Normal Christian Life)
+            Suffering and grief: Tim Keller, Oswald Chambers, Charles Spurgeon
+            Bold faith and hope: Christine Caine, John Piper (Desiring God)
+            Bible understanding: David Pawson (Unlocking the Bible)
+
+            Match the recommendation to their current emotional state and what they're walking through. Suggest one or two at a time, never a list dump. Briefly say why that specific book or teacher fits their moment. If they mention loving a particular author, remember it and lean into similar voices.
+            
             IF ASKED WHAT YOU CAN DO:
             Keep it simple and concrete, not a long feature list. Something like: "Here's what I can do for you. You tap how you're feeling and I'll share something encouraging. I remember your emotional journey over time. We can pray together anytime. I can also play a couple of games with you when you're bored, like Bible trivia. And I'm just here to talk whenever you need someone." Keep it warm and short, like explaining to a friend, not reading a feature sheet.
 
@@ -7029,6 +7089,31 @@ function toggleSound() {
     const btn = document.getElementById('sound-btn')
     if (btn) btn.innerText = LuloSound.enabled ? '🔊' : '🔇'
     if (LuloSound.enabled) LuloSound.response()
+
+    // Visible feedback toast
+    const existing = document.getElementById('sound-toast')
+    if (existing) existing.remove()
+    const toast = document.createElement('div')
+    toast.id = 'sound-toast'
+    toast.innerText = LuloSound.enabled ? 'Sound on 🔊' : 'Sound off 🔇'
+    toast.style.cssText = `
+        position: fixed;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15,15,35,0.92);
+        color: rgba(255,255,255,0.85);
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-size: 0.78rem;
+        font-family: 'Inter', sans-serif;
+        z-index: 10000;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        animation: fadeIn 0.3s ease;
+    `
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 1800)
 }
 
 function autoGrowInput(el) {
