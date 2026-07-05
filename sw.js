@@ -1,7 +1,9 @@
-const CACHE = 'emq-v22'
+const CACHE = 'emq-v23'
 const ASSETS = [
     '/EmQ/',
     '/EmQ/index.html',
+    '/EmQ/styles.css',
+    '/EmQ/app.js',
     '/EmQ/lulo.png',
     '/EmQ/lulo_happy.png',
     '/EmQ/lulo_sad.png',
