@@ -3732,6 +3732,10 @@ function setupRailSnap() {
             }
 
         function luloRandomPromise() {
+            // Don't fire on first session — let Lulo's introduction be the first thing
+            const sessionCount = parseInt(localStorage.getItem('luloSessionCount') || '0')
+            if (sessionCount === 0) return
+            
             // Don't fire on special days
             const memory = getLuloMemory()
             const today = new Date()
