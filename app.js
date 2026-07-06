@@ -105,9 +105,10 @@
 
                 return true
             } catch (err) {
-                console.error('Cloud load failed:', err)
-                return false
-            }
+    console.error('Cloud load failed:', err)
+    console.error('Failed at stage:', err.stack)
+    return false
+}
         }
 
         function startRealtimeSync() {
