@@ -2091,8 +2091,8 @@ function setupRailSnap() {
             let code = input.value.trim().toUpperCase()
             if (!code) return
 
-            if (!code.startsWith('lulo-')) {
-                code = 'lulo-' + code
+            if (!code.startsWith('LULO-')) {
+                code = 'LULO   -' + code
             }
 
             status.innerText = 'Connecting...'
