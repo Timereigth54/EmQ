@@ -3767,6 +3767,52 @@ function setupRailSnap() {
         { text: "I will open the floodgates of heaven and pour out so much blessing there will not be room enough to store it.", ref: "Malachi 3:10" },
     ]
 
+    const wisdomQuotes = [
+    { text: "The entrance of your words gives light; it gives understanding to the simple.", ref: "Psalm 119:130" },
+    { text: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.", ref: "Proverbs 3:5-6" },
+    { text: "A wise man will hear and increase learning, and a man of understanding will attain wise counsel.", ref: "Proverbs 1:5" },
+    { text: "The fear of the Lord is the beginning of wisdom, and knowledge of the Holy One is understanding.", ref: "Proverbs 9:10" },
+    { text: "If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault, and it will be given to you.", ref: "James 1:5" },
+    { text: "How much better to get wisdom than gold, to get insight rather than silver.", ref: "Proverbs 16:16" },
+    { text: "The way of fools seems right to them, but the wise listen to advice.", ref: "Proverbs 12:15" },
+    { text: "Plans fail for lack of counsel, but with many advisers they succeed.", ref: "Proverbs 15:22" },
+    { text: "A gentle answer turns away wrath, but a harsh word stirs up anger.", ref: "Proverbs 15:1" },
+    { text: "The heart of the discerning acquires knowledge, for the ears of the wise seek it out.", ref: "Proverbs 18:15" },
+    { text: "Whoever walks with the wise becomes wise, but the companion of fools will suffer harm.", ref: "Proverbs 13:20" },
+    { text: "Better a patient person than a warrior, one with self-control than one who takes a city.", ref: "Proverbs 16:32" },
+    { text: "The prudent see danger and take refuge, but the simple keep going and pay the penalty.", ref: "Proverbs 27:12" },
+    { text: "Pride goes before destruction, a haughty spirit before a fall.", ref: "Proverbs 16:18" },
+    { text: "Start children off on the way they should go, and even when they are old they will not turn from it.", ref: "Proverbs 22:6" },
+    { text: "As iron sharpens iron, so one person sharpens another.", ref: "Proverbs 27:17" },
+    { text: "Above all else, guard your heart, for everything you do flows from it.", ref: "Proverbs 4:23" },
+    { text: "The name of the Lord is a fortified tower; the righteous run to it and are safe.", ref: "Proverbs 18:10" },
+    { text: "Commit to the Lord whatever you do, and he will establish your plans.", ref: "Proverbs 16:3" },
+    { text: "In their hearts humans plan their course, but the Lord establishes their steps.", ref: "Proverbs 16:9" },
+    ]
+
+    const discipleshipQuotes = [
+        { text: "Go and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit.", ref: "Matthew 28:19" },
+        { text: "By this everyone will know that you are my disciples, if you love one another.", ref: "John 13:35" },
+        { text: "Whoever wants to be my disciple must deny themselves and take up their cross daily and follow me.", ref: "Luke 9:23" },
+        { text: "Do not conform to the pattern of this world, but be transformed by the renewing of your mind.", ref: "Romans 12:2" },
+        { text: "Let your light shine before others, that they may see your good deeds and glorify your Father in heaven.", ref: "Matthew 5:16" },
+        { text: "Be imitators of God, therefore, as dearly loved children, and walk in the way of love.", ref: "Ephesians 5:1-2" },
+        { text: "Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.", ref: "Colossians 3:23" },
+        { text: "Let the word of Christ dwell in you richly as you teach and admonish one another with all wisdom.", ref: "Colossians 3:16" },
+        { text: "Fix your thoughts on what is true, and honorable, and right, and pure, and lovely, and admirable.", ref: "Philippians 4:8" },
+        { text: "I have been crucified with Christ and I no longer live, but Christ lives in me.", ref: "Galatians 2:20" },
+        { text: "Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!", ref: "2 Corinthians 5:17" },
+        { text: "Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.", ref: "Galatians 6:9" },
+        { text: "Be strong in the Lord and in his mighty power. Put on the full armor of God.", ref: "Ephesians 6:10-11" },
+        { text: "Pray continually, give thanks in all circumstances; for this is God's will for you in Christ Jesus.", ref: "1 Thessalonians 5:17-18" },
+        { text: "Your word is a lamp for my feet, a light on my path.", ref: "Psalm 119:105" },
+        { text: "But seek first his kingdom and his righteousness, and all these things will be given to you as well.", ref: "Matthew 6:33" },
+        { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
+        { text: "For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.", ref: "Ephesians 2:10" },
+        { text: "Therefore encourage one another and build each other up, just as in fact you are doing.", ref: "1 Thessalonians 5:11" },
+        { text: "But grow in the grace and knowledge of our Lord and Savior Jesus Christ.", ref: "2 Peter 3:18" },
+    ]
+
     // 1 in 3 chance — don't fire every session
     if (Math.random() > 0.33) return
 
@@ -3779,14 +3825,40 @@ function setupRailSnap() {
     localStorage.setItem('luloLastPromiseDate', todayStr)
 
     const name = localStorage.getItem('luloUserName') || 'friend'
-    const verse = promiseVerses[Math.floor(Math.random() * promiseVerses.length)]
+    // Weighted selection — promise verses 60%, wisdom 25%, discipleship 15%
+    const roll = Math.random()
+    let selectedPool, poolType
+    if (roll < 0.60) {
+        selectedPool = promiseVerses
+        poolType = 'promise'
+    } else if (roll < 0.85) {
+        selectedPool = wisdomQuotes
+        poolType = 'wisdom'
+    } else {
+        selectedPool = discipleshipQuotes
+        poolType = 'discipleship'
+    }
 
-    const intros = [
+    const verse = selectedPool[Math.floor(Math.random() * selectedPool.length)]
+
+    const intros = poolType === 'promise' ? [
         `${name}, I just wanted you to know something before we start...`,
         `Before anything else today, God wants you to hear this.`,
         `${name}, I felt like sharing something with you right now.`,
         `I wasn't asked to share this. I just wanted to.`,
         `${name}, hold onto this today.`,
+    ] : poolType === 'wisdom' ? [
+        `${name}, a little wisdom for your day...`,
+        `This has been on my heart for you today, ${name}.`,
+        `${name}, I felt like sharing something wise before we begin.`,
+        `Before anything else, ${name} — hold this thought today.`,
+        `I wasn't asked to share this. I just felt it was for you, ${name}.`,
+    ] : [
+        `${name}, something to walk with today...`,
+        `This is for your walk today, ${name}.`,
+        `${name}, I felt the Spirit nudging me to share this with you.`,
+        `Before we begin, ${name} — this is worth carrying today.`,
+        `A gentle reminder for your journey today, ${name}.`,
     ]
 
     const intro = intros[Math.floor(Math.random() * intros.length)]
