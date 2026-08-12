@@ -299,10 +299,11 @@
            Pushed down the screen so the mood deck below sits inside comfortable
            one-handed thumb reach rather than up in the stretch zone. */
         #lulo-container {
-            margin-top: 84px;
-            /* Grew by 32px and moved up 36px — this soaks up the extra height so
-               the rail below does not shift. */
-            margin-bottom: -42px;
+            /* Lulo sits clear of the rail. The rail paints above her (it has to,
+               or her 272px image box swallows taps on the cards), so any
+               negative margin here pulls it straight over her chin. */
+            margin-top: 64px;
+            margin-bottom: 14px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -350,7 +351,7 @@
             justify-content: center;
             width: 272px;
             height: 272px;
-            margin-bottom: -25px;
+            margin-bottom: 0;
         }
 
         /* AMBIENT HALO BELOW LULO */
@@ -458,9 +459,8 @@
         /* EMOTION CAROUSEL */
         #carousel-container {
             width: 100%;
-            /* Lulo's own margin-top fixes her position, so pulling the top
-               margin here moves the deck up toward her without moving her. */
-            margin: -6px 0 25px 0;
+            /* Positive, so the rail clears her halo instead of overlapping it */
+            margin: 10px 0 25px 0;
             position: relative;
             /* Sitting this close, Lulo's 240px image box overlaps the deck and
                would swallow taps on the cards beneath it. She is not
