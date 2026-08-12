@@ -577,7 +577,10 @@ function setTheme(theme) {
     }
 
     const t = themes[theme] || themes.dark
-    const isLight = theme === 'light'
+    // isLight = pale-background themes that need dark text/UI chrome.
+    // soft (#fff8f8) has the same needs as light (cream) — without it, EM_Q and
+    // swipe-to-text render white-on-white and disappear.
+    const isLight = theme === 'light' || theme === 'soft'
     // The t2 artwork set is drawn for light backgrounds — the default PNGs rely
     // on mix-blend-mode: screen and disappear against anything pale.
     const isT2 = theme === 'soft' || theme === 'midnight' || theme === 'light'
@@ -1073,6 +1076,7 @@ function wrapDeck(container) {
 // The frame is fixed; the cards move through it. This marks whichever card is
 // currently inside it so the highlight belongs to the frame, not to any card.
 let _deckScrollRaf = null
+let _lastFramedMood = null
 function onDeckScroll() {
     if (_deckScrollRaf) return
     _deckScrollRaf = requestAnimationFrame(() => {
@@ -1096,7 +1100,15 @@ function onDeckScroll() {
         container.querySelectorAll('.mood-card.in-frame').forEach(c => {
             if (c !== closest) c.classList.remove('in-frame')
         })
-        if (closest) closest.classList.add('in-frame')
+        if (closest) {
+            closest.classList.add('in-frame')
+            // Update Lulo's face to match the centred card
+            const mood = closest.dataset.mood || 'home'
+            if (mood !== _lastFramedMood) {
+                _lastFramedMood = mood
+                updateLuloMood(mood)
+            }
+        }
     })
 }
 

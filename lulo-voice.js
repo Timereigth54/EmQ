@@ -66,17 +66,43 @@ const LuloVoice = {
     // Used to auto-restart the mic for continuous conversation.
     onDrainComplete: null,
 
+    // Screen Wake Lock — keeps the screen on while Lulo is talking so audio
+    // isn't killed by the OS when the display goes off.
+    _wakeLock: null,
+
+    async _acquireWakeLock() {
+        if (this._wakeLock || !('wakeLock' in navigator)) return
+        try {
+            this._wakeLock = await navigator.wakeLock.request('screen')
+            // The browser releases it automatically when the tab loses visibility;
+            // null it out so we know to re-acquire if needed.
+            this._wakeLock.addEventListener('release', () => { this._wakeLock = null })
+        } catch {
+            // Not supported or permission denied — fall through silently
+        }
+    },
+
+    _releaseWakeLock() {
+        if (this._wakeLock) {
+            this._wakeLock.release().catch(() => {})
+            this._wakeLock = null
+        }
+    },
+
     async _drain(fromRecursion = false) {
         if (this._speaking) return
         const next = this._queue.shift()
         if (next === undefined) {
-            // Queue is empty — if we just finished speaking, notify the caller
+            // Queue empty — release wake lock and notify caller
+            this._releaseWakeLock()
             if (fromRecursion && typeof this.onDrainComplete === 'function') {
                 this.onDrainComplete()
             }
             return
         }
         this._speaking = true
+        // Keep screen on for the duration of speech
+        if (!this._wakeLock) await this._acquireWakeLock()
         try {
             await this._utter(next)
         } catch {
@@ -142,6 +168,7 @@ const LuloVoice = {
         this._speaking = false
         if (this.currentAudio) { this.currentAudio.pause(); this.currentAudio = null }
         if ('speechSynthesis' in window) speechSynthesis.cancel()
+        this._releaseWakeLock()
     }
 }
 
