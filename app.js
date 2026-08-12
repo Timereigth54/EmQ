@@ -5540,6 +5540,9 @@ async function toggleVoiceInput() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) { switchToTextMode(); return }
 
+    // continuous keeps the session alive for long utterances.
+    // Without it, mobile Chrome hard-cuts the session after ~20s.
+
     // Establish permission once so Chrome stops asking on every tap
     const permitted = await primeMicPermission()
     if (!permitted) { switchToTextMode(); return }
@@ -5548,30 +5551,56 @@ async function toggleVoiceInput() {
     r.lang = 'en-US'
     r.interimResults = false
     r.maxAlternatives = 1
-    r.continuous = false
+    // continuous = true keeps the session alive across natural speech pauses
+    // so a long sentence isn't cut off mid-way by the browser's ~20s hard limit.
+    r.continuous = true
 
     r.onstart = () => {
         isVoiceInputActive = true
         document.getElementById('mic-btn')?.classList.add('listening')
         LuloVoice.stop()
-        // Auto-shutoff: if nothing heard after 8s, stop quietly
-        _micTimeout = setTimeout(() => {
-            stopVoiceInput()
-        }, 8000)
+        // "No-speech" guard: if the mic opens but nothing is said, close after 10s.
+        // Cleared as soon as speech is detected — doesn't affect active speakers.
+        _micTimeout = setTimeout(() => stopVoiceInput(), 10000)
     }
+
+    r.onspeechstart = () => {
+        // User started talking — cancel the no-speech timer.
+        // Let the browser (or onspeechend) decide when they're done.
+        clearTimeout(_micTimeout)
+        _micTimeout = null
+    }
+
+    r.onspeechend = () => {
+        // User stopped talking — give a 2.5s grace period in case they pause
+        // mid-thought, then close the mic and send what we have.
+        clearTimeout(_micTimeout)
+        _micTimeout = setTimeout(() => {
+            if (currentRecognition) {
+                try { currentRecognition.stop() } catch {}
+            }
+        }, 2500)
+    }
+
     r.onresult = e => {
         clearTimeout(_micTimeout)
         _micTimeout = null
-        const t = e.results[0][0].transcript
+        // With continuous = true, results accumulate — collect all final results.
+        let transcript = ''
+        for (let i = 0; i < e.results.length; i++) {
+            if (e.results[i].isFinal) transcript += e.results[i][0].transcript + ' '
+        }
+        transcript = transcript.trim()
+        if (!transcript) return
         stopVoiceInput()
         const inp = document.getElementById('lulo-input')
-        if (inp) inp.value = t
+        if (inp) inp.value = transcript
         luloListen()
     }
     r.onerror = e => {
         stopVoiceInput()
         if (e.error === 'not-allowed') {
-            localStorage.removeItem('luloMicPermGranted') // reset so next tap tries again
+            localStorage.removeItem('luloMicPermGranted')
             switchToTextMode()
         }
     }
