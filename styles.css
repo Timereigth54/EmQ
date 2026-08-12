@@ -72,13 +72,20 @@
         }
 
         /* TOP BAR */
+        /* Three columns with equal sides, so the wordmark sits on the true
+           centre of the screen. space-between only distributes the gaps, and
+           the right group (streak pill + menu) is far wider than the single
+           pill on the left, which pushed EM_Q off-centre. */
         #top-bar {
             width: 100%;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
             padding: 20px 0 10px 0;
         }
+        #top-bar > #sound-btn { justify-self: start; }
+        #top-bar > #app-name  { justify-self: center; }
+        #top-bar > #top-icons { justify-self: end; }
 
         #app-name {
             font-size: 1.15rem;
@@ -212,15 +219,17 @@
             align-items: center;
             text-align: center;
             padding: 6px 0 0 0;
-            transition: opacity 0.5s ease, max-height 0.5s ease, margin 0.5s ease;
-            max-height: 400px;
+            transition: opacity 0.5s ease;
             overflow: hidden;
         }
-        /* Collapses once the conversation actually starts */
+        /* Fades once the conversation starts, but keeps its footprint.
+           Collapsing the height instead dragged Lulo and the whole rail up 73px
+           the moment you picked a mood — a jump you saw behind the scripture
+           card, and which left the rest of the session laid out differently
+           from the start of it. The space it leaves reads as breathing room
+           above Lulo. */
         #home-greeting.greeting-dismissed {
             opacity: 0;
-            max-height: 0;
-            margin: 0;
             pointer-events: none;
         }
 
