@@ -1551,6 +1551,83 @@
             #lulo-face { font-size: 70px; }
             #lulo-name { font-size: 1.2rem; }
         }
+
+        /* ─── LANDSCAPE ON A PHONE ────────────────────────────────────
+           A phone on its side has roughly 375px of height and 800px of width.
+           The portrait column needs about 600px of height, so stacked as-is
+           Lulo is clipped off the top and the rail ends up behind the fixed mic
+           bar. Rather than shrink the column until it fits, turn the page
+           ninety degrees too: Lulo and her greeting take the left half, the
+           rail and mic take the right. Uses the width the orientation actually
+           gives us instead of fighting for height that isn't there. */
+        @media (orientation: landscape) and (max-height: 560px) {
+            #app {
+                max-width: 100%;
+                min-height: 100vh;
+                padding: 0 20px 6px;
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                grid-template-rows: auto auto 1fr;
+                grid-template-areas:
+                    "bar    bar"
+                    "greet  deck"
+                    "lulo   deck";
+                column-gap: 18px;
+                align-items: center;
+            }
+
+            #top-bar           { grid-area: bar; padding: 8px 0 2px; }
+            #home-greeting     { grid-area: greet; align-self: end; padding: 0; }
+            #lulo-container    { grid-area: lulo; align-self: start; margin: 4px 0 0; }
+            #carousel-container{ grid-area: deck; margin: 0 0 76px; }
+
+            /* Lulo scales to the short axis. The inline width/height on the img
+               are why these need !important. */
+            #lulo-face  { width: 152px; height: 152px; margin-bottom: 0; }
+            #lulo-img   { width: 152px !important; height: 152px !important; }
+            #lulo-glow  { width: 146px; height: 146px; }
+            #lulo-face::after { width: 96px; height: 18px; bottom: -10px; }
+
+            #welcome-message { font-size: 0.95rem; line-height: 1.25; }
+            #welcome-subtext { font-size: 0.72rem; }
+            #carousel-label  { height: 13px; line-height: 13px; margin-bottom: 4px; font-size: 0.6rem; }
+
+            /* The mic bar drops out of the centre and sits under the rail, in
+               the right column only, so it stops covering the deck. */
+            #bottom-bar {
+                left: auto;
+                right: 0;
+                transform: none;
+                -webkit-transform: none;
+                width: 50%;
+                max-width: none;
+                padding: 4px 20px 10px;
+                background: none;
+            }
+            #voice-input-area { gap: 6px; }
+            #mic-btn  { width: 54px; height: 54px; border-width: 1.5px; }
+            #mic-icon { font-size: 1.3rem; }
+            .hint-label { font-size: 0.66rem; }
+
+            /* A centred card has to fit the short axis too */
+            #scripture-card.scripture-expanded {
+                max-height: 88vh;
+                padding: 16px 20px;
+                max-width: 460px;
+            }
+            #scripture-card.scripture-expanded #scripture-text {
+                font-size: 0.98rem;
+                line-height: 1.55;
+                margin-bottom: 10px;
+            }
+            #scripture-back-btn { margin-bottom: 2px; }
+
+            /* The 32px bottom padding clears a portrait home indicator; in
+               landscape it just steals room from the thread. */
+            #text-input-row  { padding: 8px 16px 10px; }
+            #text-mode-chat  { padding: 10px 20px; gap: 8px; }
+            #text-mode-header{ padding: 8px 20px 6px; }
+        }
         /* CHAT THREAD — offscreen render buffer.
            Phase 3 moved all text into #text-mode-overlay. This container still
            holds the live bubbles (text mode clones from it, and the typing

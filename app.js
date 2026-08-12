@@ -588,6 +588,10 @@ function setTheme(theme) {
     // we clear the inline style instead and let the stylesheet win.
     const isGalaxy = theme === 'dark'
     document.body.style.background = isGalaxy ? '' : t.bg
+    // The `background` shorthand resets background-attachment to `scroll`, which
+    // leaves the lit themes' gradient scrolling away with the content while the
+    // galaxy stays put. Re-pin it after the shorthand.
+    document.body.style.backgroundAttachment = isGalaxy ? '' : 'fixed'
     document.body.style.color = t.text
     // Stars belong to the galaxy theme only
     document.body.classList.toggle('theme-lit', !isGalaxy)
@@ -841,7 +845,12 @@ function setTheme(theme) {
                 : '0 0 26px rgba(0,255,100,0.30), 0 0 60px rgba(0,220,90,0.15), inset 0 0 24px rgba(0,255,120,0.10)'
             } !important;
         }
-        ${isGalaxy ? '' : `body { background: ${t.bg} !important; color: ${t.text} !important; }`}
+        ${isGalaxy ? '' : `body {
+            background: ${t.bg} !important;
+            /* Must follow the shorthand, which resets attachment to scroll */
+            background-attachment: fixed !important;
+            color: ${t.text} !important;
+        }`}
         ${isGalaxy ? `body { color: ${t.text} !important; }` : ''}
 
         /* SHARE BUTTON */
