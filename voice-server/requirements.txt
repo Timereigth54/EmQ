@@ -1,0 +1,6 @@
+fastapi==0.111.0
+uvicorn==0.30.0
+torch>=2.5.0
+voxcpm
+soundfile>=0.12.1
+pydantic>=2.0.0

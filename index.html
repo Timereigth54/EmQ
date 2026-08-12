@@ -3,6 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src https://fonts.gstatic.com;
+        img-src 'self' data:;
+        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://www.google-analytics.com;
+        frame-ancestors 'none';
+    ">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
     <title>Em_Q | Your Pocket Companion</title>
     <link rel="icon" type="image/png" href="/EmQ/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/EmQ/favicon.svg" />
@@ -25,28 +37,52 @@
 </head>
 <body>
 
+<!-- STARFIELD -->
+<div id="starfield"></div>
+
 <!-- SPARKLES -->
 <div class="sparkle" style="top:10%;left:8%;font-size:0.6rem;animation-delay:0s;">✦</div>
 <div class="sparkle" style="top:15%;right:10%;font-size:0.5rem;animation-delay:1s;">✦</div>
 <div class="sparkle" style="top:35%;left:5%;font-size:0.4rem;animation-delay:2s;">✦</div>
 <div class="sparkle" style="top:60%;right:7%;font-size:0.6rem;animation-delay:0.5s;">✦</div>
 <div class="sparkle" style="top:80%;left:10%;font-size:0.5rem;animation-delay:1.5s;">✦</div>
+<div class="sparkle" style="top:5%;left:38%;font-size:0.35rem;animation-delay:2.4s;">✦</div>
+<div class="sparkle" style="top:22%;left:62%;font-size:0.55rem;animation-delay:0.8s;">✦</div>
+<div class="sparkle" style="top:44%;right:22%;font-size:0.3rem;animation-delay:3.1s;">✦</div>
+<div class="sparkle" style="top:52%;left:16%;font-size:0.45rem;animation-delay:1.7s;">✦</div>
+<div class="sparkle" style="top:68%;left:44%;font-size:0.7rem;animation-delay:2.9s;">✦</div>
+<div class="sparkle" style="top:74%;right:14%;font-size:0.4rem;animation-delay:0.3s;">✦</div>
+<div class="sparkle" style="top:88%;right:34%;font-size:0.55rem;animation-delay:3.6s;">✦</div>
+<div class="sparkle" style="top:92%;left:24%;font-size:0.32rem;animation-delay:1.2s;">✦</div>
 
-<!-- SPLASH SCREEN -->
-<div id="splash-screen">
-    <div id="splash-logo">
-        <img src="images/lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
-    </div>
-    <div id="splash-title">EM_Q</div>
-    <div id="splash-tagline">Your Pocket Companion</div>
-    <button id="splash-btn" onclick="enterNameScreen()">Meet Lulo →</button>
-</div>
+<!-- SPLASH SCREEN removed in Phase 3. initApp() routes straight to
+     #name-screen (new users) or #welcome-screen (returning users). -->
 
 <!-- NAME SCREEN -->
 <div id="name-screen">
     <div style="margin-bottom:20px;margin-top:60px;animation:float 3s ease-in-out infinite;">
         <img src="images/lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
     </div>
+    <!-- FIRST TIMER GUIDE -->
+    <div id="first-timer-info">
+        <button id="first-timer-toggle" onclick="toggleFirstTimerInfo()" aria-expanded="false">
+            ⓘ New here? What is Em_Q?
+        </button>
+        <div id="first-timer-body" aria-hidden="true">
+            <p class="ftinfo-text">
+                Em_Q is your pocket companion — an AI friend named <strong>Lulo</strong> who listens,
+                prays with you, shares scripture matched to how you feel, and remembers your story.
+            </p>
+            <div class="ftinfo-steps">
+                <div class="ftinfo-step"><span class="ftinfo-num">1</span><span>Pick how you're feeling from the mood cards</span></div>
+                <div class="ftinfo-step"><span class="ftinfo-num">2</span><span>Lulo responds with a verse and a word for you</span></div>
+                <div class="ftinfo-step"><span class="ftinfo-num">3</span><span>Tap the mic or swipe to text to talk to her</span></div>
+                <div class="ftinfo-step"><span class="ftinfo-num">4</span><span>She remembers you — every session builds your story</span></div>
+            </div>
+            <p class="ftinfo-sub">Your Lulo Code syncs your data across any device.</p>
+        </div>
+    </div>
+
     <div id="name-entry-section" style="display:flex;flex-direction:column;align-items:center;width:100%;">
         <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:8px;text-align:center;">Before we begin...</h2>
         <p style="font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:25px;text-align:center;white-space:nowrap;">I'd love to know your name 💙</p>
@@ -67,122 +103,10 @@
     </div>
 </div>
 
-<!-- WELCOME SCREEN -->
-<div id="welcome-screen">
-    <div style="width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;padding:0 20px;">
-
-        <!-- LULO -->
-        <div id="welcome-lulo" style="margin-bottom:25px;margin-top:60px;animation:float 3s ease-in-out infinite;">
-            <img src="images/lulo.png" style="width:180px;height:180px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
-        </div>
-
-        <!-- WELCOME MESSAGE -->
-        <h1 id="welcome-message" style="
-            font-size: 2rem;
-            font-weight: 700;
-            color: white;
-            text-align: center;
-            letter-spacing: -0.5px;
-            margin-bottom: 12px;
-            line-height: 1.2;
-            font-family: 'Inter', sans-serif;
-        "></h1>
-
-        <!-- SUBTEXT -->
-        <p id="welcome-subtext" style="
-            font-size: 0.95rem;
-            color: rgba(255,255,255,0.45);
-            line-height: 1.8;
-            text-align: center;
-            margin-bottom: 25px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 300;
-        "></p>
-
-        <!-- PREVIOUS SESSION CARD -->
-        <div id="welcome-history-card" style="
-            display: none;
-            width: 100%;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 20px;
-            margin-bottom: 25px;
-            overflow: hidden;
-            cursor: pointer; -webkit-tap-highlight-color: rgba(0,212,255,0.08);
-        " onclick="toggleHistoryCard()">
-
-            <!-- COLLAPSED VIEW -->
-            <div id="history-collapsed" style="
-                padding: 14px 18px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            ">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="
-                        width: 32px;
-                        height: 32px;
-                        background: rgba(0,255,100,0.1);
-                        border: 1px solid rgba(0,255,100,0.2);
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 0.9rem;
-                    ">📖</div>
-                    <span style="
-                        font-size: 0.78rem;
-                        color: rgba(255,255,255,0.4);
-                        font-family: 'Inter', sans-serif;
-                        font-weight: 400;
-                    ">Our last conversation</span>
-                </div>
-                <span id="history-arrow" style="
-                    color: rgba(255,255,255,0.25);
-                    font-size: 0.75rem;
-                    transition: transform 0.3s ease;
-                ">▼</span>
-            </div>
-
-            <!-- EXPANDED VIEW -->
-            <div id="history-expanded" style="
-                display: none;
-                padding: 0 18px 16px 18px;
-                border-top: 1px solid rgba(255,255,255,0.05);
-            ">
-                <p id="history-detail" style="
-                    font-size: 0.82rem;
-                    color: rgba(255,255,255,0.5);
-                    line-height: 1.8;
-                    margin-top: 14px;
-                    font-family: 'Inter', sans-serif;
-                    font-weight: 300;
-                    white-space: pre-line;
-                "></p>
-            </div>
-        </div>
-
-        <!-- TALK TO LULO BUTTON -->
-        <button id="welcome-btn" onclick="enterMainApp()" style="
-            width: 100%;
-            background: rgba(0,212,255,0.08);
-            border: 1px solid rgba(0,212,255,0.25);
-            color: rgba(0,212,255,0.9);
-            padding: 16px 35px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            letter-spacing: 3px;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-        "
-        onmouseover="this.style.background='rgba(0,212,255,0.15)';"
-        onmouseout="this.style.background='rgba(0,212,255,0.08)';"></button>
-
-    </div>
-</div>
+<!-- WELCOME SCREEN removed in Phase 3 — the greeting now lives on the home page
+     itself (#home-greeting inside #main-app). Kept as an empty hidden shell so
+     the few places that still reference it stay safe. -->
+<div id="welcome-screen" style="display:none;"></div>
 
 <!-- CRISIS SCREEN -->
 <div id="crisis-screen">
@@ -297,12 +221,48 @@
 
     <!-- TOP BAR -->
     <div id="top-bar">
-        <div id="app-name">EM_Q</div>
-        <div id="top-icons">
-            <div class="top-icon" id="sound-btn" onclick="toggleSound()" title="Sound">🔊</div>
-            <div class="top-icon" id="more-btn" onclick="toggleMoreMenu()" title="More">⋯</div>
-            <div class="top-icon" onclick="showEmergencyKit()" title="Emergency">🆘</div>
+        <!-- LEFT: voice toggle -->
+        <div class="top-pill top-pill-circle" id="sound-btn" onclick="toggleSound()" title="Voice OFF — tap to enable">
+            <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+                <path d="M4 9.5h3.2L12 5.2v13.6L7.2 14.5H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"
+                      fill="currentColor"/>
+                <g class="snd-wave" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                    <path d="M15.5 9.2a4 4 0 0 1 0 5.6"/>
+                    <path d="M18.1 6.6a7.6 7.6 0 0 1 0 10.8"/>
+                </g>
+                <path class="snd-slash" d="M15.5 9 21 15M21 9l-5.5 6"
+                      fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
         </div>
+
+        <!-- CENTRE: wordmark -->
+        <div id="app-name">EM_Q</div>
+
+        <!-- RIGHT: streak shield + menu -->
+        <div id="top-icons">
+            <div class="top-pill" id="notif-btn" onclick="toggleNotifTray()" title="Notifications">
+                <svg class="shield-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                    <path d="M12 2.6 20 5.4v6c0 4.6-3.2 8.5-8 9.9-4.8-1.4-8-5.3-8-9.9v-6L12 2.6Z"
+                          fill="currentColor"/>
+                    <path d="m8.4 11.8 2.5 2.5 4.7-4.7" fill="none" stroke="#0b0b1e"
+                          stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span id="streak-count">1</span><span id="notif-count"></span>
+            </div>
+            <div class="top-pill top-pill-circle" id="more-btn" onclick="toggleMoreMenu()" title="More">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M4 7h16M4 12h16M4 17h16"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- HOME GREETING — Phase 3: the welcome message lives here now.
+         Nothing else belongs on this screen: just Lulo, the mood cards and this. -->
+    <div id="home-greeting">
+        <h1 id="welcome-message"></h1>
+        <p id="welcome-subtext"></p>
     </div>
 
     <!-- LULO FACE -->
@@ -310,8 +270,8 @@
         <div id="lulo-glow"></div>
         <div id="lulo-face">
             <img id="lulo-img" src="images/lulo.png" alt="Lulo" style="
-                width: 200px;
-                height: 200px;
+                width: 240px;
+                height: 240px;
                 object-fit: contain;
                 mix-blend-mode: screen;
                 filter: drop-shadow(0 0 25px rgba(0,255,100,0.5));
@@ -334,30 +294,22 @@
     <div id="carousel-container">
         <div id="carousel-label"></div>
         <div id="carousel-wrapper">
-            <!-- THE RING -->
-            <div id="ring-outer">
-                <div id="ring-inner"></div>
-                <div id="ring-shine"></div>
-            </div>
-            <!-- ACTIVE SLOT -->
-            <div id="ring-active-slot"></div>
-            <!-- EMOJI TRACK -->
+            <!-- MOOD CARD DECK -->
             <div id="mood-buttons"></div>
-            <!-- FADE MASKS -->
-            <div id="ring-fade-left"></div>
-            <div id="ring-fade-right"></div>
         </div>
         <div id="lock-message" onclick="tryUnlockCarousel()"></div>
     </div>
 
-    <!-- CHAT THREAD -->
-    <div id="chat-thread-container" style="display:none; width:100%;">
+    <!-- CHAT THREAD — Phase 3: text lives in #text-mode-overlay, not on the
+         main page. This stays in the DOM as the render target that text mode
+         mirrors from, but is never shown here. -->
+    <div id="chat-thread-container" hidden>
         <button id="chat-toggle" onclick="toggleChatThread()">
             <span id="chat-toggle-arrow">↑</span>
             Our conversation
             <span id="chat-count-badge">0</span>
         </button>
-        <div id="chat-thread" style="display:none;">
+        <div id="chat-thread">
             <div id="typing-indicator">
                 <div class="typing-dots">
                     <div class="typing-dot"></div>
@@ -370,6 +322,7 @@
 
     <!-- UNIFIED RESPONSE CARD -->
     <div id="scripture-card">
+        <button id="scripture-back-btn" onclick="dismissScriptureCard()" aria-label="Back to Lulo">← Back to Lulo</button>
         <div id="scripture-inner">
             <!-- LULO'S MESSAGE SECTION -->
             <div id="lulo-message-section" style="display:none;">
@@ -471,21 +424,121 @@
     <p id="sync-status" style="font-size:0.7rem;text-align:center;margin-top:10px;min-height:16px;"></p>
 </div>
 
+<!-- LAST CONVERSATION — opened from the menu, not shown on the home page -->
+<div id="history-panel" style="display:none;">
+    <div id="history-panel-header">
+        <span id="history-panel-title">Our last conversation</span>
+        <button id="history-panel-close" onclick="toggleHistoryPanel()" aria-label="Close">✕</button>
+    </div>
+    <p id="history-detail"></p>
+</div>
+
+<!-- NOTIFICATION TRAY -->
+<!-- LULO TOAST — pops down when Lulo says something while you're on the home
+     screen, where there is no visible thread. Tapping it opens text mode. -->
+<div id="lulo-toast" role="status" aria-live="polite" hidden>
+    <div id="lulo-toast-tap" role="button" tabindex="0" aria-label="Open conversation with Lulo">
+        <img id="lulo-toast-avatar" src="images/lulo.png" alt="" aria-hidden="true"/>
+        <div id="lulo-toast-body">
+            <div id="lulo-toast-name">Lulo</div>
+            <div id="lulo-toast-text"></div>
+        </div>
+    </div>
+    <button id="lulo-toast-close" aria-label="Dismiss">✕</button>
+</div>
+
+<div id="notif-tray" style="display:none;">
+    <div id="notif-tray-header">
+        <span id="notif-tray-title">Notifications</span>
+        <button onclick="markAllNotifsRead();renderNotifTray()" id="notif-mark-read">Mark all read</button>
+    </div>
+    <div id="notif-tray-list"></div>
+</div>
+
 <div id="more-menu" style="display:none;position:fixed;top:70px;right:20px;width:200px;border-radius:20px;padding:10px;z-index:9999;backdrop-filter:blur(24px);box-shadow:0 8px 32px rgba(0,0,0,0.25);background:rgba(15,15,35,0.95);border:1px solid rgba(255,255,255,0.1);">
+    <div onclick="closeMoreMenu();toggleHistoryPanel()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">📖 Our last conversation</div>
     <div onclick="closeMoreMenu();showJournal()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">📔 My Journey</div>
     <div onclick="closeMoreMenu();toggleThemePanel()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🎨 Themes</div>
     <div onclick="closeMoreMenu();toggleSyncPanel()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🔗 Sync Devices</div>
+    <div onclick="closeMoreMenu();showEmergencyKit()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🆘 Emergency Kit</div>
 </div>
 
-<!-- BOTTOM BAR -->
+<!-- BOTTOM BAR — VOICE MODE (default) -->
 <div id="bottom-bar" style="display:none;">
-    <div id="input-row">
-        <span style="font-size:1rem;opacity:0.4;">✦</span>
-        <textarea id="lulo-input" placeholder="Tell Lulo how you're feeling..." autocomplete="off" rows="1" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();luloListen()}" oninput="autoGrowInput(this)"></textarea>
+    <div id="voice-input-area">
+        <button id="mic-btn" onclick="toggleVoiceInput()" aria-label="Speak to Lulo">
+            <span id="mic-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" width="34" height="34">
+                    <defs>
+                        <linearGradient id="micGold" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"   stop-color="#ffe9a8"/>
+                            <stop offset="28%"  stop-color="#e8be5c"/>
+                            <stop offset="62%"  stop-color="#b8862c"/>
+                            <stop offset="100%" stop-color="#8a5f18"/>
+                        </linearGradient>
+                        <linearGradient id="micSheen" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%"   stop-color="#fff8dc" stop-opacity=".85"/>
+                            <stop offset="45%"  stop-color="#fff8dc" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <!-- capsule -->
+                    <rect x="17" y="7" width="14" height="22" rx="7" fill="url(#micGold)"/>
+                    <rect x="17" y="7" width="6"  height="22" rx="3" fill="url(#micSheen)"/>
+                    <!-- grille lines -->
+                    <g stroke="#7a5214" stroke-width="1" opacity=".55">
+                        <path d="M18.5 13h11M18.5 17h11M18.5 21h11"/>
+                    </g>
+                    <!-- cradle + stem + base -->
+                    <path d="M13 24.5a11 11 0 0 0 22 0" fill="none"
+                          stroke="url(#micGold)" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M24 35.5v5.5" stroke="url(#micGold)" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M17.5 41.5h13" stroke="url(#micGold)" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+            </span>
+        </button>
+        <div id="swipe-to-text-hint" onclick="switchToTextMode()">
+            <span class="hint-label">Swipe to text</span>
+            <div class="hint-track">
+                <span class="hint-arrow">←</span>
+                <span class="hint-bar"></span>
+                <span class="hint-arrow">→</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TEXT MODE OVERLAY — full page, hidden by default -->
+<div id="text-mode-overlay" style="display:none;" aria-hidden="true">
+    <div id="text-mode-header">
+        <button id="text-mode-close" onclick="switchToVoiceMode()" aria-label="Back to voice">✕ Back</button>
+        <span id="text-mode-title">Talk to Lulo</span>
+        <span id="char-counter"></span>
+    </div>
+    <!-- Chat thread is mirrored here while text mode is open -->
+    <div id="text-mode-chat"></div>
+    <div id="text-mode-typing" style="display:none;padding:0 20px 8px;">
+        <div id="typing-indicator-text">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    </div>
+    <div id="text-input-row">
+        <textarea id="lulo-input"
+            placeholder="Tell Lulo how you're feeling..."
+            autocomplete="off"
+            rows="1"
+            maxlength="2000"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();luloListen()}"
+            oninput="autoGrowInput(this);updateCharCounter(this)"></textarea>
         <button id="send-btn" onclick="luloListen()">→</button>
     </div>
 </div>
 
+<script src="lulo-scripture.js"></script>
+<script src="lulo-voice.js"></script>
 <script src="app.js"></script>
 
 </body>

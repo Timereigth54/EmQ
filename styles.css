@@ -2,9 +2,19 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* DEEP SPACE GALAXY — dark theme default.
+           setTheme() overwrites background-color for light/soft/midnight. */
         body {
-            background: #080818;
+            background-color: #050510;
+            background-image:
+                radial-gradient(ellipse 80% 60% at 70% 55%, rgba(160, 60, 180, 0.35) 0%, transparent 65%),
+                radial-gradient(ellipse 60% 40% at 25% 70%, rgba(120, 40, 160, 0.2) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 65% 50%, rgba(200, 80, 120, 0.15) 0%, transparent 50%),
+                radial-gradient(circle 300px at 50% 35%, rgba(0, 220, 120, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 100% 80% at 50% 0%, rgba(10, 5, 40, 0.9) 0%, transparent 100%);
+            background-attachment: fixed;
             min-height: 100vh;
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -25,6 +35,7 @@
             background: radial-gradient(circle, rgba(0,255,100,0.08) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
+            opacity: 0.4;
         }
 
         body::after {
@@ -38,6 +49,7 @@
             background: radial-gradient(circle, rgba(120,60,255,0.08) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
+            opacity: 0.4;
         }
 
         /* MAIN CONTAINER */
@@ -64,16 +76,18 @@
         }
 
         #app-name {
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 4px;
-            color: rgba(255,255,255,0.3);
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: white;
             text-transform: uppercase;
+            white-space: nowrap;
         }
 
         #top-icons {
             display: flex;
-            gap: 12px;
+            gap: 8px;
+            align-items: center;
         }
 
         .top-icon {
@@ -97,9 +111,190 @@
             transform: scale(1.05);
         }
 
-        /* LULO FACE */
+        /* UNIFIED TOP PILL */
+        .top-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: rgba(20, 20, 45, 0.75);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px;
+            backdrop-filter: blur(12px);
+            cursor: pointer;
+            color: white;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .top-pill:hover, .top-pill:active {
+            background: rgba(30, 30, 60, 0.9);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* Circular variant — sound and menu */
+        .top-pill-circle {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            justify-content: center;
+            gap: 0;
+        }
+
+        .shield-icon { color: rgba(255,255,255,0.92); flex-shrink: 0; }
+
+        /* Muted vs speaking — the slash only shows when voice is off */
+        #sound-btn .snd-slash { display: none; }
+        #sound-btn:not(.voice-active) .snd-wave { display: none; }
+        #sound-btn:not(.voice-active) .snd-slash { display: block; }
+        #sound-btn:not(.voice-active) { color: rgba(255,255,255,0.45); }
+        #sound-btn.voice-active { color: rgba(160,255,190,0.95); }
+
+        /* Voice active state */
+        #sound-btn.voice-active {
+            background: rgba(0, 255, 100, 0.15) !important;
+            border-color: rgba(0, 255, 100, 0.5) !important;
+            animation: voice-pulse 2s ease-in-out infinite;
+        }
+        @keyframes voice-pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(0,255,100,0.1), 0 0 12px rgba(0,255,100,0.2); }
+            50%       { box-shadow: 0 0 0 5px rgba(0,255,100,0.15), 0 0 20px rgba(0,255,100,0.3); }
+        }
+
+        /* Notification badge has unread items */
+        #notif-btn.has-unread {
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 10px rgba(0,212,255,0.2);
+        }
+        /* The pill reads as the streak. Unread notifications ride on the corner
+           as a separate count so the two numbers never run together. */
+        #notif-btn { position: relative; }
+
+        #streak-count {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+        }
+
+        #notif-count {
+            position: absolute;
+            top: -5px;
+            right: -4px;
+            min-width: 17px;
+            height: 17px;
+            padding: 0 4px;
+            border-radius: 9px;
+            background: rgba(0,212,255,0.95);
+            color: #06121a;
+            font-size: 0.64rem;
+            font-weight: 800;
+            line-height: 17px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,212,255,0.5);
+        }
+        /* :empty keeps the dot off the pill when there is nothing unread */
+        #notif-count:empty { display: none; }
+
+        /* HOME GREETING — the welcome message, on the home page itself */
+        #home-greeting {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 6px 0 0 0;
+            transition: opacity 0.5s ease, max-height 0.5s ease, margin 0.5s ease;
+            max-height: 400px;
+            overflow: hidden;
+        }
+        /* Collapses once the conversation actually starts */
+        #home-greeting.greeting-dismissed {
+            opacity: 0;
+            max-height: 0;
+            margin: 0;
+            pointer-events: none;
+        }
+
+        #welcome-message {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.92);
+            letter-spacing: -0.2px;
+            line-height: 1.35;
+            margin-bottom: 4px;
+            font-family: 'Inter', sans-serif;
+            white-space: pre-line;
+        }
+        #welcome-subtext {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.5;
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            white-space: pre-line;
+        }
+
+        /* LAST CONVERSATION PANEL — reached from the menu */
+        #history-panel {
+            position: fixed;
+            top: 68px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 380px;
+            max-height: 60vh;
+            overflow-y: auto;
+            border-radius: 22px;
+            padding: 16px;
+            z-index: 9999;
+            backdrop-filter: blur(24px);
+            background: rgba(12, 12, 32, 0.96);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+        }
+        #history-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        #history-panel-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.5);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        #history-panel-close {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.35);
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-family: 'Inter', sans-serif;
+        }
+        #history-panel-close:hover { color: white; }
+        #history-detail {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.8;
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            white-space: pre-line;
+        }
+
+        /* LULO FACE
+           Pushed down the screen so the mood deck below sits inside comfortable
+           one-handed thumb reach rather than up in the stretch zone. */
         #lulo-container {
-            margin-top: 5px;
+            margin-top: 120px;
             margin-bottom: -10px;
             position: relative;
             display: flex;
@@ -107,14 +302,26 @@
             align-items: center;
         }
 
+        /* Lulo hidden state — when scripture or text mode is active */
+        #lulo-container {
+            transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
+        }
+        #lulo-container.lulo-recede {
+            opacity: 0;
+            filter: blur(6px);
+            transform: scale(0.88);
+            pointer-events: none;
+            transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
+        }
+
         #lulo-glow {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 180px;
-            height: 180px;
-            background: radial-gradient(circle, rgba(0,255,100,0.2) 0%, transparent 70%);
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(0,255,100,0.35) 0%, rgba(0,180,255,0.08) 60%, transparent 80%);
             border-radius: 50%;
             animation: pulse-glow 3s ease-in-out infinite;
         }
@@ -134,9 +341,25 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 200px;
-            height: 200px;
+            width: 240px;
+            height: 240px;
             margin-bottom: -25px;
+        }
+
+        /* AMBIENT HALO BELOW LULO */
+        #lulo-face::after {
+            content: '';
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 28px;
+            background: radial-gradient(ellipse, rgba(0,255,100,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(10px);
+            z-index: -1;
+            pointer-events: none;
         }
 
         #lulo-face:hover { transform: scale(1.05); }
@@ -228,203 +451,158 @@
         /* EMOTION CAROUSEL */
         #carousel-container {
             width: 100%;
-            margin: 0px 0 25px 0;
+            /* Lulo's own margin-top fixes her position, so pulling the top
+               margin here moves the deck up toward her without moving her. */
+            margin: -6px 0 25px 0;
             position: relative;
+            /* Sitting this close, Lulo's 240px image box overlaps the deck and
+               would swallow taps on the cards beneath it. She is not
+               interactive, so the deck takes the higher layer. */
+            z-index: 3;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        /* GLASS RAIL */
+        /* CARD DECK WRAPPER */
         #carousel-wrapper {
             position: relative;
             width: 100%;
-            height: 110px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
         }
 
-        /* THE RAIL BODY */
-        #ring-outer {
-            position: absolute;
-            width: 100%;
-            height: 88px;
-            border-radius: 24px;
-            background: linear-gradient(180deg,
-                rgba(255,255,255,0.06) 0%,
-                rgba(255,255,255,0.03) 50%,
-                rgba(255,255,255,0.06) 100%);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow:
-                0 0 30px rgba(0,255,100,0.06),
-                inset 0 1px 0 rgba(255,255,255,0.08),
-                inset 0 -1px 0 rgba(0,0,0,0.2);
-            backdrop-filter: blur(20px);
+        /* Carousel recedes while a scripture is on screen */
+        #carousel-container.carousel-recede {
+            opacity: 0.3;
             pointer-events: none;
-            z-index: 1;
-            transition: background 0.3s ease, border-color 0.3s ease;
+            transition: opacity 0.35s ease;
         }
 
-        /* CRYSTAL CENTER WINDOW */
-        #ring-active-slot {
-            position: absolute;
-            width: 75px;
-            height: 88px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.04);
-            border-left: 1px solid rgba(0,255,100,0.2);
-            border-right: 1px solid rgba(0,255,100,0.2);
-            box-shadow:
-                0 0 20px rgba(0,255,100,0.12),
-                inset 0 0 20px rgba(0,255,100,0.04);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 3;
-            pointer-events: none;
-        }
-
-        /* TOP AND BOTTOM CRYSTAL LINES */
-        #ring-active-slot::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 10%; right: 10%;
-            height: 1px;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(0,255,100,0.5),
-                transparent);
-        }
-
-        #ring-active-slot::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 10%; right: 10%;
-            height: 1px;
-            background: linear-gradient(90deg,
-                transparent,
-                rgba(0,255,100,0.5),
-                transparent);
-        }
-
-        /* FADE MASKS */
-        #ring-fade-left {
-            position: absolute;
-            top: 0; left: 0;
-            width: 20%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                rgba(8,8,24,0.95) 0%,
-                transparent 100%);
-            z-index: 10;
-            pointer-events: none;
-            border-radius: 24px 0 0 24px;
-        }
-
-        #ring-fade-right {
-            position: absolute;
-            top: 0; right: 0;
-            width: 20%;
-            height: 100%;
-            background: linear-gradient(270deg,
-                rgba(8,8,24,0.95) 0%,
-                transparent 100%);
-            z-index: 10;
-            pointer-events: none;
-            border-radius: 0 24px 24px 0;
-        }
-
-        /* EMOJI TRACK */
+        /* THE CARD DECK — horizontal scroller */
         #mood-buttons {
             display: flex;
-            gap: 0px;
-            overflow-x: auto;
-            padding: 0;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            position: relative;
-            z-index: 5;
+            flex-direction: row;
             align-items: center;
-            width: 100%;
-            height: 100%;
+            gap: 10px;
+            overflow-x: auto;
+            /* Half-viewport side padding lets the first and last card reach the
+               centre, so scroll-snap can actually centre them. */
+            padding: 12px calc(50% - 45px);
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            width: 100%;
+            /* Depth: the centred card reads at full strength and the deck falls
+               away toward both edges (100% → 65% → 40%). A mask keys off screen
+               position rather than card index, so the fade stays put while the
+               deck scrolls underneath it. Purely visual — edge cards stay
+               tappable, unlike an opacity/pointer-events approach. */
+            -webkit-mask-image: linear-gradient(90deg,
+                rgba(0,0,0,0.40) 0%,
+                rgba(0,0,0,0.65) 20%,
+                rgba(0,0,0,1)    37%,
+                rgba(0,0,0,1)    63%,
+                rgba(0,0,0,0.65) 80%,
+                rgba(0,0,0,0.40) 100%);
+                    mask-image: linear-gradient(90deg,
+                rgba(0,0,0,0.40) 0%,
+                rgba(0,0,0,0.65) 20%,
+                rgba(0,0,0,1)    37%,
+                rgba(0,0,0,1)    63%,
+                rgba(0,0,0,0.65) 80%,
+                rgba(0,0,0,0.40) 100%);
         }
-
         #mood-buttons::-webkit-scrollbar { display: none; }
 
-        /* EMOTION BUTTON */
-        .emotion-btn {
+        .mood-card {
             flex-shrink: 0;
-            scroll-snap-align: center;
+            width: 78px;
+            height: 78px;
+            background: rgba(22, 22, 48, 0.72);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            background: transparent;
-            border: none;
-            padding: 8px 0;
+            gap: 6px;
             cursor: pointer;
-            width: 75px;
-            height: 88px;
-            opacity: 0.2;
-            transform: scale(0.82);
-            transition: opacity 0.3s ease, transform 0.3s ease,
-                        filter 0.3s ease;
-            filter: blur(0.5px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07);
+            transition: all 0.22s ease;
+            scroll-snap-align: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-
-        .emotion-btn .emoji {
-            font-size: 1.6rem;
-            line-height: 1;
-            transition: all 0.3s ease;
+        .mood-card:active, .mood-card.active {
+            background: rgba(0,180,255,0.12);
+            border-color: rgba(0,180,255,0.35);
+            transform: scale(1.06);
         }
-
-        .emotion-btn .label {
-            font-size: 0.58rem;
-            color: rgba(255,255,255,0.6);
+        .mood-card .card-emoji { font-size: 1.65rem; line-height: 1; }
+        .mood-card .card-label {
+            font-size: 0.62rem;
+            color: rgba(255,255,255,0.72);
             font-weight: 500;
-            font-family: 'Inter', sans-serif;
-            letter-spacing: 0.3px;
             text-align: center;
-            white-space: nowrap;
-            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.2px;
         }
 
-        /* NEAR CENTER */
-        .emotion-btn.near {
-            opacity: 0.55;
-            transform: scale(0.91);
-            filter: blur(0px);
+        /* LULO center card */
+        .mood-card.lulo-center-card {
+            width: 88px;
+            height: 88px;
+            background: rgba(0, 220, 120, 0.16);
+            border: 2px solid rgba(0, 255, 120, 0.7);
+            box-shadow:
+                0 0 26px rgba(0,255,100,0.35),
+                0 0 60px rgba(0,220,90,0.18),
+                inset 0 0 24px rgba(0,255,120,0.12);
         }
-
-        /* ACTIVE CENTER */
-        .emotion-btn.active {
-            opacity: 1;
-            transform: scale(1.08);
-            filter: none;
-            filter: drop-shadow(0 0 8px rgba(0,255,100,0.5));
-        }
-
-        .emotion-btn.active .label {
-            color: rgba(0,255,100,0.9);
-            font-weight: 600;
-            letter-spacing: 0.5px;
+        .mood-card.lulo-center-card .card-label {
+            color: rgba(190,255,215,0.98);
+            font-weight: 700;
+            font-size: 0.68rem;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
         }
 
         /* SCRIPTURE CARD */
         #scripture-card {
             width: 100%;
             display: none;
-            animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             margin-bottom: 15px;
         }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        /* The card fades up in place rather than travelling.
+           Two variants because the centred card carries a permanent
+           translate(-50%,-50%): an animation that omits it would yank the card
+           off-centre for the duration and snap it back at the end, which is
+           what made it look like it slid in from the side. */
+        @keyframes scriptureFadeCentre {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+            to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes scriptureFadeCentreOut {
+            from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            to   { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+        }
+        @keyframes scriptureFadeFlow {
+            from { opacity: 0; transform: scale(0.98); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        #scripture-card.card-intro { animation: scriptureFadeFlow 0.26s ease-out; }
+        #scripture-card.scripture-expanded.card-intro { animation: scriptureFadeCentre 0.26s ease-out; }
+        #scripture-card.scripture-expanded.card-leaving { animation: scriptureFadeCentreOut 0.2s ease-in forwards; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #scripture-card.card-intro,
+            #scripture-card.scripture-expanded.card-intro,
+            #scripture-card.scripture-expanded.card-leaving { animation: none; }
         }
 
         #scripture-inner {
@@ -469,6 +647,88 @@
             margin-bottom: 15px;
         }
 
+        /* SCRIPTURE / PRAYER CARD — premium glass, centred on screen.
+           Lulo fades out behind it, so the card takes the optical centre
+           rather than sitting in the flow where she used to be. */
+        #scripture-card.scripture-expanded {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: calc(100% - 40px);
+            max-width: 380px;
+            max-height: 72vh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            z-index: 200;
+            margin: 0;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 28px;
+            box-shadow:
+                0 8px 40px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.12);
+            padding: 28px 24px;
+        }
+        /* Dim the page behind the centred card */
+        #scripture-card.scripture-expanded::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 4, 14, 0.55);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Premium scripture text */
+        #scripture-card.scripture-expanded #scripture-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.92);
+            line-height: 1.75;
+            letter-spacing: -0.2px;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 14px;
+        }
+        #scripture-card.scripture-expanded #scripture-ref {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(0, 212, 255, 0.8);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        /* The expanded card carries its own glass — drop the inner shell's */
+        #scripture-card.scripture-expanded #scripture-inner {
+            background: transparent !important;
+            border-color: transparent !important;
+            backdrop-filter: none;
+            padding: 0;
+        }
+
+        /* BACK TO LULO */
+        #scripture-back-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.35);
+            font-size: 0.72rem;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 1px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-bottom: 6px;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #scripture-back-btn:hover {
+            color: rgba(255,255,255,0.75);
+            background: rgba(255,255,255,0.06);
+        }
+        #scripture-card.scripture-expanded #scripture-back-btn { display: inline-block; }
+
         #another-btn {
             display: none;
             margin: 0 auto;
@@ -497,72 +757,242 @@
             padding: 10px 0;
         }
 
-        /* BOTTOM INPUT BAR */
+        /* BOTTOM VOICE BAR */
         #bottom-bar {
             position: fixed;
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
+            -webkit-transform: translateX(-50%); /* Safari fix */
             width: 100%;
             max-width: 420px;
-            padding: 12px 20px 30px 20px;
-            background: linear-gradient(to top, #080818 60%, transparent);
-            z-index: 100;
-            -webkit-transform: translateX(-50%); /* Safari fix */
-        }
-
-        #input-row {
             display: flex;
-            gap: 10px;
+            flex-direction: column;
             align-items: center;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 50px;
-            padding: 10px 10px 10px 18px;
-            backdrop-filter: blur(20px);
-            overflow: hidden;
+            padding: 16px 20px 34px;
+            background: linear-gradient(to top, rgba(5,5,16,0.97) 55%, transparent);
+            z-index: 100;
         }
-
-        #lulo-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: white;
-            font-size: 16px;
-            font-family: 'Inter', sans-serif;
-            min-width: 0;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            resize: none;
-            max-height: 120px;
-            overflow-y: auto;
-            line-height: 1.4;
-            padding: 8px 0;
+        #voice-input-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
         }
-
-        #lulo-input::placeholder {
-            color: rgba(255,255,255,0.25);
-        }
-
-        #send-btn {
-            width: 38px;
-            height: 38px;
-            background: linear-gradient(135deg, #00d4ff, #0099cc);
-            border: none;
+        /* MIC — gold capsule set in a brushed metal bezel */
+        #mic-btn {
+            position: relative;
+            width: 78px;
+            height: 78px;
             border-radius: 50%;
-            cursor: pointer;
+            /* conic sweep reads as a machined ring; the inner radial is the well */
+            background:
+                radial-gradient(circle at 50% 46%, #14142c 0%, #0a0a1c 58%, transparent 59%),
+                conic-gradient(from 210deg,
+                    #6f6f8c 0deg, #cfcfe4 42deg, #55556e 96deg, #9a9ab6 150deg,
+                    #3f3f56 210deg, #b6b6d0 268deg, #4a4a63 320deg, #6f6f8c 360deg);
+            border: none;
+            box-shadow:
+                0 6px 26px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(255,255,255,0.10),
+                0 0 22px rgba(0,255,120,0.18);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* inner lip — separates the gold from the ring */
+        #mic-btn::before {
+            content: '';
+            position: absolute;
+            inset: 7px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 42% 34%, #23234a 0%, #0c0c1e 70%);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.75), inset 0 -1px 0 rgba(255,255,255,0.06);
+            pointer-events: none;
+        }
+        #mic-btn:active { transform: scale(0.95); }
+        #mic-btn.listening {
+            box-shadow:
+                0 0 0 8px rgba(0,255,100,0.12),
+                0 0 0 16px rgba(0,255,100,0.06),
+                0 6px 26px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(0,255,120,0.55);
+            animation: mic-pulse 1.1s ease-in-out infinite;
+        }
+        @keyframes mic-pulse {
+            0%,100% { box-shadow: 0 0 0 8px rgba(0,255,100,0.12), 0 0 0 16px rgba(0,255,100,0.06), 0 6px 26px rgba(0,0,0,0.6); }
+            50%      { box-shadow: 0 0 0 12px rgba(0,255,100,0.18), 0 0 0 22px rgba(0,255,100,0.04), 0 6px 26px rgba(0,0,0,0.6); }
+        }
+        #mic-icon {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6)) drop-shadow(0 0 6px rgba(230,190,100,0.3));
         }
 
-        #send-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 0 20px rgba(0,212,255,0.4);
+        /* SWIPE TO TEXT — label over a lit track */
+        #swipe-to-text-hint {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            width: 210px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hint-label {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 0.2px;
+            font-family: 'Inter', sans-serif;
+        }
+        .hint-track {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .hint-arrow {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1;
+        }
+        .hint-bar {
+            flex: 1;
+            height: 2px;
+            border-radius: 2px;
+            background: linear-gradient(90deg,
+                rgba(0,255,120,0) 0%,
+                rgba(0,255,120,0.85) 50%,
+                rgba(0,255,120,0) 100%);
+            box-shadow: 0 0 10px rgba(0,255,120,0.5);
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            .hint-bar { animation: hint-breathe 2.6s ease-in-out infinite; }
+        }
+        @keyframes hint-breathe {
+            0%, 100% { opacity: 0.55; }
+            50%      { opacity: 1; }
+        }
+
+        /* TEXT MODE OVERLAY — full screen */
+        #text-mode-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 18, 0.96);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 500;
+            flex-direction: column;
+            max-width: 420px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            animation: slideUpFade 0.3s ease;
+        }
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateX(-50%) translateY(24px); }
+            to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        #text-mode-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        #text-mode-close {
+            background: none; border: none; color: rgba(255,255,255,0.4);
+            font-size: 0.8rem; cursor: pointer; padding: 6px 10px; font-family: 'Inter', sans-serif;
+            border-radius: 20px; transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #text-mode-close:hover { color: white; background: rgba(255,255,255,0.08); }
+        #text-mode-title { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.6); letter-spacing: 1px; }
+        #char-counter { font-size: 0.68rem; color: rgba(255,255,255,0.25); font-family: 'Inter', sans-serif; min-width: 40px; text-align: right; }
+        #char-counter.near-limit { color: rgba(255, 160, 60, 0.8); }
+
+        #text-mode-chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        #text-input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 12px 16px 32px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            background: rgba(10,10,28,0.8);
+        }
+        #lulo-input {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            color: white;
+            padding: 10px 16px;
+            font-size: 16px; /* 16px stops iOS from zooming on focus */
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            resize: none;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.5;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            min-width: 0;
+        }
+        #lulo-input::placeholder {
+            color: rgba(255,255,255,0.25);
+        }
+        #send-btn {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.35);
+            color: rgba(0,212,255,0.9); font-size: 1.1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #send-btn:hover { background: rgba(0,212,255,0.22); }
+
+        /* STARFIELD — CSS only, so it costs no request and survives the CSP's
+           img-src 'self'. Three layers at different sizes read as depth. */
+        #starfield {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                radial-gradient(1.4px 1.4px at 12% 18%, rgba(255,255,255,0.9), transparent),
+                radial-gradient(1.1px 1.1px at 82% 12%, rgba(255,255,255,0.75), transparent),
+                radial-gradient(1.6px 1.6px at 46% 8%,  rgba(255,255,255,0.85), transparent),
+                radial-gradient(1px 1px   at 24% 42%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1.3px 1.3px at 68% 34%, rgba(200,230,255,0.8), transparent),
+                radial-gradient(1px 1px   at 91% 52%, rgba(255,255,255,0.55), transparent),
+                radial-gradient(1.5px 1.5px at 7% 63%,  rgba(255,255,255,0.8), transparent),
+                radial-gradient(1.1px 1.1px at 36% 74%, rgba(255,235,220,0.7), transparent),
+                radial-gradient(1px 1px   at 58% 88%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1.4px 1.4px at 78% 79%, rgba(255,255,255,0.75), transparent),
+                radial-gradient(1px 1px   at 16% 92%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1.2px 1.2px at 95% 27%, rgba(220,240,255,0.7), transparent);
+            opacity: 0.85;
+        }
+        /* Only the dark/galaxy theme gets stars */
+        body.theme-lit #starfield { display: none; }
+
+        @media (prefers-reduced-motion: no-preference) {
+            #starfield { animation: star-drift 14s ease-in-out infinite; }
+        }
+        @keyframes star-drift {
+            0%, 100% { opacity: 0.65; }
+            50%      { opacity: 0.95; }
         }
 
         /* SPARKLES */
@@ -1024,7 +1454,11 @@
             #lulo-face { font-size: 70px; }
             #lulo-name { font-size: 1.2rem; }
         }
-        /* CHAT THREAD */
+        /* CHAT THREAD — offscreen render buffer.
+           Phase 3 moved all text into #text-mode-overlay. This container still
+           holds the live bubbles (text mode clones from it, and the typing
+           indicator lives here) but it never appears on the main page. */
+        #chat-thread-container[hidden] { display: none !important; }
         #chat-thread-container { width: 100%; margin-bottom: 15px; }
 
         #chat-toggle {
@@ -1072,32 +1506,60 @@
             padding: 2px 0 4px 0;
         }
 
+        /* The user's own voice — cool glass mirroring Lulo's warm glass.
+           Same type metrics as her bubble so the thread reads as one
+           conversation; the cyan edge on the right answers her green one
+           on the left. */
         .chat-bubble-user {
             align-self: flex-end;
             max-width: 78%;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            background: rgba(0,212,255,0.07);
-            border: 1px solid rgba(0,212,255,0.13);
+            /* Deliberately further from Lulo's than a tint apart — this is a
+               cool indigo-blue, hers is a warm pearl-green. At a glance the
+               thread should read as two distinct voices, not one palette. */
+            background: linear-gradient(135deg, rgba(70,120,255,0.20), rgba(0,190,255,0.10));
+            border: 1px solid rgba(90,150,255,0.34);
             border-radius: 16px 16px 4px 16px;
-            padding: 9px 13px;
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.65);
+            padding: 10px 14px;
+            font-size: 0.86rem;
+            color: rgba(226,238,255,0.96);
             font-family: 'Inter', sans-serif;
-            line-height: 1.55;
+            font-weight: 400;
+            line-height: 1.65;
+            letter-spacing: 0.1px;
+            white-space: pre-line;
+            box-shadow: inset -3px 0 0 rgba(90,150,255,0.75), 0 2px 14px rgba(0,0,0,0.28);
         }
 
+        /* Lulo's voice — pearl white carrying a whisper of her green.
+           The glow around her face is what should read as green; her words
+           just need to read as lit, warm and expensive. */
         .chat-bubble-lulo {
             align-self: flex-start;
             max-width: 78%;
-            background: rgba(180,235,210,0.06);
-            border: 1px solid rgba(180,235,210,0.12);
+            /* Same wrapping rules as the user's bubble — without these a long
+               unbroken string (a URL, a scripture reference run together)
+               blows the bubble past its max-width. */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            background: linear-gradient(135deg, rgba(255,255,255,0.075), rgba(120,255,190,0.035));
+            border: 1px solid rgba(160,255,215,0.18);
             border-radius: 16px 16px 16px 4px;
-            padding: 9px 13px;
-            font-size: 0.85rem;
-            color: rgba(100,255,200,0.85);
+            padding: 10px 14px;
+            font-size: 0.86rem;
+            color: rgba(228,246,237,0.95);
             font-family: 'Inter', sans-serif;
-            line-height: 1.55;
+            font-weight: 400;
+            line-height: 1.65;
+            letter-spacing: 0.1px;
+            /* Her system prompt makes her open with a short standalone beat, a
+               blank line, then the response. HTML collapses that by default —
+               pre-line is what keeps the pause she was written to take. */
+            white-space: pre-line;
+            /* The green edge is an inset shadow, not a border — setTheme() writes
+               `border-color` with !important and would otherwise wipe it. */
+            box-shadow: inset 2px 0 0 rgba(0,255,140,0.5), 0 2px 14px rgba(0,0,0,0.28);
         }
 
         .chat-meta {
@@ -1105,9 +1567,17 @@
             color: rgba(255,255,255,0.16);
             margin-top: 4px;
         }
-        .chat-meta.lulo-meta { color: rgba(0,255,100,0.25); }
+        .chat-meta.lulo-meta { color: rgba(190,235,215,0.32); letter-spacing: 0.3px; }
 
         /* TYPING INDICATOR */
+        #typing-indicator-text {
+            display: inline-block;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px 16px 16px 4px;
+        }
+
         #typing-indicator {
             display: none;
             align-self: flex-start;
@@ -1139,3 +1609,228 @@
             0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
             30% { transform: translateY(-6px); opacity: 1; }
         }
+
+        /* ─── FIRST TIMER GUIDE (name screen) ─────────────────────── */
+        #first-timer-info {
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 20px;
+        }
+        #first-timer-toggle {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.4);
+            font-size: 0.75rem;
+            font-family: 'Inter', sans-serif;
+            padding: 7px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: all 0.2s ease;
+            letter-spacing: 0.3px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #first-timer-toggle:hover { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.25); }
+        #first-timer-body {
+            display: none;
+            padding: 16px;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            animation: fadeIn 0.25s ease;
+        }
+        .ftinfo-text {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.7;
+            margin-bottom: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+        .ftinfo-text strong { color: rgba(0,255,120,0.8); font-weight: 600; }
+        .ftinfo-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+        .ftinfo-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.5);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+        }
+        .ftinfo-num {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(0,212,255,0.12);
+            border: 1px solid rgba(0,212,255,0.25);
+            color: rgba(0,212,255,0.8);
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .ftinfo-sub {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.25);
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ─── LULO TOAST ──────────────────────────────────────────────
+           The home screen has no visible thread, so anything Lulo says there
+           would otherwise be lost. This drops down under the top bar, waits,
+           and takes you to the conversation when tapped. */
+        #lulo-toast {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            width: calc(100% - 32px);
+            max-width: 380px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 12px 12px 14px;
+            border-radius: 20px;
+            background: rgba(14, 16, 34, 0.94);
+            border: 1px solid rgba(160,255,215,0.18);
+            box-shadow:
+                inset 3px 0 0 rgba(0,255,140,0.55),
+                0 14px 40px rgba(0,0,0,0.55);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            z-index: 10001;
+            transform: translate(-50%, -160%);
+            opacity: 0;
+            transition: transform 0.42s cubic-bezier(0.22, 1.2, 0.36, 1), opacity 0.28s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #lulo-toast[hidden] { display: none; }
+        #lulo-toast.toast-in {
+            transform: translate(-50%, 64px);
+            opacity: 1;
+        }
+
+        #lulo-toast-tap {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
+            background: none;
+            border: none;
+            text-align: left;
+        }
+        #lulo-toast-tap:focus-visible {
+            outline: 2px solid rgba(0,255,140,0.6);
+            outline-offset: 3px;
+            border-radius: 12px;
+        }
+
+        #lulo-toast-avatar {
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            object-fit: contain;
+            mix-blend-mode: screen;
+            filter: drop-shadow(0 0 6px rgba(0,255,100,0.45));
+            margin-top: 1px;
+        }
+        #lulo-toast-body { min-width: 0; flex: 1; }
+        #lulo-toast-name {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: rgba(0,255,140,0.75);
+            margin-bottom: 3px;
+        }
+        #lulo-toast-text {
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: rgba(228,246,237,0.92);
+            font-family: 'Inter', sans-serif;
+            /* Two lines then ellipsis — the full message lives in text mode */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        #lulo-toast-close {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.78rem;
+            line-height: 1;
+            padding: 4px 6px;
+            cursor: pointer;
+            flex-shrink: 0;
+            border-radius: 50%;
+            transition: color 0.2s ease, background 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #lulo-toast-close:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.08); }
+
+        @media (prefers-reduced-motion: reduce) {
+            #lulo-toast { transition: opacity 0.2s ease; transform: translate(-50%, 64px); }
+            #lulo-toast.toast-in { transform: translate(-50%, 64px); }
+        }
+
+        /* ─── NOTIFICATION TRAY ───────────────────────────────────── */
+        #notif-tray {
+            position: fixed;
+            top: 68px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 380px;
+            max-height: 60vh;
+            overflow-y: auto;
+            border-radius: 22px;
+            padding: 16px;
+            z-index: 9999;
+            backdrop-filter: blur(24px);
+            background: rgba(12, 12, 32, 0.96);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+        }
+        #notif-tray-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        #notif-tray-title { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 1.5px; text-transform: uppercase; }
+        #notif-mark-read { background: none; border: none; color: rgba(0,212,255,0.6); font-size: 0.72rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .notif-item {
+            padding: 12px 14px;
+            border-radius: 14px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .notif-item:hover { background: rgba(255,255,255,0.07); }
+        .notif-item.unread { border-color: rgba(0,212,255,0.2); background: rgba(0,212,255,0.04); }
+        .notif-item-title { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
+        .notif-item-body { font-size: 0.78rem; color: rgba(255,255,255,0.45); line-height: 1.55; font-style: italic; }
+        .notif-item-ref { font-size: 0.68rem; color: rgba(0,212,255,0.6); margin-top: 4px; letter-spacing: 0.5px; }
+        .notif-item-time { font-size: 0.62rem; color: rgba(255,255,255,0.2); margin-top: 6px; }
+        .notif-empty { text-align: center; color: rgba(255,255,255,0.2); font-size: 0.8rem; padding: 24px 0; font-family: 'Inter', sans-serif; }
+
+        /* ─── CHAT ERROR RETRY ────────────────────────────────────── */
+        .chat-retry { text-align: center; margin: 4px 0 12px; }
+        .retry-btn {
+            background: none; border: 1px solid rgba(0,212,255,0.25); color: rgba(0,212,255,0.7);
+            font-size: 0.75rem; font-family: 'Inter', sans-serif; padding: 6px 16px;
+            border-radius: 20px; cursor: pointer; transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .retry-btn:hover { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.4); }

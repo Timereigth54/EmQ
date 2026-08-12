@@ -1,9 +1,18 @@
-const CACHE = 'emq-v26'
-const ASSETS = [
+const CACHE = 'emq-v28'
+
+// App shell — core files served cache-first
+const SHELL_ASSETS = [
     '/EmQ/',
     '/EmQ/index.html',
     '/EmQ/styles.css',
+    '/EmQ/lulo-scripture.js',
+    '/EmQ/lulo-voice.js',
     '/EmQ/app.js',
+    '/EmQ/site.webmanifest',
+]
+
+// Images — cached on install, served cache-first indefinitely
+const IMAGE_ASSETS = [
     '/EmQ/images/lulo.png',
     '/EmQ/images/lulo_happy.png',
     '/EmQ/images/lulo_sad.png',
@@ -52,36 +61,67 @@ const ASSETS = [
     '/EmQ/images/lulo_t2_unsettled.png',
 ]
 
+const ALL_ASSETS = [...SHELL_ASSETS, ...IMAGE_ASSETS]
+
+// ─── INSTALL: cache all assets, then skip waiting immediately ─────────────────
 self.addEventListener('install', e => {
     e.waitUntil(
         caches.open(CACHE).then(cache => {
             return Promise.allSettled(
-                ASSETS.map(asset => cache.add(asset).catch(err => {
-                    console.log('Could not cache:', asset)
+                ALL_ASSETS.map(asset => cache.add(asset).catch(() => {
+                    // Silently skip assets that fail — don't block install
                 }))
             )
-        })
+        }).then(() => self.skipWaiting()) // Activate immediately, don't wait for old tabs to close
     )
 })
 
+// ─── ACTIVATE: delete old caches, claim all clients ───────────────────────────
 self.addEventListener('activate', e => {
     e.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cache => {
                     if (cache !== CACHE) {
-                        console.log('Deleting old cache:', cache)
                         return caches.delete(cache)
                     }
                 })
             )
-        })
+        }).then(() => self.clients.claim()) // Take control of all pages immediately
     )
-    self.clients.claim()
 })
 
+// ─── FETCH: stale-while-revalidate for shell, cache-first for images ──────────
 self.addEventListener('fetch', e => {
-    e.respondWith(
-        caches.match(e.request).then(cached => cached || fetch(e.request))
-    )
+    const url = new URL(e.request.url)
+
+    // Don't intercept non-GET, cross-origin API calls (Firebase, Worker, Analytics)
+    if (e.request.method !== 'GET') return
+    if (!url.origin.includes('github.io') && !url.pathname.startsWith('/EmQ')) return
+
+    const isShell = SHELL_ASSETS.some(a => url.pathname === a || url.pathname === a + 'index.html')
+    const isImage = url.pathname.includes('/images/')
+
+    if (isShell) {
+        // Stale-while-revalidate: serve cached version instantly, update cache in background
+        e.respondWith(
+            caches.open(CACHE).then(cache => {
+                return cache.match(e.request).then(cached => {
+                    const networkFetch = fetch(e.request).then(response => {
+                        if (response && response.status === 200) {
+                            cache.put(e.request, response.clone())
+                        }
+                        return response
+                    }).catch(() => null)
+                    return cached || networkFetch
+                })
+            })
+        )
+    } else if (isImage) {
+        // Cache-first for images — they don't change often
+        e.respondWith(
+            caches.match(e.request).then(cached => cached || fetch(e.request))
+        )
+    }
+    // Everything else (fonts, GA, Firebase) goes straight to network
 })

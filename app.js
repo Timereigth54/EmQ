@@ -1,3 +1,19 @@
+/*
+ * Em_Q app.js — Phase 3
+ * Full modularisation planned for Phase 4:
+ *   lulo-scripture.js  — all verse arrays (extracted Phase 3)
+ *   lulo-voice.js      — voice engine (extracted Phase 3)
+ *   lulo-brain.js      — luloListen, luloThink, generatePrayer, classifyIntent, crisis detection
+ *   lulo-ui.js         — screens, animations, carousel, themes, journal UI
+ *   lulo-core.js       — init, state, memory, Firebase sync, games
+ * Until then: all remaining code lives here.
+ */
+
+// ─── PHASE 3 GLOBALS ─────────────────────────────────────────────────────────
+let currentRecognition = null   // active SpeechRecognition instance, if any
+let isVoiceInputActive = false  // true while the mic is listening
+let _lastUserMessage = ''       // last thing the user sent — used by the retry button
+
         const firebaseConfig = {
             apiKey: "AIzaSyAiUXWpcqpysOouq-2CWUQQ2GaCUANLzRk",
             authDomain: "emq-companion.firebaseapp.com",
@@ -47,7 +63,6 @@
             try {
                 await db.collection('users').doc(code).set(data)
                 localStorage.setItem('luloLastCloudSave', Date.now().toString())
-                console.log('Synced to cloud:', code)
             } catch (err) {
                 console.error('Cloud save failed:', err)
             }
@@ -134,7 +149,7 @@
                 // Never save to cloud from inside the listener — breaks the loop
                 // The 30-second interval and explicit saves handle keeping cloud updated
 
-                console.log('Real-time sync received update from another device')
+                // Real-time sync: received update from another device
 
                 // Update everything except chat history which stays local
                 if (data.luloMemory) localStorage.setItem('luloMemory', data.luloMemory)
@@ -197,9 +212,11 @@
             const theme = document.getElementById('theme-panel')
             const sync = document.getElementById('sync-panel')
             const more = document.getElementById('more-menu')
+            const history = document.getElementById('history-panel')
             if (theme) theme.style.display = 'none'
             if (sync) sync.style.display = 'none'
             if (more) more.style.display = 'none'
+            if (history) history.style.display = 'none'
         }
 
         function copySyncCode() {
@@ -218,8 +235,8 @@
             let code = input.value.trim().toUpperCase()
             if (!code) return
 
-            if (!code.startsWith('lulo-')) {
-                code = 'lulo-' + code
+            if (!code.startsWith('LULO-')) {
+                code = 'LULO-' + code
             }
 
             status.innerText = 'Connecting...'
@@ -270,21 +287,54 @@
             { mood: 'bored', emoji: '😴', label: 'Bored' },
         ]
 
-        let infiniteReady = false
-            const COPIES = 3
-            const MID_COPY = 1
+        // infiniteReady / COPIES / MID_COPY belonged to the ring carousel,
+        // replaced by the card deck in Phase 3.
 
-function toggleHistoryCard() {
-    const expanded = document.getElementById('history-expanded')
-    const arrow = document.getElementById('history-arrow')
-    if (!expanded) return
-    if (expanded.style.display === 'none' || expanded.style.display === '') {
-        expanded.style.display = 'block'
-        if (arrow) arrow.style.transform = 'rotate(180deg)'
-    } else {
-        expanded.style.display = 'none'
-        if (arrow) arrow.style.transform = 'rotate(0deg)'
+// Phase 3: "Our last conversation" moved off the home page into a panel you
+// reach from the menu. The home screen is Lulo, the mood cards and the greeting.
+function toggleHistoryPanel() {
+    const panel = document.getElementById('history-panel')
+    if (!panel) return
+    const isOpen = panel.style.display !== 'none'
+    if (isOpen) { panel.style.display = 'none'; return }
+
+    // Fill it in fresh each time it opens
+    const detail = document.getElementById('history-detail')
+    if (detail && !detail.innerText.trim()) {
+        detail.innerText = buildLastConversationSummary()
     }
+    closeFloatingPanels()
+    const tray = document.getElementById('notif-tray')
+    if (tray) tray.style.display = 'none'
+    panel.style.display = 'block'
+}
+
+function buildLastConversationSummary() {
+    const lastMood = localStorage.getItem('luloLastMood')
+    const lastRef = localStorage.getItem('luloLastRef')
+    const lastVerseText = localStorage.getItem('luloLastVerseText')
+    const lastTimestamp = localStorage.getItem('luloLastVisitTimestamp')
+    if (!lastMood || !lastRef) {
+        return `We haven't talked yet. Pick how you're feeling and I'll be right here. 💙`
+    }
+
+    let when = ''
+    if (lastTimestamp) {
+        const days = Math.floor((new Date() - new Date(parseInt(lastTimestamp))) / (1000 * 60 * 60 * 24))
+        if (days === 0) when = 'earlier today'
+        else if (days === 1) when = 'yesterday'
+        else if (days < 7) when = `${days} days ago`
+        else if (days < 14) when = 'last week'
+        else if (days < 30) when = `${Math.floor(days / 7)} weeks ago`
+        else when = 'last month'
+    }
+    const opener = when ? when.charAt(0).toUpperCase() + when.slice(1) : 'Last time'
+    return `${opener}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.`
+}
+
+// Kept so the old touchend binding stays harmless
+function toggleHistoryCard() {
+    toggleHistoryPanel()
 }
 
     function toggleThemePanel() {
@@ -373,15 +423,15 @@ function setTheme(theme) {
             activeSlotLine: 'rgba(0,255,100,0.5)',
             emotionLabel: 'rgba(255,255,255,0.6)',
             emotionLabelActive: 'rgba(0,255,100,0.9)',
-            bottomBar: 'linear-gradient(to top,#080818 60%,transparent)',
+            bottomBar: 'linear-gradient(to top, rgba(5,5,16,0.97) 55%, transparent)',
             scrollbar: 'rgba(0,212,255,0.2)',
             appName: 'rgba(255,255,255,0.3)',
-            chatBubbleUserBg: 'rgba(0,212,255,0.07)',
-            chatBubbleUserBorder: 'rgba(0,212,255,0.13)',
-            chatBubbleUserText: 'rgba(255,255,255,0.65)',
-            chatBubbleLuloBg: 'rgba(255,255,255,0.04)',
-            chatBubbleLuloBorder: 'rgba(255,255,255,0.08)',
-            chatBubbleLuloText: 'rgba(100,255,200,0.85)',
+            chatBubbleUserBg: 'linear-gradient(135deg, rgba(70,120,255,0.20), rgba(0,190,255,0.10))',
+            chatBubbleUserBorder: 'rgba(90,150,255,0.34)',
+            chatBubbleUserText: 'rgba(226,238,255,0.96)',
+            chatBubbleLuloBg: 'linear-gradient(135deg, rgba(255,255,255,0.075), rgba(120,255,190,0.035))',
+            chatBubbleLuloBorder: 'rgba(160,255,215,0.16)',
+            chatBubbleLuloText: 'rgba(228,246,237,0.95)',
             scriptureFont: "'Inter', sans-serif",
             glassScreenBg: 'rgba(8,8,24,0.97)',
             glassCardBg: 'rgba(255,255,255,0.04)',
@@ -500,15 +550,15 @@ function setTheme(theme) {
             activeSlotLine: 'rgba(0,255,100,0.5)',
             emotionLabel: 'rgba(255,255,255,0.6)',
             emotionLabelActive: 'rgba(0,255,100,0.9)',
-            bottomBar: 'linear-gradient(to top,#080818 60%,transparent)',
+            bottomBar: 'linear-gradient(to top, rgba(5,5,16,0.97) 55%, transparent)',
             scrollbar: 'rgba(0,212,255,0.2)',
             appName: 'rgba(255,255,255,0.3)',
-            chatBubbleUserBg: 'rgba(0,212,255,0.07)',
-            chatBubbleUserBorder: 'rgba(0,212,255,0.13)',
-            chatBubbleUserText: 'rgba(255,255,255,0.65)',
-            chatBubbleLuloBg: 'rgba(255,255,255,0.04)',
-            chatBubbleLuloBorder: 'rgba(255,255,255,0.08)',
-            chatBubbleLuloText: 'rgba(100,255,200,0.85)',
+            chatBubbleUserBg: 'linear-gradient(135deg, rgba(70,120,255,0.20), rgba(0,190,255,0.10))',
+            chatBubbleUserBorder: 'rgba(90,150,255,0.34)',
+            chatBubbleUserText: 'rgba(226,238,255,0.96)',
+            chatBubbleLuloBg: 'linear-gradient(135deg, rgba(255,255,255,0.075), rgba(120,255,190,0.035))',
+            chatBubbleLuloBorder: 'rgba(160,255,215,0.16)',
+            chatBubbleLuloText: 'rgba(228,246,237,0.95)',
             scriptureFont: "'Inter', sans-serif",
             glassScreenBg: 'rgba(8,8,24,0.97)',
             glassCardBg: 'rgba(255,255,255,0.04)',
@@ -524,12 +574,19 @@ function setTheme(theme) {
     const isLight = theme === 'light'
 
     // BODY
-    document.body.style.background = t.bg
+    // The dark theme's galaxy background lives in styles.css. Setting the
+    // `background` shorthand here would wipe its background-image, so for dark
+    // we clear the inline style instead and let the stylesheet win.
+    const isGalaxy = theme === 'dark'
+    document.body.style.background = isGalaxy ? '' : t.bg
     document.body.style.color = t.text
+    // Stars belong to the galaxy theme only
+    document.body.classList.toggle('theme-lit', !isGalaxy)
 
-    // APP NAME
+    // APP NAME — the Phase 3 wordmark is the centre of the top bar and stays
+    // full strength. t.appName is the old muted value and would grey it out.
     const appName = document.getElementById('app-name')
-    if (appName) appName.style.color = t.appName
+    if (appName) appName.style.color = isLight ? '#3d3550' : 'white'
 
     // BOTTOM BAR
     const bottomBar = document.getElementById('bottom-bar')
@@ -669,33 +726,36 @@ function setTheme(theme) {
             color: ${t.chatBubbleLuloText} !important;
             font-family: ${t.scriptureFont} !important;
         }
-        .chat-bubble-user { 
-            background: ${t.chatBubbleUserBg} !important; 
-            border-color: ${t.chatBubbleUserBorder} !important; 
+        .chat-bubble-user {
+            background: ${t.chatBubbleUserBg} !important;
+            border-color: ${t.chatBubbleUserBorder} !important;
             color: ${t.chatBubbleUserText} !important;
+            /* Kept identical to .chat-bubble-lulo below — the two sides of the
+               thread should only ever differ by side, tail and hue. */
+            font-weight: ${isLight ? '500' : '400'} !important;
+            font-size: ${isLight ? '0.82rem' : '0.86rem'} !important;
+            line-height: 1.65 !important;
+            letter-spacing: 0.1px !important;
         }
-        #ring-outer {
-            background: ${t.carouselBg} !important;
+        /* MOOD CARD DECK — themed */
+        .mood-card {
+            background: ${isLight ? 'rgba(255,255,255,0.75)' : 'rgba(22,22,48,0.8)'} !important;
             border-color: ${t.carouselBorder} !important;
-            box-shadow: ${isLight 
-                ? '0 0 30px rgba(201,168,76,0.1), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(201,168,76,0.1)'
-                : '0 0 30px rgba(0,255,100,0.06), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.2)'
-            } !important;
         }
-
-        #ring-fade-left {
-            background: linear-gradient(90deg, ${t.bg} 0%, transparent 100%) !important;
-        }
-        #ring-fade-right {
-            background: linear-gradient(270deg, ${t.bg} 0%, transparent 100%) !important;
-        }
-
-        .emotion-btn .label { 
-            color: ${t.emotionLabel} !important; 
+        .mood-card .card-label {
+            color: ${t.emotionLabel} !important;
             font-family: ${isLight ? "'Palatino Linotype', Georgia, serif" : "'Inter', sans-serif"} !important;
         }
-        .emotion-btn.active .label { color: ${t.emotionLabelActive} !important; }
-        body { background: ${t.bg} !important; color: ${t.text} !important; }
+        .mood-card.active .card-label { color: ${t.emotionLabelActive} !important; }
+        .mood-card.lulo-center-card {
+            background: ${isLight ? 'rgba(201,168,76,0.1)' : 'rgba(0,200,100,0.1)'} !important;
+            border-color: ${isLight ? 'rgba(201,168,76,0.55)' : 'rgba(0,255,120,0.55)'} !important;
+        }
+        .mood-card.lulo-center-card .card-label {
+            color: ${isLight ? '#c9a84c' : 'rgba(0,255,120,0.9)'} !important;
+        }
+        ${isGalaxy ? '' : `body { background: ${t.bg} !important; color: ${t.text} !important; }`}
+        ${isGalaxy ? `body { color: ${t.text} !important; }` : ''}
 
         /* SHARE BUTTON */
         .scripture-action-btn {
@@ -715,7 +775,9 @@ function setTheme(theme) {
         /* LULO BUBBLE FONT — thicker in light theme */
         .chat-bubble-lulo {
             font-weight: ${isLight ? '500' : '400'} !important;
-            font-size: ${isLight ? '0.82rem' : '0.79rem'} !important;
+            font-size: ${isLight ? '0.82rem' : '0.86rem'} !important;
+            line-height: 1.65 !important;
+            letter-spacing: 0.1px !important;
         }
 
         /* SCRIPTURE CARD TEXT */
@@ -801,159 +863,68 @@ function loadSavedTheme() {
     if (saved) setTheme(saved)
 }
 
-function buildEmotionButtons() {
+// ─── EMOTION CARD DECK ───────────────────────────────────────────────────────
+// Phase 3 replaced the infinite ring carousel with a flat horizontal card deck.
+// The LULO card sits in the middle of the deck and opens text mode.
+
+function isCarouselLocked() {
+    const container = document.getElementById('carousel-container')
+    return lockSecondsLeft > 0 || (container ? container.classList.contains('locked') : false)
+}
+
+// Selecting a mood — the exact behaviour the ring carousel had
+function selectMood(item) {
+    dismissHomeGreeting()
+    addToChatHistory('user', `${item.emoji} ${item.label}`)
+    setTimeout(() => showScripture(item.mood), 300)
+}
+
+function buildCarousel() {
     const container = document.getElementById('mood-buttons')
     if (!container) return
     container.innerHTML = ''
-    infiniteReady = false
 
-    const N = emotionList.length + 1 // +1 for the Lulo home slot per copy
+    // Insert the LULO card in the middle of the emotion list
+    const insertAt = Math.floor(emotionList.length / 2)
 
-    const spacer1 = document.createElement('div')
-    spacer1.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
-    container.appendChild(spacer1)
+    emotionList.forEach((mood, i) => {
+        if (i === insertAt) {
+            const luloCard = document.createElement('div')
+            luloCard.className = 'mood-card lulo-center-card'
+            const isT2 = localStorage.getItem('luloTheme') === 'soft' || localStorage.getItem('luloTheme') === 'midnight'
+            luloCard.innerHTML = `
+                <img class="card-emoji" src="${isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'}"
+                     alt="Lulo"
+                     style="width:42px;height:42px;object-fit:contain;${isT2 ? '' : 'mix-blend-mode:screen;'}filter:drop-shadow(0 0 6px rgba(0,255,100,0.45));"/>
+                <div class="card-label">LULO</div>`
+            luloCard.addEventListener('click', () => openVoiceOrTextInput())
+            container.appendChild(luloCard)
+        }
 
-    for (let copy = 0; copy < COPIES; copy++) {
-
-        // HOME SLOT — Lulo's face, no emotion
-        const homeGIndex = copy * N
-        const homeBtn = document.createElement('div')
-        homeBtn.className = 'emotion-btn home-btn'
-        homeBtn.dataset.gindex = homeGIndex
-        homeBtn.dataset.rindex = 0
-        homeBtn.dataset.mood = 'home'
-        const isT2 = localStorage.getItem('luloTheme') === 'soft' || localStorage.getItem('luloTheme') === 'midnight'
-        homeBtn.innerHTML = `
-            <img src="${isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'}" style="width:34px;height:34px;object-fit:contain;${isT2 ? '' : 'mix-blend-mode:screen;'}filter:drop-shadow(0 0 6px rgba(0,255,100,0.4));"/>
-            <span class="label" style="color:rgba(0,255,100,0.55);font-size:0.55rem;letter-spacing:1px;">LULO</span>
-        `
-        homeBtn.onclick = () => scrollToGlobal(homeGIndex)
-        container.appendChild(homeBtn)
-
-        // EMOTION SLOTS
-        emotionList.forEach((item, i) => {
-            const gIndex = copy * N + (i + 1)
-            const btn = document.createElement('div')
-            btn.className = 'emotion-btn'
-            btn.dataset.gindex = gIndex
-            btn.dataset.rindex = i + 1
-            btn.dataset.mood = item.mood
-            btn.innerHTML = `<span class="emoji">${item.emoji}</span><span class="label">${item.label}</span>`
-            btn.onclick = () => {
-                scrollToGlobal(gIndex)
-                addToChatHistory('user', `${item.emoji} ${item.label}`)
-                setTimeout(() => showScripture(item.mood), 300)
-            }
-            container.appendChild(btn)
+        const card = document.createElement('div')
+        card.className = 'mood-card'
+        card.dataset.mood = mood.mood
+        card.innerHTML = `<div class="card-emoji">${mood.emoji}</div><div class="card-label">${mood.label}</div>`
+        card.addEventListener('click', () => {
+            if (isCarouselLocked()) return
+            container.querySelectorAll('.mood-card.active').forEach(c => c.classList.remove('active'))
+            card.classList.add('active')
+            selectMood(mood)
         })
-    }
+        container.appendChild(card)
+    })
 
-    const spacer2 = document.createElement('div')
-    spacer2.style.cssText = 'flex-shrink:0;width:calc(50% - 37.5px);'
-    container.appendChild(spacer2)
-
-    container.addEventListener('scroll', onRailScroll)
-
-    // Start centered on Lulo home slot (middle copy)
+    // Centre the LULO card on load
     setTimeout(() => {
-        scrollToGlobal(MID_COPY * N, true)
-        setTimeout(() => { infiniteReady = true }, 200)
-    }, 150)
+        const luloCard = container.querySelector('.lulo-center-card')
+        if (luloCard) luloCard.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' })
+    }, 50)
 }
 
-function scrollToGlobal(gIndex, instant = false) {
-    const container = document.getElementById('mood-buttons')
-    if (!container) return
-    const btns = container.querySelectorAll('.emotion-btn')
-    const btn = btns[gIndex]
-    if (!btn) return
-    const scrollTo = btn.offsetLeft - (container.offsetWidth / 2) + (btn.offsetWidth / 2)
-    if (instant) {
-        container.scrollLeft = scrollTo
-    } else {
-        container.scrollTo({ left: scrollTo, behavior: 'smooth' })
-    }
-}
+// enterMainApp() still calls these by their original names
+function buildEmotionButtons() { buildCarousel() }
+function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses CSS scroll-snap */ }
 
-function scrollToEmotion(rIndex) {
-    const N = emotionList.length + 1
-    scrollToGlobal(MID_COPY * N + rIndex + 1)
-}
-
-function onRailScroll() {
-    const container = document.getElementById('mood-buttons')
-    if (!container) return
-
-    const N = emotionList.length + 1
-    const containerCenter = container.scrollLeft + container.offsetWidth / 2
-    const btns = container.querySelectorAll('.emotion-btn')
-
-    let closestBtn = null
-    let closestDist = Infinity
-    let closestGIndex = MID_COPY * N
-
-    btns.forEach((btn, i) => {
-        const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
-        const dist = Math.abs(containerCenter - btnCenter)
-        btn.classList.remove('active', 'near')
-        if (dist < closestDist) {
-            closestDist = dist
-            closestBtn = btn
-            closestGIndex = i
-        }
-    })
-
-    btns.forEach(btn => {
-        const btnCenter = btn.offsetLeft + btn.offsetWidth / 2
-        const dist = Math.abs(containerCenter - btnCenter)
-        if (btn === closestBtn) btn.classList.add('active')
-        else if (dist < 120) btn.classList.add('near')
-    })
-
-    // Infinite loop jump
-    if (infiniteReady) {
-        const rIndex = closestGIndex % N
-        if (closestGIndex < N || closestGIndex >= N * 2) {
-            infiniteReady = false
-            const jumpTo = MID_COPY * N + rIndex
-            const targetBtn = btns[jumpTo]
-            if (targetBtn) {
-                container.scrollLeft = targetBtn.offsetLeft - (container.offsetWidth / 2) + (targetBtn.offsetWidth / 2)
-            }
-            setTimeout(() => { infiniteReady = true }, 80)
-        }
-    }
-
-    if (closestBtn && closestBtn.dataset.mood !== window.lastScrollMood) {
-        window.lastScrollMood = closestBtn.dataset.mood
-        updateLuloMood(closestBtn.dataset.mood)
-        animateLulo('nod')
-    }
-
-    // Reset face to current emotion after 5 seconds of no interaction
-    clearTimeout(window.faceResetTimer)
-    window.faceResetTimer = setTimeout(() => {
-        if (currentMood && currentMood !== 'home') {
-            updateLuloMood(currentMood)
-        }
-    }, 5000)
-}
-
-function setupRailSnap() {
-    const container = document.getElementById('mood-buttons')
-    if (!container) return
-    let snapTimer = null
-    container.addEventListener('scroll', () => {
-        clearTimeout(snapTimer)
-        snapTimer = setTimeout(() => {
-            if (!infiniteReady) return
-            const active = container.querySelector('.emotion-btn.active')
-            if (active) {
-                scrollToGlobal(parseInt(active.dataset.gindex))
-            }
-        }, 150)
-    })
-}
         let currentMood = "";
         let conversationHistory = []
 
@@ -980,22 +951,7 @@ function setupRailSnap() {
             'i need help', 'please help me', 'no one cares'
         ]
 
-        // SCRIPTURES FOR CRISIS/THERAPY RESPONSES
-        const boundaryVerses = {
-            crisis: [
-                { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
-                { text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", ref: "Jeremiah 29:11" },
-                { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-                { text: "I will never desert you nor forsake you.", ref: "Hebrews 13:5" },
-            ],
-            therapy: [
-                { text: "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.", ref: "Joshua 1:9" },
-                { text: "God is our refuge and strength, an ever-present help in trouble.", ref: "Psalm 46:1" },
-                { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
-                { text: "No weapon forged against you will prevail.", ref: "Isaiah 54:17" },
-                { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
-            ]
-        }
+        // boundaryVerses moved to lulo-scripture.js (Phase 3)
 
         let currentBoundaryLevel = ''
         let crisisFollowUpStage = 0
@@ -1061,6 +1017,8 @@ function setupRailSnap() {
                 followup.style.display = 'block'
             }
             LuloSound.crisis()
+            LuloVoice.stop()
+            LuloVoice.speak(message.innerText)
             screen.style.display = 'flex'
         }
 
@@ -1191,7 +1149,7 @@ function setupRailSnap() {
 
         function getLuloWeeklySuggestion(summary) {
             const name = localStorage.getItem('luloUserName') || 'friend'
-            if (!summary) return `${name}, start using Em_Q daily and I'll track your emotional journey here! 💙`
+            if (!summary) return `${name}, start using Em_Q daily and I'll track your emotional journey here!`
 
             const { topMood, positiveCount, difficultCount, prayerCount } = summary
             const positiveEmotionsList = ['happy', 'grateful', 'hopeful', 'excited', 
@@ -1200,9 +1158,9 @@ function setupRailSnap() {
             if (positiveCount > difficultCount) {
                 return `${name}, this was a predominantly positive week! 🌟 You felt ${topMood} most often. Keep nurturing what's bringing you joy. ${prayerCount > 0 ? `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} this week — that matters! 🙏` : 'Try starting next week with a prayer! 💙'}`
             } else if (difficultCount > positiveCount) {
-                return `${name}, this was a tough week and I see that. 💙 You felt ${topMood} most often. For next week — try opening Em_Q first thing in the morning before the day takes over. ${prayerCount === 0 ? 'And let\'s pray together more — it really helps. 🙏' : `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} — keep that going. 💙`}`
+                return `${name}, this was a tough week and I see that. 💙 You felt ${topMood} most often. For next week — try opening Em_Q first thing in the morning before the day takes over. ${prayerCount === 0 ? 'And let\'s pray together more — it really helps. 🙏' : `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} — keep that going.`}`
             } else {
-                return `${name}, this week had its ups and downs — which is just life. 💙 You felt ${topMood} most often. For next week, try to notice the small moments of joy and bring them to Lulo. ${prayerCount > 0 ? `Your ${prayerCount} prayer${prayerCount > 1 ? 's' : ''} this week were heard. 🙏` : 'Let\'s pray together next week! 💙'}`
+                return `${name}, this week had its ups and downs — which is just life. 💙 You felt ${topMood} most often. For next week, try to notice the small moments of joy and bring them to Lulo. ${prayerCount > 0 ? `Your ${prayerCount} prayer${prayerCount > 1 ? 's' : ''} this week were heard. 🙏` : 'Let\'s pray together next week!'}`
             }
         }
 
@@ -1283,7 +1241,7 @@ function setupRailSnap() {
             // Build entries HTML
             let entriesHTML = ''
             if (entries.length === 0) {
-                entriesHTML = `<p style="color: #a0c4d8; text-align: center; font-size: 0.9rem; padding: 20px;">Your journey starts the moment you click your first emotion. 💙</p>`
+                entriesHTML = `<p style="color: #a0c4d8; text-align: center; font-size: 0.9rem; padding: 20px;">Your journey starts the moment you click your first emotion.</p>`
             } else {
                 entriesHTML = entries.slice(0, 30).map((entry, i) => `
                     <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:15px;padding:15px;margin-bottom:10px;cursor:pointer;" 
@@ -1321,16 +1279,7 @@ function setupRailSnap() {
             document.getElementById('journal-screen').style.display = 'none'
         }
         
-        const emergencyVerses = [
-            "God is our refuge and strength, an ever-present help in trouble. — Psalm 46:1",
-            "The Lord is my shepherd; I lack nothing. — Psalm 23:1",
-            "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you. — Isaiah 41:10",
-            "The Lord will fight for you; you need only to be still. — Exodus 14:14",
-            "Peace I leave with you; my peace I give you. Do not let your hearts be troubled and do not be afraid. — John 14:27",
-            "I can do all things through Christ who strengthens me. — Philippians 4:13",
-            "Cast all your anxiety on him because he cares for you. — 1 Peter 5:7",
-            "Be still, and know that I am God. — Psalm 46:10",
-        ]
+        // emergencyVerses moved to lulo-scripture.js (Phase 3)
 
         function showTonguesQuestion() {
     const name = localStorage.getItem('luloUserName') || 'friend'
@@ -1372,10 +1321,8 @@ function setupRailSnap() {
         </div>
     `
     box.style.display = 'block'
-    box.style.animation = 'none'
-    void box.offsetHeight
-    box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
-    setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 100)
+    playCardIntro(box)
+    setTimeout(() => centreCard(box), 100)
 }
 
         function unlockTongues(answer) {
@@ -1452,7 +1399,7 @@ function setupRailSnap() {
     const tonguesResponses = [
         `Have you prayed in tongues today, ${name}? 💙 What did the Spirit reveal to you?`,
         `${name}, when you pray in the Spirit today — what is God saying to your heart? 🕊️`,
-        `Your prayer language is powerful, ${name}. Have you spent time in it today? What are you sensing from the Spirit? 💙`,
+        `Your prayer language is powerful, ${name}. Have you spent time in it today? What are you sensing from the Spirit?`,
         `${name}, the Spirit intercedes through you when you pray in tongues. Have you prayed today? What's stirring in your spirit? 🔥`
     ]
     const randomResponse = tonguesResponses[Math.floor(Math.random() * tonguesResponses.length)]
@@ -1464,10 +1411,8 @@ function setupRailSnap() {
     textEl.innerText = randomResponse
 
     box.style.display = 'block'
-    box.style.animation = 'none'
-    void box.offsetHeight
-    box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
-    setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 100)
+    playCardIntro(box)
+    setTimeout(() => centreCard(box), 100)
 }
         
         function showEmergencyKit() {
@@ -1505,458 +1450,13 @@ function setupRailSnap() {
             return false
         }
 
-        // YOUR SPECIAL VERSES - hardcoded in their perfect versions
-        const specialVerses = {
-    afraid: [
-        { text: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with My righteous right hand.", ref: "Isaiah 41:10" },
-        { text: "I will never desert you nor forsake you. So we take comfort and are encouraged and confidently say, The Lord is my Helper, I will not be afraid. What will man do to me?", ref: "Hebrews 13:5-6" },
-        { text: "For God has not given us a spirit of fear, but of power and of love and of a sound mind.", ref: "2 Timothy 1:7" },
-        { text: "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.", ref: "Joshua 1:9" },
-        { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
-        { text: "God is our refuge and strength, an ever-present help in trouble.", ref: "Psalm 46:1" },
-        { text: "When I am afraid, I put my trust in you.", ref: "Psalm 56:3" },
-        { text: "Take courage! It is I. Don't be afraid.", ref: "Matthew 14:27" },
-        { text: "Be strong and of good courage, do not fear nor be afraid of them; for the Lord your God, He is the one who goes with you. He will not leave you nor forsake you.", ref: "Deuteronomy 31:6" },
-        { text: "Peace I leave with you; my peace I give you. Do not let your hearts be troubled and do not be afraid.", ref: "John 14:27" },
-        { text: "The Lord is my rock and my fortress and my deliverer; my God, my strength, in whom I will trust.", ref: "Psalm 18:2" },
-        { text: "He only is my rock and my salvation; he is my defense; I shall not be moved.", ref: "Psalm 62:6" },
-        { text: "The Lord also will be a refuge for the oppressed, a refuge in times of trouble.", ref: "Psalm 9:9" },
-        { text: "But the Lord has been my defense, and my God the rock of my refuge.", ref: "Psalm 94:22" },
-        { text: "The Lord is my defender and protector. You are my God; in you I trust.", ref: "Psalm 91:2" },
-        { text: "The Lord is my strength and my defense; he has become my salvation.", ref: "Exodus 15:2" },
-    ],
-    anxious: [
-        { text: "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.", ref: "Philippians 4:6" },
-        { text: "Cast all your anxiety on him because he cares for you.", ref: "1 Peter 5:7" },
-        { text: "Therefore do not worry about tomorrow, for tomorrow will worry about itself. Each day has enough trouble of its own.", ref: "Matthew 6:34" },
-        { text: "Be still, and know that I am God.", ref: "Psalm 46:10" },
-        { text: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.", ref: "Proverbs 3:5-6" },
-        { text: "Cast your burden on the Lord, and he shall sustain you; he shall never permit the righteous to be moved.", ref: "Psalm 55:22" },
-        { text: "The Lord is my shepherd; I lack nothing.", ref: "Psalm 23:1" },
-        { text: "Come to me, all you who are weary and burdened, and I will give you rest.", ref: "Matthew 11:28" },
-        { text: "I can do all things through Christ who strengthens me.", ref: "Philippians 4:13" },
-        { text: "I will both lie down in peace, and sleep; for you alone, O Lord, make me dwell in safety.", ref: "Psalm 4:8" },
-        { text: "And my God shall supply all your need according to his riches in glory by Christ Jesus.", ref: "Philippians 4:19" },
-        { text: "You will keep him in perfect peace, whose mind is stayed on you, because he trusts in you.", ref: "Isaiah 26:3" },
-        { text: "The Lord is on my side; I will not fear. What can man do to me?", ref: "Psalm 118:6" },
-        { text: "Give your entire attention to what God is doing right now, and don't get worked up about what may or may not happen tomorrow.", ref: "Matthew 6:34" },
-        { text: "And God is able to make all grace abound toward you, that you, always having all sufficiency in all things, may have an abundance for every good work.", ref: "2 Corinthians 9:8" },
-        { text: "Humble yourselves under the mighty hand of God, that he may exalt you in due time.", ref: "1 Peter 5:6" },
-        { text: "Therefore I say to you, do not worry about your life, what you will eat or what you will drink; nor about your body, what you will put on.", ref: "Matthew 6:25" },
-        { text: "I have been young, and now am old; yet I have not seen the righteous forsaken, nor his descendants begging bread.", ref: "Psalm 37:25" },
-        { text: "Let your gentleness be known to all men. The Lord is at hand.", ref: "Philippians 4:5" },
-    ],
-    sad: [
-        { text: "The Lord himself goes before you and will be with you; he will never leave you nor forsake you. Do not be afraid; do not be discouraged.", ref: "Deuteronomy 31:8" },
-        { text: "He heals the brokenhearted and binds up their wounds.", ref: "Psalm 147:3" },
-        { text: "In this world you will have trouble. But take heart! I have overcome the world.", ref: "John 16:33" },
-        { text: "Weeping may stay for the night, but rejoicing comes in the morning.", ref: "Psalm 30:5" },
-        { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
-        { text: "For the Lord will not reject you forever. If he causes grief, he will show compassion.", ref: "Lamentations 3:31-32" },
-        { text: "To console those who mourn in Zion, to give them beauty for ashes, the oil of joy for mourning.", ref: "Isaiah 61:3" },
-        { text: "Do not grieve, for the joy of the Lord is your strength.", ref: "Nehemiah 8:10" },
-        { text: "Blessed are those who mourn, for they will be comforted.", ref: "Matthew 5:4" },
-        { text: "You have turned my mourning into joyful dancing. You have taken away my clothes of mourning and clothed me with joy.", ref: "Psalm 30:11" },
-        { text: "The Lord has heard my weeping. The Lord has heard my supplication; the Lord will receive my prayer.", ref: "Psalm 6:8-9" },
-        { text: "Those who sow in tears shall reap in joy.", ref: "Psalm 126:5" },
-        { text: "He will yet fill your mouth with laughing, and your lips with rejoicing.", ref: "Job 8:21" },
-        { text: "He will swallow up death forever, and the Lord God will wipe away tears from all faces.", ref: "Isaiah 25:8" },
-        { text: "You have seen my affliction; you know the sorrows of my heart.", ref: "Psalm 31:7" },
-        { text: "My soul is weary with my sorrow; strengthen me according to your word.", ref: "Psalm 119:28" },
-    ],
-    depressed: [
-        { text: "Why, my soul, are you downcast? Why so disturbed within me? Put your hope in God, for I will yet praise him, my Savior and my God.", ref: "Psalm 42:11" },
-        { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
-        { text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", ref: "Jeremiah 29:11" },
-        { text: "I will never desert you nor forsake you.", ref: "Hebrews 13:5" },
-        { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-        { text: "But those who wait on the Lord shall renew their strength; they shall mount up with wings like eagles.", ref: "Isaiah 40:31" },
-        { text: "He lifted me out of the slimy pit, out of the mud and mire; he set my feet on a rock.", ref: "Psalm 40:2" },
-        { text: "The Lord is my light and my salvation — whom shall I fear? The Lord is the stronghold of my life — of whom shall I be afraid?", ref: "Psalm 27:1" },
-        { text: "Hope in God; for I shall again praise him, my salvation and my God.", ref: "Psalm 43:5" },
-        { text: "The Lord upholds all who fall, and raises up all who are bowed down.", ref: "Psalm 145:14" },
-        { text: "A bruised reed he will not break, and smoking flax he will not quench.", ref: "Isaiah 42:3" },
-        { text: "The Lord will guide you continually, and satisfy your soul in drought, and strengthen your bones.", ref: "Isaiah 58:11" },
-        { text: "I will praise the Lord at all times; his praise will always be on my lips.", ref: "Psalm 34:1" },
-        { text: "He raises the poor from the dust and lifts the beggar from the ash heap.", ref: "Psalm 113:7" },
-        { text: "He will not always strive with us, nor will he keep his anger forever.", ref: "Psalm 103:9" },
-    ],
-    lonely: [
-        { text: "The Lord himself goes before you and will be with you; he will never leave you nor forsake you.", ref: "Deuteronomy 31:8" },
-        { text: "Even though I walk through the darkest valley, I will fear no evil, for you are with me.", ref: "Psalm 23:4" },
-        { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-        { text: "The eternal God is your refuge, and underneath are the everlasting arms.", ref: "Deuteronomy 33:27" },
-        { text: "I will not leave you as orphans; I will come to you.", ref: "John 14:18" },
-        { text: "For God has said, 'I will never fail you. I will never abandon you.'", ref: "Hebrews 13:5" },
-        { text: "Who shall separate us from the love of Christ? Neither death nor life, nor anything else in all creation will be able to separate us from the love of God.", ref: "Romans 8:35-39" },
-        { text: "The Lord your God is with you, the Mighty Warrior who saves. He will take great delight in you; in his love he will rejoice over you with singing.", ref: "Zephaniah 3:17" },
-        { text: "I am with you always, even to the end of the age.", ref: "Matthew 28:20" },
-        { text: "Behold, I am with you and will keep you wherever you go.", ref: "Genesis 28:15" },
-        { text: "Though my father and mother forsake me, the Lord will receive me.", ref: "Psalm 27:10" },
-        { text: "God sets the solitary in families.", ref: "Psalm 68:6" },
-        { text: "For your Maker is your husband, the Lord of hosts is his name.", ref: "Isaiah 54:5" },
-        { text: "The Lord is my shepherd, I lack nothing.", ref: "Psalm 23:1" },
-        { text: "Be strong and courageous. Do not be afraid... for the Lord your God is with you wherever you go.", ref: "Joshua 1:9" },
-    ],
-    angry: [
-        { text: "A gentle answer turns away wrath, but a harsh word stirs up anger.", ref: "Proverbs 15:1" },
-        { text: "Be still, and know that I am God.", ref: "Psalm 46:10" },
-        { text: "In your anger do not sin: Do not let the sun go down while you are still angry.", ref: "Ephesians 4:26" },
-        { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
-        { text: "My dear brothers and sisters, take note of this: Everyone should be quick to listen, slow to speak and slow to become angry, because human anger does not produce the righteousness that God desires.", ref: "James 1:19-20" },
-        { text: "Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It is not rude, it is not self-seeking, it is not easily angered, it keeps no record of wrongs.", ref: "1 Corinthians 13:4-5" },
-        { text: "Refrain from anger and turn from wrath; do not fret — it leads only to evil.", ref: "Psalm 37:8" },
-        { text: "A hot-tempered person stirs up conflict, but the one who is patient calms a quarrel.", ref: "Proverbs 15:18" },
-        { text: "Get rid of all bitterness, rage and anger. Be kind and compassionate to one another, forgiving each other, just as in Christ God forgave you.", ref: "Ephesians 4:31-32" },
-        { text: "Whoever is slow to anger has great understanding, but one who has a hasty temper exalts folly.", ref: "Proverbs 14:29" },
-        { text: "A fool gives full vent to his anger, but a wise man keeps himself under control.", ref: "Proverbs 29:11" },
-        { text: "The discretion of a man makes him slow to anger, and his glory is to overlook a transgression.", ref: "Proverbs 19:11" },
-        { text: "Be angry, and do not sin; meditate within your heart on your bed, and be still.", ref: "Psalm 4:4" },
-    ],
-    tired: [
-        { text: "Come to me, all you who are weary and burdened, and I will give you rest.", ref: "Matthew 11:28" },
-        { text: "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.", ref: "Isaiah 40:31" },
-        { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
-        { text: "He gives strength to the weary and increases the power of the weak.", ref: "Isaiah 40:29" },
-        { text: "My grace is sufficient for you, for my power is made perfect in weakness.", ref: "2 Corinthians 12:9" },
-        { text: "The Lord is my shepherd, I lack nothing. He makes me lie down in green pastures.", ref: "Psalm 23:1-2" },
-        { text: "I will refresh the weary and satisfy the faint.", ref: "Jeremiah 31:25" },
-        { text: "You, Lord, give perfect peace to those who keep their purpose firm and put their trust in you.", ref: "Isaiah 26:3" },
-        { text: "Therefore we do not lose heart. Though outwardly we are wasting away, yet inwardly we are being renewed day by day.", ref: "2 Corinthians 4:16" },
-        { text: "My flesh and my heart fail; but God is the strength of my heart and my portion forever.", ref: "Psalm 73:26" },
-        { text: "Come aside by yourselves to a deserted place and rest a while.", ref: "Mark 6:31" },
-        { text: "There remains therefore a rest for the people of God.", ref: "Hebrews 4:9" },
-        { text: "The Lord is my strength and my shield; my heart trusted in him, and I am helped.", ref: "Psalm 28:7" },
-        { text: "Even the youths shall faint and be weary, and the young men shall utterly fall, but those who wait on the Lord shall renew their strength.", ref: "Isaiah 40:30" },
-        { text: "My soul melts from heaviness; strengthen me according to your word.", ref: "Psalm 119:28" },
-    ],
-    grateful: [
-        { text: "Give thanks to the Lord, for he is good; his love endures forever.", ref: "Psalm 107:1" },
-        { text: "This is the day the Lord has made; let us rejoice and be glad in it.", ref: "Psalm 118:24" },
-        { text: "Every good and perfect gift is from above, coming down from the Father of the heavenly lights.", ref: "James 1:17" },
-        { text: "Enter his gates with thanksgiving and his courts with praise; give thanks to him and praise his name.", ref: "Psalm 100:4" },
-        { text: "Give thanks in all circumstances; for this is the will of God in Christ Jesus for you.", ref: "1 Thessalonians 5:18" },
-        { text: "Let the peace of Christ rule in your hearts... and be thankful.", ref: "Colossians 3:15" },
-        { text: "Always be joyful. Never stop praying. Be thankful in all circumstances.", ref: "1 Thessalonians 5:16-18" },
-        { text: "Bless the Lord, O my soul, and forget not all his benefits.", ref: "Psalm 103:2" },
-        { text: "Thanks be to God for his indescribable gift!", ref: "2 Corinthians 9:15" },
-        { text: "Let everything that has breath praise the Lord. Praise the Lord!", ref: "Psalm 150:6" },
-        { text: "Thanks be to God, who gives us the victory through our Lord Jesus Christ.", ref: "1 Corinthians 15:57" },
-        { text: "It is good to give thanks to the Lord, and to sing praises to your name, O Most High.", ref: "Psalm 92:1" },
-        { text: "I will bless the Lord at all times; his praise shall continually be in my mouth.", ref: "Psalm 34:1" },
-        { text: "Let us come before his presence with thanksgiving; let us shout joyfully to him with psalms.", ref: "Psalm 95:2" },
-        { text: "I will praise the name of God with a song, and will magnify him with thanksgiving.", ref: "Psalm 69:30" },
-    ],
-    heartbroken: [
-        { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
-        { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-        { text: "He heals the brokenhearted and binds up their wounds.", ref: "Psalm 147:3" },
-        { text: "And we know that in all things God works for the good of those who love him.", ref: "Romans 8:28" },
-        { text: "My flesh and my heart may fail, but God is the strength of my heart and my portion forever.", ref: "Psalm 73:26" },
-        { text: "The Lord has sent me to bind up the brokenhearted, to proclaim freedom for the captives.", ref: "Isaiah 61:1" },
-        { text: "God will wipe away every tear from their eyes; there shall be no more death, nor sorrow, nor crying.", ref: "Revelation 21:4" },
-        { text: "The faithful love of the Lord never ends! His mercies never cease. Great is his faithfulness.", ref: "Lamentations 3:22-23" },
-        { text: "Cast your burden on the Lord, and he shall sustain you.", ref: "Psalm 55:22" },
-        { text: "The sacrifices of God are a broken spirit, a broken and a contrite heart — these, O God, you will not despise.", ref: "Psalm 51:17" },
-        { text: "Fear not, for you will not be ashamed; neither be disgraced, for you will not be put to shame.", ref: "Isaiah 54:4" },
-        { text: "The Lord is my portion, says my soul, therefore I will hope in him.", ref: "Lamentations 3:24" },
-        { text: "You number my wanderings; put my tears into your bottle; are they not in your book?", ref: "Psalm 56:8" },
-        { text: "For his anger is but for a moment, his favor is for life; weeping may endure for a night, but joy comes in the morning.", ref: "Psalm 30:5" },
-        { text: "The Lord has heard the voice of my weeping. The Lord has heard my supplication; the Lord will receive my prayer.", ref: "Psalm 6:8-9" },
-    ],
-    overwhelmed: [
-        { text: "The Lord will fight for you; you need only to be still.", ref: "Exodus 14:14" },
-        { text: "Cast all your anxiety on him because he cares for you.", ref: "1 Peter 5:7" },
-        { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
-        { text: "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.", ref: "Philippians 4:6" },
-        { text: "Be still, and know that I am God.", ref: "Psalm 46:10" },
-        { text: "From the end of the earth I will cry to you, when my heart is overwhelmed; lead me to the rock that is higher than I.", ref: "Psalm 61:2" },
-        { text: "God is our refuge and strength, an ever-present help in trouble.", ref: "Psalm 46:1" },
-        { text: "Come to me, all you who are weary and burdened, and I will give you rest.", ref: "Matthew 11:28" },
-        { text: "Peace I leave with you; my peace I give you. Do not let your hearts be troubled and do not be afraid.", ref: "John 14:27" },
-        { text: "I called on the Lord in distress; the Lord answered me and set me in a broad place.", ref: "Psalm 118:5" },
-        { text: "In the day when I cried out, you answered me, and made me bold with strength in my soul.", ref: "Psalm 138:3" },
-        { text: "The righteous cry out, and the Lord hears, and delivers them out of all their troubles.", ref: "Psalm 34:17" },
-        { text: "The Lord is my rock and my fortress and my deliverer; my God, my strength, in whom I will trust.", ref: "Psalm 18:2" },
-        { text: "These things I have spoken to you, that in me you may have peace. In the world you will have tribulation; but be of good cheer, I have overcome the world.", ref: "John 16:33" },
-    ],
-    hopeful: [
-        { text: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.", ref: "Jeremiah 29:11" },
-        { text: "And we know that in all things God works for the good of those who love him.", ref: "Romans 8:28" },
-        { text: "Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us.", ref: "Ephesians 3:20" },
-        { text: "May the God of hope fill you with all joy and peace as you trust in him.", ref: "Romans 15:13" },
-        { text: "The path of the righteous is like the morning sun, shining ever brighter till the full light of day.", ref: "Proverbs 4:18" },
-        { text: "But those who hope in the Lord will renew their strength.", ref: "Isaiah 40:31" },
-        { text: "Be strong and take heart, all you who hope in the Lord.", ref: "Psalm 31:24" },
-        { text: "We have this hope as an anchor for the soul, firm and secure.", ref: "Hebrews 6:19" },
-        { text: "The Lord delights in those who fear him, who put their hope in his unfailing love.", ref: "Psalm 147:11" },
-        { text: "I wait for the Lord, my whole being waits, and in his word I put my hope.", ref: "Psalm 130:5" },
-        { text: "Blessed is the man who trusts in the Lord, and whose hope is the Lord.", ref: "Jeremiah 17:7" },
-        { text: "Let us hold fast the confession of our hope without wavering, for he who promised is faithful.", ref: "Hebrews 10:23" },
-        { text: "Now hope does not disappoint, because the love of God has been poured out in our hearts by the Holy Spirit.", ref: "Romans 5:5" },
-        { text: "And my God shall supply all your need according to his riches in glory by Christ Jesus.", ref: "Philippians 4:19" },
-        { text: "Why are you cast down, O my soul? Hope in God; for I shall yet praise him.", ref: "Psalm 42:5" },
-        { text: "The Lord is my strength and my defense; he has become my salvation.", ref: "Exodus 15:2" },
-    ],
-    confused: [
-        { text: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.", ref: "Proverbs 3:5-6" },
-        { text: "Your word is a lamp for my feet, a light on my path.", ref: "Psalm 119:105" },
-        { text: "If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault, and it will be given to you.", ref: "James 1:5" },
-        { text: "For God is not a God of confusion but of peace.", ref: "1 Corinthians 14:33" },
-        { text: "I will instruct you and teach you in the way you should go; I will counsel you with my loving eye on you.", ref: "Psalm 32:8" },
-        { text: "Whether you turn to the right or to the left, your ears will hear a voice behind you, saying, 'This is the way; walk in it.'", ref: "Isaiah 30:21" },
-        { text: "Guide me in your truth and teach me, for you are God my Savior, and my hope is in you all day long.", ref: "Psalm 25:5" },
-        { text: "The unfolding of your words gives light; it gives understanding to the simple.", ref: "Psalm 119:130" },
-        { text: "Commit your way to the Lord; trust in him and he will do this.", ref: "Psalm 37:5" },
-        { text: "For the Lord gives wisdom; from his mouth come knowledge and understanding.", ref: "Proverbs 2:6" },
-        { text: "Call to me, and I will answer you, and show you great and mighty things, which you do not know.", ref: "Jeremiah 33:3" },
-        { text: "I will lead the blind by ways they have not known, along unfamiliar paths I will guide them.", ref: "Isaiah 42:16" },
-        { text: "The steps of a good man are ordered by the Lord, and he delights in his way.", ref: "Psalm 37:23" },
-        { text: "Teach me your way, O Lord; I will walk in your truth; unite my heart to fear your name.", ref: "Psalm 86:11" },
-    ],
-    happy: [
-        { text: "This is the day the Lord has made; let us rejoice and be glad in it.", ref: "Psalm 118:24" },
-        { text: "Those who look to him are radiant; their faces are never covered with shame.", ref: "Psalm 34:5" },
-        { text: "May the God of hope fill you with all joy and peace as you trust in him.", ref: "Romans 15:13" },
-        { text: "Rejoice in the Lord always. I will say it again: Rejoice!", ref: "Philippians 4:4" },
-        { text: "You make known to me the path of life; you will fill me with joy in your presence, with eternal pleasures at your right hand.", ref: "Psalm 16:11" },
-        { text: "The Lord has done great things for us, and we are filled with joy.", ref: "Psalm 126:3" },
-        { text: "Shout for joy to the Lord, all the earth. Worship the Lord with gladness; come before him with joyful songs.", ref: "Psalm 100:1-2" },
-        { text: "The joy of the Lord is your strength.", ref: "Nehemiah 8:10" },
-        { text: "You have put gladness in my heart, more than when their grain and new wine abound.", ref: "Psalm 4:7" },
-        { text: "Blessed are the people who know the joyful sound! They walk, O Lord, in the light of your countenance.", ref: "Psalm 89:15" },
-        { text: "Serve the Lord with gladness; come before his presence with singing.", ref: "Psalm 100:2" },
-        { text: "You turned my wailing into dancing; you removed my sackcloth and clothed me with joy.", ref: "Psalm 30:11" },
-        { text: "Rejoice in the Lord, you righteous, and give thanks at the remembrance of his holy name.", ref: "Psalm 97:12" },
-        { text: "A happy heart makes the face cheerful, but heartache crushes the spirit.", ref: "Proverbs 15:13" },
-    ],
-    bored: [
-        { type: "didyouknow", text: "Did you know... Shamgar killed 600 Philistines with just an ox goad — a simple farming stick! One man. 600 enemies. One stick. God can use the most ordinary things in extraordinary ways.", ref: "Judges 3:31" },
-        { type: "didyouknow", text: "Did you know... Water was divided TWICE in the Bible! Once for Moses at the Red Sea, and once for Joshua at the Jordan River. God literally parted waters for two different generations!", ref: "Exodus 14 & Joshua 3" },
-        { type: "didyouknow", text: "Did you know... Elijah outran a horse-drawn chariot for about 25 miles after calling down fire from heaven. Talk about a supernatural energy boost!", ref: "1 Kings 18:46" },
-        { type: "didyouknow", text: "Did you know... Methuselah lived to be 969 years old — the oldest person in the Bible. He died the same year as the great flood.", ref: "Genesis 5:27" },
-        { type: "didyouknow", text: "Did you know... The Bible is a library of 66 books, written by about 40 authors over roughly 1,500 years — yet tells one consistent story of God's love.", ref: "The Holy Bible" },
-        { type: "didyouknow", text: "Did you know... The shortest verse in the entire Bible is just two words: 'Jesus wept.'", ref: "John 11:35" },
-        { type: "didyouknow", text: "Did you know... The book of Esther never once mentions God by name — yet God's hand is visible on every page!", ref: "The Book of Esther" },
-        { type: "didyouknow", text: "Did you know... Balaam's donkey is the only animal specifically said to talk in the Bible — and it made a pretty good point!", ref: "Numbers 22:28" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nWho was the oldest person in the Bible?\n\nAnswer: Methuselah — he lived 969 years!", ref: "Genesis 5:27" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nHow many days and nights did it rain during Noah's flood?\n\nAnswer: 40 days and 40 nights!\n\nThe number 40 appears throughout the Bible as a period of testing and transformation.", ref: "Genesis 7:12" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nHow many books are in the Bible?\n\nAnswer: 66 books! (39 Old Testament, 27 New Testament)\n\nWritten by over 40 authors across 1,500 years.", ref: "The Holy Bible" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nWhich prophet was swallowed by a great fish?\n\nAnswer: Jonah!", ref: "Jonah 1:17" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nWhat city's walls fell after marching around them for 7 days?\n\nAnswer: Jericho!", ref: "Joshua 6:20" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nWho was thrown into a lions' den for praying to God?\n\nAnswer: Daniel!", ref: "Daniel 6:16" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nWhich apostle doubted Jesus' resurrection until he saw the wounds?\n\nAnswer: Thomas!", ref: "John 20:25" },
-        { type: "trivia", text: "Bible Trivia! 🎯\n\nWhich king asked God for an extra 15 years of life?\n\nAnswer: Hezekiah!", ref: "2 Kings 20:1-6" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nWhich car brand appears most in the Bible?\n\nHonda! — Because the disciples were all in One Accord!\n\n'When the Day of Pentecost had fully come, they were all with one accord in one place.'", ref: "Acts 2:1" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nWho was the fastest runner in the Bible?\n\nAdam! — He was first in the human race!\n\n'So the Lord God formed a man from the dust of the ground.'", ref: "Genesis 2:7" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nWhat kind of lights did Noah use on the ark?\n\nFloodlights! 🚢\n\n'The waters rose and increased greatly on the earth.'", ref: "Genesis 7:18" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nHow does Moses make his coffee?\n\nHe brews it! ☕", ref: "Exodus" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nWhy did Noah laugh while fishing?\n\nBecause he heard a 'reel' good word from the Lord! 🎣", ref: "Genesis" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nWhy don't they serve coffee at church?\n\nBecause the Lord's Supper is the only 'roast' they do! ☕", ref: "1 Corinthians 11:20" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nWhat's a Bible character's favourite type of music?\n\nHeavy 'metal' — because of all the Armour of God! 🛡️", ref: "Ephesians 6:11" },
-        { type: "joke", text: "😄 Bible Dad Joke!\n\nHow do we know Peter was a good fisherman?\n\nBecause he always had a 'net' profit! 🐟", ref: "Luke 5:6" },
-        { type: "joke", text: "😄 Bible Pun!\n\nWhat do you call a chef in heaven?\n\nAbba Cook! 🍳\n\n(Habakkuk — a book of the Bible that nobody can pronounce!)", ref: "Habakkuk 3:17-18" },
-        { type: "joke", text: "😄 Bible Pun!\n\nWhat do you call a sleeping dinosaur in the Bible?\n\nA Tea-Rex-us! 🦕\n\n'Be still before the Lord and wait patiently for him.'", ref: "Psalm 37:7" },
-        { type: "joke", text: "😄 Bible Pun!\n\nWhy did Samson avoid arguing with Delilah?\n\nHe didn't want to lose his head over it! 💇\n\n(He almost did though...)", ref: "Judges 16" },
-        { type: "joke", text: "😄 Bible Pun!\n\nWhat's a biblical spider's favourite verse?\n\n'I can do all things through Christ who strengthens me!' 🕷️\n\n(He's been hanging on by a thread for years!)", ref: "Philippians 4:13" },
-        { type: "joke", text: "😄 Bible Pun!\n\nWhy couldn't Jonah trust the ocean?\n\nBecause he knew there was something fishy going on! 🐟", ref: "Jonah 1:17" },
-        { type: "joke", text: "😄 Bible Pun!\n\nWhat do you call Daniel's friends in the WhatsApp group?\n\nThe 🔥 Squad — Shadrach, Meshach and the other one nobody can remember! 😄", ref: "Daniel 3" },
-    ],
-    excited: [
-        { text: "Delight yourself in the Lord, and he will give you the desires of your heart.", ref: "Psalm 37:4" },
-        { text: "For the Lord your God is living among you. He is a mighty savior. He will take delight in you with gladness. With his love, he will calm all your fears. He will rejoice over you with joyful songs.", ref: "Zephaniah 3:17" },
-        { text: "No eye has seen, no ear has heard, and no mind has imagined what God has prepared for those who love him.", ref: "1 Corinthians 2:9" },
-        { text: "Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us.", ref: "Ephesians 3:20" },
-        { text: "How great is the goodness you have stored up for those who fear you.", ref: "Psalm 31:19" },
-        { text: "You have turned my mourning into joyful dancing. You have taken away my clothes of mourning and clothed me with joy.", ref: "Psalm 30:11" },
-        { text: "This is the day the Lord has made; let us rejoice and be glad in it.", ref: "Psalm 118:24" },
-        { text: "May he grant your heart's desires and make all your plans succeed.", ref: "Psalm 20:4" },
-    ],
-    peaceful: [
-        { text: "You will keep in perfect peace all who trust in you, all whose thoughts are fixed on you!", ref: "Isaiah 26:3" },
-        { text: "Peace I leave with you; my peace I give you. I do not give to you as the world gives. Do not let your hearts be troubled and do not be afraid.", ref: "John 14:27" },
-        { text: "And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.", ref: "Philippians 4:7" },
-        { text: "The Lord gives his people strength. The Lord blesses them with peace.", ref: "Psalm 29:11" },
-        { text: "I will lie down and sleep in peace, for you alone, O Lord, make me dwell in safety.", ref: "Psalm 4:8" },
-        { text: "Let the peace of Christ rule in your hearts, since as members of one body you were called to peace.", ref: "Colossians 3:15" },
-        { text: "The Lord is my shepherd, I lack nothing. He makes me lie down in green pastures, he leads me beside quiet waters, he refreshes my soul.", ref: "Psalm 23:1-3" },
-        { text: "Great peace have those who love your law, and nothing can make them stumble.", ref: "Psalm 119:165" },
-    ],
-    loved: [
-        { text: "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.", ref: "John 3:16" },
-        { text: "See what great love the Father has lavished on us, that we should be called children of God! And that is what we are!", ref: "1 John 3:1" },
-        { text: "I have loved you with an everlasting love; I have drawn you with unfailing kindness.", ref: "Jeremiah 31:3" },
-        { text: "Neither death nor life, neither angels nor demons, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.", ref: "Romans 8:38-39" },
-        { text: "The Lord your God is with you, the Mighty Warrior who saves. He will take great delight in you; in his love he will no longer rebuke you, but will rejoice over you with singing.", ref: "Zephaniah 3:17" },
-        { text: "But God demonstrates his own love for us in this: While we were still sinners, Christ died for us.", ref: "Romans 5:8" },
-        { text: "How precious is your unfailing love, O God! All humanity finds shelter in the shadow of your wings.", ref: "Psalm 36:7" },
-        { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-    ],
-    joyful: [
-        { text: "Rejoice in the Lord always. I will say it again: Rejoice!", ref: "Philippians 4:4" },
-        { text: "The joy of the Lord is your strength.", ref: "Nehemiah 8:10" },
-        { text: "You make known to me the path of life; you will fill me with joy in your presence, with eternal pleasures at your right hand.", ref: "Psalm 16:11" },
-        { text: "Shout for joy to the Lord, all the earth. Worship the Lord with gladness; come before him with joyful songs.", ref: "Psalm 100:1-2" },
-        { text: "Those who sow with tears will reap with songs of joy.", ref: "Psalm 126:5" },
-        { text: "A cheerful heart is good medicine, but a crushed spirit dries up the bones.", ref: "Proverbs 17:22" },
-        { text: "I have told you this so that my joy may be in you and that your joy may be complete.", ref: "John 15:11" },
-        { text: "Let all who take refuge in you be glad; let them ever sing for joy.", ref: "Psalm 5:11" },
-    ],
-    encouraged: [
-        { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
-        { text: "Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go.", ref: "Joshua 1:9" },
-        { text: "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.", ref: "Isaiah 40:31" },
-        { text: "The Lord is my strength and my shield; my heart trusts in him, and he helps me. My heart leaps for joy, and with my song I praise him.", ref: "Psalm 28:7" },
-        { text: "No weapon forged against you will prevail, and you will refute every tongue that accuses you. This is the heritage of the servants of the Lord.", ref: "Isaiah 54:17" },
-        { text: "We are hard pressed on every side, but not crushed; perplexed, but not in despair; persecuted, but not abandoned; struck down, but not destroyed.", ref: "2 Corinthians 4:8-9" },
-        { text: "But as for you, be strong and do not give up, for your work will be rewarded.", ref: "2 Chronicles 15:7" },
-        { text: "The Lord your God is with you, the Mighty Warrior who saves.", ref: "Zephaniah 3:17" },
-    ],
-    expecting: [
-        { text: "None will miscarry or be barren in your land. I will give you a full life span.", ref: "Exodus 23:26" },
-        { text: "And I will rebuke the devourer for your sakes, and he shall not destroy the fruits of your ground; neither shall your vine cast her fruit before the time in the field, saith the LORD of hosts.", ref: "Malachi 3:11" },
-        { text: "For He has looked upon the low station and humiliation of His handmaiden. For behold, from now on all generations [of all ages] will call me blessed and declare me happy and to be envied!", ref: "Luke 1:48" },
-        { text: "His descendants will be mighty in the land; the generation of the upright will be blessed.", ref: "Psalm 112:2" },
-        { text: "Don't you see that children are God's best gift? the fruit of the womb his generous legacy? Like a warrior's fistful of arrows are the children of a vigorous youth. Oh, how blessed are you parents, with your quivers full of children!", ref: "Psalm 127:3-5" },
-        { text: "Your wife will bear children as a vine bears grapes, your household lush as a vineyard, the children around your table as fresh and promising as young olive shoots. Stand in awe of God's Yes. Oh, how he blesses the one who fears God!", ref: "Psalm 128:3-4" },
-        { text: "Sing, O childless woman, you who have never given birth! Break into loud and joyful song, O Jerusalem, you who have never been in labor. For the desolate woman now has more children than the woman who lives with her husband, says the LORD.", ref: "Isaiah 54:1" },
-        { text: "Before the birth pains even begin, Jerusalem gives birth to a son.", ref: "Isaiah 66:7" },
-        { text: "Would I ever bring this nation to the point of birth and then not deliver it? No! I would never keep this nation from being born, says your God.", ref: "Isaiah 66:9" },
-        { text: "The Lord will keep you from all harm — he will watch over your life; the Lord will watch over your coming and going both now and forevermore.", ref: "Psalm 121:7-8" },
-        { text: "Before I formed you in the womb I knew you, before you were born I set you apart.", ref: "Jeremiah 1:5" },
-        { text: "For you created my inmost being; you knit me together in my mother's womb. I praise you because I am fearfully and wonderfully made.", ref: "Psalm 139:13-14" },
-        { text: "She is clothed with strength and dignity, and she laughs without fear of the future.", ref: "Proverbs 31:25" },
-        { text: "Children are a gift from the Lord; they are a reward from him.", ref: "Psalm 127:3" },
-        { text: "The Lord will guide you continually, giving you water when you are dry and restoring your strength.", ref: "Isaiah 58:11" },
-        { text: "I can do all things through Christ who strengthens me.", ref: "Philippians 4:13" },
-        { text: "The Lord your God is with you, the Mighty Warrior who saves.", ref: "Zephaniah 3:17" },
-    ],
-    empty: [
-        { text: "He heals the brokenhearted and binds up their wounds.", ref: "Psalm 147:3" },
-        { text: "Come to me, all you who are weary and burdened, and I will give you rest.", ref: "Matthew 11:28" },
-        { text: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.", ref: "Psalm 34:18" },
-        { text: "I will refresh the weary and satisfy the faint.", ref: "Jeremiah 31:25" },
-        { text: "Why are you cast down, O my soul? Hope in God; for I shall yet praise him.", ref: "Psalm 42:11" },
-        { text: "He lifted me out of the slimy pit, out of the mud and mire; he set my feet on a rock.", ref: "Psalm 40:2" },
-        { text: "The Lord upholds all who fall, and raises up all who are bowed down.", ref: "Psalm 145:14" },
-        { text: "A bruised reed he will not break, and smoking flax he will not quench.", ref: "Isaiah 42:3" },
-        { text: "My flesh and my heart may fail, but God is the strength of my heart and my portion forever.", ref: "Psalm 73:26" },
-    ],
-    invisible: [
-        { text: "You have seen my affliction; you know the sorrows of my heart.", ref: "Psalm 31:7" },
-        { text: "The Lord your God is with you, the Mighty Warrior who saves. He will rejoice over you with singing.", ref: "Zephaniah 3:17" },
-        { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-        { text: "See what great love the Father has lavished on us, that we should be called children of God!", ref: "1 John 3:1" },
-        { text: "I have loved you with an everlasting love; I have drawn you with unfailing kindness.", ref: "Jeremiah 31:3" },
-        { text: "Before I formed you in the womb I knew you, before you were born I set you apart.", ref: "Jeremiah 1:5" },
-        { text: "For your Maker is your husband, the Lord of hosts is his name.", ref: "Isaiah 54:5" },
-        { text: "You number my wanderings; put my tears into your bottle; are they not in your book?", ref: "Psalm 56:8" },
-        { text: "The Lord has heard the voice of my weeping. The Lord has heard my supplication; the Lord will receive my prayer.", ref: "Psalm 6:8-9" },
-    ],
-    rejected: [
-        { text: "Though my father and mother forsake me, the Lord will receive me.", ref: "Psalm 27:10" },
-        { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-        { text: "I will never desert you nor forsake you.", ref: "Hebrews 13:5" },
-        { text: "I have loved you with an everlasting love; I have drawn you with unfailing kindness.", ref: "Jeremiah 31:3" },
-        { text: "Neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God.", ref: "Romans 8:38-39" },
-        { text: "God sets the solitary in families.", ref: "Psalm 68:6" },
-        { text: "He was despised and rejected by mankind, a man of suffering and familiar with pain — yet it was our suffering he carried.", ref: "Isaiah 53:3-4" },
-        { text: "See what great love the Father has lavished on us, that we should be called children of God!", ref: "1 John 3:1" },
-        { text: "For your Maker is your husband, the Lord of hosts is his name.", ref: "Isaiah 54:5" },
-    ],
-    unappreciated: [
-        { text: "Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.", ref: "Colossians 3:23" },
-        { text: "God is not unjust; he will not forget your work and the love you have shown him.", ref: "Hebrews 6:10" },
-        { text: "But as for you, be strong and do not give up, for your work will be rewarded.", ref: "2 Chronicles 15:7" },
-        { text: "You are altogether beautiful, my darling; there is no flaw in you.", ref: "Song of Solomon 4:7" },
-        { text: "Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.", ref: "Galatians 6:9" },
-        { text: "The Lord will fulfill his purpose for me; your steadfast love endures forever.", ref: "Psalm 138:8" },
-        { text: "For God is not unjust so as to overlook your work and the love which you have shown toward His name.", ref: "Hebrews 6:10" },
-        { text: "And whatever you do, do it heartily, as to the Lord and not to men.", ref: "Colossians 3:23" },
-    ],
-    unsettled: [
-        { text: "You will keep in perfect peace all who trust in you, all whose thoughts are fixed on you.", ref: "Isaiah 26:3" },
-        { text: "Be still, and know that I am God.", ref: "Psalm 46:10" },
-        { text: "And the peace of God, which transcends all understanding, will guard your hearts and your minds.", ref: "Philippians 4:7" },
-        { text: "Trust in the Lord with all your heart and lean not on your own understanding.", ref: "Proverbs 3:5-6" },
-        { text: "For God is not a God of confusion but of peace.", ref: "1 Corinthians 14:33" },
-        { text: "Cast all your anxiety on him because he cares for you.", ref: "1 Peter 5:7" },
-        { text: "Peace I leave with you; my peace I give you. Do not let your hearts be troubled.", ref: "John 14:27" },
-        { text: "I will both lie down in peace, and sleep; for you alone, O Lord, make me dwell in safety.", ref: "Psalm 4:8" },
-    ],
-    unmotivated: [
-        { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
-        { text: "But those who hope in the Lord will renew their strength. They will soar on wings like eagles.", ref: "Isaiah 40:31" },
-        { text: "Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.", ref: "Galatians 6:9" },
-        { text: "For it is God who works in you to will and to act in order to fulfill his good purpose.", ref: "Philippians 2:13" },
-        { text: "The path of the righteous is like the morning sun, shining ever brighter till the full light of day.", ref: "Proverbs 4:18" },
-        { text: "Being confident of this, that he who began a good work in you will carry it on to completion.", ref: "Philippians 1:6" },
-        { text: "No weapon forged against you will prevail.", ref: "Isaiah 54:17" },
-        { text: "The Lord is my strength and my shield; my heart trusts in him, and he helps me.", ref: "Psalm 28:7" },
-    ],
-    praise: [
-        { text: "Praise the Lord! Praise God in his sanctuary; praise him in his mighty heavens!", ref: "Psalm 150:1" },
-        { text: "I will praise you, Lord, with all my heart; I will tell of all the wonderful things you have done.", ref: "Psalm 9:1" },
-        { text: "Shout for joy to the Lord, all the earth. Worship the Lord with gladness; come before him with joyful songs.", ref: "Psalm 100:1-2" },
-        { text: "Great is the Lord and most worthy of praise; his greatness no one can fathom.", ref: "Psalm 145:3" },
-        { text: "Sing to the Lord a new song; sing to the Lord, all the earth.", ref: "Psalm 96:1" },
-        { text: "Bless the Lord, O my soul, and all that is within me, bless his holy name!", ref: "Psalm 103:1" },
-        { text: "This is the day the Lord has made; let us rejoice and be glad in it.", ref: "Psalm 118:24" },
-        { text: "Enter his gates with thanksgiving and his courts with praise; give thanks to him and praise his name.", ref: "Psalm 100:4" },
-        { text: "Let everything that has breath praise the Lord. Praise the Lord!", ref: "Psalm 150:6" },
-        { text: "How majestic is your name in all the earth!", ref: "Psalm 8:1" },
-        { text: "The Lord is my strength and my song.", ref: "Exodus 15:2" },
-        { text: "Rejoice in the Lord always. I will say it again: Rejoice!", ref: "Philippians 4:4" },
-        { text: "Oh, that men would give thanks to the Lord for his goodness, and for his wonderful works!", ref: "Psalm 107:8" },
-        { text: "I will sing of the mercies of the Lord forever.", ref: "Psalm 89:1" },
-        { text: "Make a joyful noise unto the Lord, all ye lands!", ref: "Psalm 100:1" },
-        { text: "Worthy is the Lamb who was slain to receive power and riches and wisdom and strength and honor and glory and blessing!", ref: "Revelation 5:12" },
-    ],
-    sick: [
-        { text: "How God anointed Jesus of Nazareth with the Holy Spirit and with power, who went about doing good and healing all who were oppressed by the devil, for God was with Him.", ref: "Acts 10:38" },
-        { text: "The Spirit of the Lord is upon Me, because He has anointed Me to preach the gospel to the poor; He has sent Me to heal the brokenhearted, to proclaim liberty to the captives and recovery of sight to the blind, to set at liberty those who are oppressed.", ref: "Luke 4:18" },
-        { text: "They will take up serpents; and if they drink anything deadly, it will by no means hurt them; they will lay hands on the sick, and they will recover.", ref: "Mark 16:18" },
-        { text: "He cast out the spirits with a word, and healed all who were sick, that it might be fulfilled which was spoken by Isaiah the prophet, saying: 'He Himself took our infirmities and bore our sicknesses.'", ref: "Matthew 8:16-17" },
-        { text: "He called His twelve disciples together and gave them power and authority over all demons, and to cure diseases.", ref: "Matthew 10:1" },
-        { text: "Bless the Lord, O my soul, and forget not all His benefits: who forgives all your iniquities, who heals all your diseases.", ref: "Psalm 103:2-3" },
-        { text: "He said to her, 'Daughter, your faith has made you well. Go in peace, and be healed of your affliction.'", ref: "Mark 5:34" },
-        { text: "Beloved, I pray that you may prosper in all things and be in health, just as your soul prospers.", ref: "3 John 1:2" },
-        { text: "A merry heart does good, like medicine, but a broken spirit dries the bones.", ref: "Proverbs 17:22" },
-        { text: "But he was pierced for our transgressions, he was crushed for our iniquities; the punishment that brought us peace was on him, and by his wounds we are healed.", ref: "Isaiah 53:5" },
-        { text: "He himself bore our sins in his body on the cross, so that we might die to sins and live for righteousness; by his wounds you have been healed.", ref: "1 Peter 2:24" },
-        { text: "For I will restore health to you and heal you of your wounds, says the Lord.", ref: "Jeremiah 30:17" },
-        { text: "The Lord sustains them on their sickbed and restores them from their bed of illness.", ref: "Psalm 41:3" },
-        { text: "Heal me, Lord, and I will be healed; save me and I will be saved, for you are the one I praise.", ref: "Jeremiah 17:14" },
-        { text: "Is anyone among you sick? Let them call the elders of the church to pray over them and anoint them with oil in the name of the Lord. And the prayer offered in faith will make the sick person well.", ref: "James 5:14-15" },
-        { text: "And these signs will follow those who believe: In My name they will cast out demons; they will speak with new tongues; they will lay hands on the sick, and they will recover.", ref: "Mark 16:17-18" },
-        { text: "Jesus went throughout Galilee, teaching in their synagogues, proclaiming the good news of the kingdom, and healing every disease and sickness among the people.", ref: "Matthew 4:23" },
-        { text: "And the prayer of faith will save the sick, and the Lord will raise him up.", ref: "James 5:15" },
-        { text: "He sent out his word and healed them; he rescued them from the grave.", ref: "Psalm 107:20" },
-        { text: "My son, pay attention to what I say; turn your ear to my words. Do not let them out of your sight, keep them within your heart; for they are life to those who find them and health to one's whole body.", ref: "Proverbs 4:20-22" },
-        { text: "Surely he took up our pain and bore our suffering.", ref: "Isaiah 53:4" },
-        { text: "O Lord my God, I called to you for help, and you healed me.", ref: "Psalm 30:2" },
-        { text: "I am the Lord who heals you.", ref: "Exodus 15:26" },
-        { text: "He heals the brokenhearted and binds up their wounds.", ref: "Psalm 147:3" },
-        { text: "Jesus reached out his hand and touched the man. 'I am willing,' he said. 'Be healed!' And immediately he was cleansed of his leprosy.", ref: "Matthew 8:3" },
-        { text: "When Jesus had called the Twelve together, he gave them power and authority to drive out all demons and to cure diseases, and he sent them out to proclaim the kingdom of God and to heal the sick.", ref: "Luke 9:1-2" },
-        { text: "He said to her, 'Daughter, your faith has healed you. Go in peace.'", ref: "Luke 8:48" },
-        { text: "And the prayer offered in faith will make the sick person well; the Lord will raise them up. If they have sinned, they will be forgiven.", ref: "James 5:15-16" },
-        { text: "Jesus went through all the towns and villages, teaching in their synagogues, proclaiming the good news of the kingdom and healing every disease and sickness.", ref: "Matthew 9:35" },
-        { text: "Heal me, Lord, and I will be healed; save me and I will be saved, for you are the one I praise.", ref: "Jeremiah 17:14" },
-        { text: "Is anyone among you sick? Let them call the elders of the church to pray over them and anoint them with oil in the name of the Lord. And the prayer offered in faith will make the sick person well; the Lord will raise them up.", ref: "James 5:14-15" },
-        { text: "And these signs will accompany those who believe: In my name they will drive out demons; they will speak in new tongues; they will pick up snakes with their hands; and when they drink deadly poison, it will not hurt them at all; they will place their hands on sick people, and they will get well.", ref: "Mark 16:17-18" },
-        { text: "Jesus went through all the towns and villages, teaching in their synagogues, proclaiming the good news of the kingdom and healing every disease and sickness.", ref: "Matthew 9:35" },
-        { text: "And the prayer offered in faith will make the sick person well; the Lord will raise them up. If they have sinned, they will be forgiven.", ref: "James 5:15-16" },
-        { text: "Surely he took up our pain and bore our suffering.", ref: "Isaiah 53:4" },
-        { text: "O Lord my God, I called to you for help, and you healed me.", ref: "Psalm 30:2" },
-        { text: "I am the Lord who heals you.", ref: "Exodus 15:26"},    ],
-}
+        // specialVerses moved to lulo-scripture.js (Phase 3)
         const reactions = {
             happy: ["That's wonderful! 🎉", "Happiness looks good on you! ✨", "Let's celebrate that! 🙌"],
             joyful: ["That joy is contagious! 😄", "Let that joy overflow! 🎉", "God's joy looks beautiful on you! ✨"],
             excited: ["Oh I love this energy! 🤩", "Something wonderful is happening! 🎉", "God is up to something amazing! ✨"],
-            peaceful: ["That peace is a gift from God. 😌", "Rest in that stillness. 💙", "God's peace is beyond understanding. 🕊️"],
-            loved: ["You are so deeply loved! 🥰", "God's love for you is endless! 💙", "You are cherished beyond measure! ✨"],
+            peaceful: ["That peace is a gift from God. 😌", "Rest in that stillness.", "God's peace is beyond understanding. 🕊️"],
+            loved: ["You are so deeply loved! 🥰", "God's love for you is endless!", "You are cherished beyond measure! ✨"],
             encouraged: ["Yes! Keep going! 💪", "That momentum is God-given! 🌟", "Nothing can stop what God has started in you! 🔥"],
             grateful: ["Gratitude is beautiful! 🙏", "A thankful heart is a happy heart! ✨", "That's so wonderful! 🎉"],
             hopeful: ["Hope is powerful! 🌟", "Hold on to that hope! ✨", "Beautiful things are coming! 🎉"],
@@ -1966,10 +1466,10 @@ function setupRailSnap() {
             depressed: ["I see you. I'm here. 💙", "You are not alone in this. 🤗", "Let me share something just for you..."],
             lonely: ["You are never truly alone. ", "I'm here with you right now. 🤗", "Let Lulo keep you company. ✨"],
             angry: ["It's okay to feel angry. Let's breathe. ", "I hear you. Let's find some peace. 🕊️"],
-            tired: ["Rest is sacred. You've been doing so much. 💙", "It's okay to be tired. Let me encourage you. ✨"],
+            tired: ["Rest is sacred. You've been doing so much.", "It's okay to be tired. Let me encourage you. ✨"],
             heartbroken: ["I'm so sorry you're hurting. 💙", "Your heart matters. I'm here. 🤗", "Let me share something healing..."],
             overwhelmed: ["One breath at a time. I've got you. 💙", "You don't have to carry this alone. 🤗"],
-            confused: ["It's okay not to have all the answers. 💙", "Let's find some clarity together. ✨"],
+            confused: ["It's okay not to have all the answers.", "Let's find some clarity together. ✨"],
             bored: [
                 "Oh, I have something for you! 😄 How about some Bible trivia?",
                 "Have you gone for a walk today? 🌿 Fresh air does wonders — and I have something fun while you're at it!",
@@ -1979,14 +1479,14 @@ function setupRailSnap() {
                 "Sometimes boredom is God's invitation to be still. 😌 Let me share something interesting!",
                 "Let me guess — you've scrolled everything twice already? 😄 Let Lulo entertain you!",
             ],
-            expecting: ["What a beautiful season you're in! 🥰", "God is already writing this little one's story! 💙", "Pregnancy is sacred ground. Let me share something just for you... 🌟", "A baby is coming! 🎉 God is so good!"],
-            empty: ["I see you. Even in the emptiness, I'm here. 💙", "You don't have to feel anything right now. Just rest here with me. 💙", "Empty doesn't mean broken, it means there's space for God to fill. 💙"],
-            invisible: ["God sees you completely, even when others don't. 💙", "You are never invisible to the One who matters most. 💙", "I see you, and so does He. 💙"],
-            rejected: ["Rejection hurts like nothing else. I'm so sorry. 💙", "The world's rejection cannot undo God's acceptance. 💙", "You are loved beyond measure, even now. 💙"],
-            unappreciated: ["Your work matters, even when no one says so. 💙", "God sees every sacrifice you make. Not one is forgotten. 💙", "You are more valued than you know. 💙"],
-            unsettled: ["That restless feeling is real. Let's find some peace together. 💙", "God's peace is available even in the most unsettled seasons. 💙", "Let me share something to quiet that storm inside. 🕊️"],
-            unmotivated: ["It's okay to be in a slow season. God is still working. 💙", "Even rest is productive when God is in it. 💙", "Let me share something to reignite that spark. 🌟"],
-            praise: ["YESSS!!! 🎉 The heavens are rejoicing with you right now!", "That's the sound of breakthrough! 🔥 Praise Him!", "Now THAT'S what I love to hear! 🎉", "The enemy HATES that! Keep going! 🔥💙", "Something shifts in the atmosphere when you praise! 🌟"],
+            expecting: ["What a beautiful season you're in! 🥰", "God is already writing this little one's story!", "Pregnancy is sacred ground. Let me share something just for you... 🌟", "A baby is coming! 🎉 God is so good!"],
+            empty: ["I see you. Even in the emptiness, I'm here. 💙", "You don't have to feel anything right now. Just rest here with me.", "Empty doesn't mean broken, it means there's space for God to fill."],
+            invisible: ["God sees you completely, even when others don't. 💙", "You are never invisible to the One who matters most.", "I see you, and so does He."],
+            rejected: ["Rejection hurts like nothing else. I'm so sorry. 💙", "The world's rejection cannot undo God's acceptance.", "You are loved beyond measure, even now."],
+            unappreciated: ["Your work matters, even when no one says so.", "God sees every sacrifice you make. Not one is forgotten.", "You are more valued than you know."],
+            unsettled: ["That restless feeling is real. Let's find some peace together.", "God's peace is available even in the most unsettled seasons.", "Let me share something to quiet that storm inside. 🕊️"],
+            unmotivated: ["It's okay to be in a slow season. God is still working.", "Even rest is productive when God is in it.", "Let me share something to reignite that spark. 🌟"],
+            praise: ["YESSS!!! 🎉 The heavens are rejoicing with you right now!", "That's the sound of breakthrough! 🔥 Praise Him!", "Now THAT'S what I love to hear! 🎉", "The enemy HATES that! Keep going! 🔥", "Something shifts in the atmosphere when you praise! 🌟"],
             sick: [
                 `${name}, by Jesus' stripes you are healed. 💙 That's not just a saying — that's a covenant promise. Would you like me to pray healing over you?`,
                 `${name}, the same God who healed the sick in the Bible is still healing today. 💙 By His stripes you ARE healed. Let me share something powerful and then pray with you.`,
@@ -2007,19 +1507,15 @@ function setupRailSnap() {
         // Check if user already has a saved name
         const savedName = localStorage.getItem('luloUserName')
 
+        // The splash screen was removed in Phase 3 — initApp() does this routing
+        // on load now. Kept as a named entry point in case anything still calls it.
         function enterNameScreen() {
-            const splash = document.getElementById('splash-screen')
-            splash.classList.add('hide')
-
-            setTimeout(() => {
-                // If we already know their name → skip to welcome
-                if (savedName) {
-                    showReturningWelcome(savedName)
-                } else {
-                    // First time → show name entry
-                    document.getElementById('name-screen').style.display = 'flex'
-                }
-            }, 800)
+            if (savedName) {
+                showReturningWelcome(savedName)
+            } else {
+                const nameScreen = document.getElementById('name-screen')
+                if (nameScreen) nameScreen.style.display = 'flex'
+            }
         }
 
         function saveName() {
@@ -2056,15 +1552,36 @@ function setupRailSnap() {
                 background:#080818;display:flex;flex-direction:column;
                 align-items:center;justify-content:center;z-index:2001;padding:30px;
             `
-            screen.innerHTML = `
-                <div style="margin-bottom:25px;animation:float 3s ease-in-out infinite;">
-                    <img src="images/lulo.png" style="width:160px;height:160px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));"/>
-                </div>
-                <h2 style="font-size:1.3rem;font-weight:600;color:white;margin-bottom:10px;text-align:center;">One thing before we begin, ${name} 💙</h2>
-                <p style="font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:25px;text-align:center;max-width:320px;line-height:1.6;">This is your Lulo Code. Save it somewhere safe, it's how I'll recognise you again on another device, or if you ever clear your browser.</p>
-                <div style="font-size:1.6rem;font-weight:700;letter-spacing:3px;color:#00d4ff;margin-bottom:20px;">${code}</div>
-                <button onclick="confirmCodeSaved('${name}')" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:'Inter',sans-serif;transition:all 0.3s ease;text-transform:uppercase;">I've saved it →</button>
-            `
+            // Build with DOM methods to avoid XSS via name field
+            const img = document.createElement('img')
+            img.src = 'images/lulo.png'
+            img.style.cssText = 'width:160px;height:160px;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 25px rgba(0,255,100,0.5));'
+            const imgWrap = document.createElement('div')
+            imgWrap.style.cssText = 'margin-bottom:25px;animation:float 3s ease-in-out infinite;'
+            imgWrap.appendChild(img)
+
+            const h2 = document.createElement('h2')
+            h2.style.cssText = 'font-size:1.3rem;font-weight:600;color:white;margin-bottom:10px;text-align:center;'
+            h2.textContent = `One thing before we begin, ${name}`
+
+            const p = document.createElement('p')
+            p.style.cssText = 'font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:25px;text-align:center;max-width:320px;line-height:1.6;'
+            p.textContent = "This is your Lulo Code. Save it somewhere safe — it's how I'll recognise you again on another device, or if you ever clear your browser."
+
+            const codeDiv = document.createElement('div')
+            codeDiv.style.cssText = 'font-size:1.6rem;font-weight:700;letter-spacing:3px;color:#00d4ff;margin-bottom:20px;'
+            codeDiv.textContent = code
+
+            const btn = document.createElement('button')
+            btn.style.cssText = 'background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:Inter,sans-serif;transition:all 0.3s ease;text-transform:uppercase;'
+            btn.textContent = "I've saved it →"
+            btn.addEventListener('click', () => confirmCodeSaved(name))
+
+            screen.appendChild(imgWrap)
+            screen.appendChild(h2)
+            screen.appendChild(p)
+            screen.appendChild(codeDiv)
+            screen.appendChild(btn)
             document.body.appendChild(screen)
         }
 
@@ -2091,7 +1608,7 @@ function setupRailSnap() {
             if (!code) return
 
             if (!code.startsWith('LULO-')) {
-                code = 'LULO   -' + code
+                code = 'LULO-' + code
             }
 
             status.innerText = 'Connecting...'
@@ -2111,27 +1628,22 @@ function setupRailSnap() {
             }
         }
         
+        // Phase 3: there is no separate welcome screen any more. These two
+        // functions fill in the greeting that sits at the top of the home page
+        // and then drop the user straight into the app.
         function showFirstTimeWelcome(name) {
-            const welcomeScreen = document.getElementById('welcome-screen')
             const welcomeMessage = document.getElementById('welcome-message')
             const welcomeSubtext = document.getElementById('welcome-subtext')
-            const welcomeBtn = document.getElementById('welcome-btn')
-            const historyCard = document.getElementById('welcome-history-card')
 
-            welcomeMessage.innerText = `Hi ${name}, I'm Lulo! 🌱`
-            welcomeSubtext.innerText = `Your pocket companion.\nI'm here whenever you need me.`
-            welcomeBtn.innerText = `MEET LULO →`
-            if (historyCard) historyCard.style.display = 'none'
+            if (welcomeMessage) welcomeMessage.innerText = `Hi ${name}, I'm Lulo! 🌱`
+            if (welcomeSubtext) welcomeSubtext.innerText = `Your pocket companion.\nI'm here whenever you need me.`
 
-            welcomeScreen.style.display = 'flex'
+            enterMainApp()
         }
 
         function showReturningWelcome(name) {
-            const welcomeScreen = document.getElementById('welcome-screen')
             const welcomeMessage = document.getElementById('welcome-message')
             const welcomeSubtext = document.getElementById('welcome-subtext')
-            const welcomeBtn = document.getElementById('welcome-btn')
-            const historyCard = document.getElementById('welcome-history-card')
             const historyDetail = document.getElementById('history-detail')
 
             // Get remembered data
@@ -2161,19 +1673,23 @@ function setupRailSnap() {
             ]
             const randomMsg = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
 
-            welcomeMessage.innerText = randomMsg
-            welcomeSubtext.innerText = `How are you feeling today?`
-            welcomeBtn.innerText = `TALK TO LULO →`
+            if (welcomeMessage) welcomeMessage.innerText = randomMsg
+            if (welcomeSubtext) welcomeSubtext.innerText = `How are you feeling today?`
 
-            // Show history card if we have data
-            if (lastMood && lastRef && historyCard) {
-                historyCard.style.display = 'block'
-                if (historyDetail) {
-                    historyDetail.innerText = `${timeAgo ? timeAgo.charAt(0).toUpperCase() + timeAgo.slice(1) : 'Last time'}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.`
-                }
+            // The recap now lives in the menu panel, not on the home page
+            if (historyDetail) {
+                historyDetail.innerText = (lastMood && lastRef)
+                    ? `${timeAgo ? timeAgo.charAt(0).toUpperCase() + timeAgo.slice(1) : 'Last time'}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.`
+                    : buildLastConversationSummary()
             }
 
-            welcomeScreen.style.display = 'flex'
+            enterMainApp()
+        }
+
+        // The greeting is a hello, not furniture — it folds away once the
+        // conversation actually starts.
+        function dismissHomeGreeting() {
+            document.getElementById('home-greeting')?.classList.add('greeting-dismissed')
         }
 
         function preloadLuloFaces() {
@@ -2352,7 +1868,7 @@ function setupRailSnap() {
                 localStorage.setItem('luloAskedNotificationPermission', 'true')
                 setTimeout(() => {
                     const name = localStorage.getItem('luloUserName') || 'friend'
-                    addToChatHistory('lulo', `${name}, would it be okay if I sent you a gentle scripture reminder sometimes when you haven't checked in for a while? You can always turn it off later. 💙`)
+                    addToChatHistory('lulo', `${name}, would it be okay if I sent you a gentle scripture reminder sometimes when you haven't checked in for a while? You can always turn it off later.`)
                     
                     const promptDiv = document.createElement('div')
                     promptDiv.id = 'notification-prompt'
@@ -2372,44 +1888,54 @@ function setupRailSnap() {
                 const prompt = document.getElementById('notification-prompt')
                 if (prompt) prompt.remove()
                 if (permission === 'granted') {
-                    addToChatHistory('lulo', `Thank you 💙 I'll check in gently when I notice you've been away a while.`)
+                    addToChatHistory('lulo', `Thank you I'll check in gently when I notice you've been away a while.`)
                 }
             })
         }
         
-        async function classifyIntent(text) {
-            const prompt = `A user of a faith companion app just typed this message: "${text}"
+        // ─── INTENT CLASSIFIER (local) ───────────────────────────────────────
+        // Phase 3: this used to be a second Claude call on every message that
+        // contained an emotion keyword, adding 500-1500ms and doubling API cost
+        // on those turns. Now it runs synchronously in the browser.
+        //
+        // Contract is unchanged so every call site keeps working:
+        //   SELF    — the message is about the user's own state right now
+        //   OTHER   — it's about somebody else
+        //   REQUEST — they want a joke/story/game/recommendation and the
+        //             emotion keyword was incidental
+        function classifyIntent(text) {
+            const t = text.toLowerCase().trim()
 
-        A keyword in their message would normally trigger an emotional reaction and scripture. Your job is to classify what's actually happening. Respond with EXACTLY one word, nothing else.
+            // OTHER — the sentence is about a third party.
+            // Checked first: "my sister is depressed" must never read as SELF.
+            const thirdPartySubject = /\b(my|our|his|her|their)\s+(mum|mom|mother|dad|father|parents?|wife|husband|spouse|partner|son|daughter|child|children|kid|kids|brother|sister|sibling|friend|colleague|coworker|boss|neighbou?r|aunt|uncle|cousin|niece|nephew|grandma|grandpa|grandmother|grandfather|pastor|boyfriend|girlfriend|fianc[ée]e?|ex)\b/
+            const thirdPartyPronoun = /\b(he|she|they)\s+(is|are|was|were|feels?|felt|has|have|had|keeps?|seems?|looks?|sounds?|got|been)\b/
+            const aboutSomeoneElse = /\b(someone|somebody|a friend of mine|this person|my friend's)\b/
+            const isAboutSelf = /\b(i|i'm|im|i am|me|my own|myself)\b/.test(t)
 
-        SELF — the message is genuinely about the user's own current emotional state or situation right now
-        OTHER — the message is about someone else's situation, like a family member, friend, or third person, not the user's own state
-        REQUEST — the user is asking for something else entirely, like a story, joke, advice, or general conversation, and the keyword just happened to appear incidentally in their wording
-
-        Respond with exactly one word: SELF, OTHER, or REQUEST.`
-
-            try {
-                const response = await fetch('https://em1-prayer.kayuso2011.workers.dev', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: 'claude-sonnet-4-6',
-                        system: 'You are a precise intent classifier. Respond with exactly one word and absolutely nothing else.',
-                        messages: [{ role: 'user', content: prompt }]
-                    })
-                })
-                const data = await response.json()
-                if (data.content && data.content[0]) {
-                    const result = data.content[0].text.trim().toUpperCase()
-                    if (['SELF', 'OTHER', 'REQUEST'].includes(result)) {
-                        return result
-                    }
-                }
-                return 'SELF' // safe fallback if anything goes wrong
-            } catch (err) {
-                console.error('Classification error:', err)
-                return 'SELF' // safe fallback on network failure
+            if ((thirdPartySubject.test(t) || thirdPartyPronoun.test(t) || aboutSomeoneElse.test(t)) && !isAboutSelf) {
+                return 'OTHER'
             }
+            // "my sister is sick and I don't know what to do" — still about them
+            if (thirdPartySubject.test(t) && !/\bi (feel|am|'m)\b/.test(t)) {
+                return 'OTHER'
+            }
+
+            // REQUEST — they're asking Lulo to do or explain something, and the
+            // emotion word just happened to land in the wording.
+            const askingFor = /\b(tell me a|give me a|can you (tell|give|play|recommend|suggest|explain)|do you know|what (is|are|does)|how (do|does|can)|why (is|do|does)|recommend|suggest|any (good|nice)|let'?s play|play a game|trivia|a joke|a story|sing|write me)\b/
+            if (askingFor.test(t)) return 'REQUEST'
+
+            // A bare question with no first-person feeling statement is a request
+            const startsAsQuestion = /^(what|how|why|when|where|who|which|can|could|would|should|do|does|did|is|are|tell|explain|give)\b/
+            const statesAFeeling = /\b(i feel|i'm feeling|im feeling|i am feeling|i've been|i have been|i'm|im |i am|makes me|i can'?t|i cannot|i don'?t)\b/
+            if ((startsAsQuestion.test(t) || t.includes('?')) && !statesAFeeling.test(t)) {
+                return 'REQUEST'
+            }
+
+            // Default: treat it as the user's own state. Empathy first is the
+            // safer failure mode for this app.
+            return 'SELF'
         }
 
         function checkForDateMention(text) {
@@ -2523,11 +2049,11 @@ function setupRailSnap() {
                             if (dateObj.celebratory && dateObj.approach === 'warm_surprise') {
                                 triggerDateCelebration(dateObj, name)
                             } else {
-                                addToChatHistory('lulo', `${name}, I am inclined to share something special with you today. But before that — I genuinely want to know how you are feeling this morning. 💙`)
+                                addToChatHistory('lulo', `${name}, I am inclined to share something special with you today. But before that — I genuinely want to know how you are feeling this morning.`)
                                 localStorage.setItem('luloSpecialDayPending', JSON.stringify(dateObj))
                             }
                         } else {
-                            addToChatHistory('lulo', `${name}, I have a note about today. Is it okay if I mention it? 💙`)
+                            addToChatHistory('lulo', `${name}, I have a note about today. Is it okay if I mention it?`)
                             localStorage.setItem('luloSpecialDayPending', JSON.stringify(dateObj))
                         }
                     }, 1000)
@@ -2547,28 +2073,39 @@ function setupRailSnap() {
             })
         }
 
+        // Phase 3: the daily catch-up scripture no longer takes over the main
+        // card. It lands in the notification tray and waits for the user.
         function checkDailyScripture() {
             const lastVisit = localStorage.getItem('luloLastVisitTimestamp')
             const lastMood = localStorage.getItem('luloLastMood')
             if (!lastVisit) return // First time ever, no catch up needed
 
             const hoursSince = (Date.now() - parseInt(lastVisit)) / (1000 * 60 * 60)
-            
-            // If it's been more than 20 hours since their last visit, treat this as a new day
-            if (hoursSince >= 20) {
-                localStorage.setItem('luloDailyScriptureShownToday', new Date().toDateString())
-                const name = localStorage.getItem('luloUserName') || 'friend'
-                setTimeout(() => {
-                    addToChatHistory('lulo', `Good to see you again, ${name} 💙 I saved something for you today.`)
-                    setTimeout(() => {
-                        showScripture(lastMood && lastMood !== 'home' ? lastMood : 'hopeful', 'silent', true)
-                    }, 1200)
-                }, 1500)
 
-                // If notifications are granted, also fire a real browser notification for next time
-                if (Notification.permission === 'granted') {
-                    scheduleNextNotification()
-                }
+            // If it's been more than 20 hours since their last visit, treat this as a new day
+            if (hoursSince < 20) return
+
+            // Still only once per day
+            const today = new Date().toDateString()
+            if (localStorage.getItem('luloDailyScriptureShownToday') === today) return
+            localStorage.setItem('luloDailyScriptureShownToday', today)
+
+            const mood = lastMood && lastMood !== 'home' && specialVerses[lastMood] ? lastMood : 'hopeful'
+            const pool = specialVerses[mood]
+            if (!pool || pool.length === 0) return
+            const verse = pool[Math.floor(Math.random() * pool.length)]
+
+            pushNotification({
+                type: 'daily_scripture',
+                title: "Today's Scripture",
+                body: verse.text,
+                verseRef: verse.ref,
+                verseText: verse.text
+            })
+
+            // If notifications are granted, also fire a real browser notification
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                scheduleNextNotification()
             }
         }
 
@@ -2578,7 +2115,7 @@ function setupRailSnap() {
             if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
                 navigator.serviceWorker.ready.then(registration => {
                     registration.showNotification('Em_Q', {
-                        body: 'lulo saved something for you today 💙',
+                        body: 'lulo saved something for you today',
                         icon: '/EmQ/favicon-96x96.png',
                         tag: 'daily-scripture'
                     })
@@ -2638,7 +2175,7 @@ function setupRailSnap() {
                 localStorage.setItem('luloIntroduced', 'true')
                 setTimeout(() => {
                     const name = localStorage.getItem('luloUserName') || 'friend'
-                    const intro = `Hi ${name}, I'm Lulo 🌱 Here's how this works. Scroll through the feelings above and tap the one that matches your heart right now, and I'll share something just for you. You can also just type to me anytime, ask me anything, tell me anything. We can pray together, play Bible trivia, and I'll remember our journey along the way. Start wherever feels natural 💙`
+                    const intro = `Hi ${name}, I'm Lulo 🌱 Here's how this works. Scroll through the feelings above and tap the one that matches your heart right now, and I'll share something just for you. You can also just type to me anytime, ask me anything, tell me anything. We can pray together, play Bible trivia, and I'll remember our journey along the way. Start wherever feels natural`
                     addToChatHistory('lulo', intro)
                     conversationHistory.push({ role: 'assistant', content: intro })
                     localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
@@ -2669,10 +2206,8 @@ function setupRailSnap() {
                 try {
                     chatHistory = JSON.parse(savedChat)
                     renderChatThread()
-                    const container = document.getElementById('chat-thread-container')
-                    if (container && chatHistory.length > 0) {
-                        container.style.display = 'block'
-                    }
+                    // The thread container stays hidden on the home page —
+                    // text lives in #text-mode-overlay now.
                     const badge = document.getElementById('chat-count-badge')
                     if (badge) badge.innerText = chatHistory.length
                 } catch (e) { chatHistory = [] }
@@ -2711,7 +2246,12 @@ function setupRailSnap() {
             setTimeout(() => LuloSound.welcome(), 400)
             const app = document.getElementById('main-app')
             app.style.display = 'flex'
-            document.getElementById('bottom-bar').style.display = 'block'
+            document.getElementById('bottom-bar').style.display = 'flex'
+
+            // Restore the badges now that the top bar is on screen
+            updateNotifBadge()
+            updateStreakBadge()
+            updateVoiceToggleUI()
 
             // Update Lulo's greeting with user's name
             const name = localStorage.getItem('luloUserName')
@@ -2758,15 +2298,35 @@ function setupRailSnap() {
                 setInterval(saveToCloud, 30000)
         }
 
+        // Rate-limit guard — prevents hammering the API
+        let _luloListenLastCall = 0
+        const _LULO_RATE_MS = 1500 // minimum ms between API calls
+
         async function luloListen() {
+            stopVoiceInput()
+
+            const now = Date.now()
+            if (now - _luloListenLastCall < _LULO_RATE_MS) return
+            _luloListenLastCall = now
+
             const input = document.getElementById('lulo-input')
             const text = input.value.trim()
             if (!text) return
+            // Hard cap on input length — prevents oversized payloads to the worker
+            if (text.length > 2000) {
+                addToChatHistory('lulo', `That's quite a lot! Could you share a bit at a time? I want to really hear you. 💙`)
+                return
+            }
             input.value = '' // Clear immediately — don't wait for response
             input.style.height = 'auto'
+            updateCharCounter(input)
             document.getElementById('scripture-card').style.display = 'none'
+            exitScriptureMode()
+            document.querySelectorAll('.chat-retry').forEach(el => el.remove())
+            dismissHomeGreeting()
             addToChatHistory('user', text)
             window._lastUserText = text
+            _lastUserMessage = text // for the retry button
             silentlyLearnFromText(text) // Silent preference learning — always runs first
             const name = localStorage.getItem('luloUserName') || 'friend'
 
@@ -2787,6 +2347,9 @@ function setupRailSnap() {
             const prayerForOther = localStorage.getItem('luloPrayerForOther')
             if (prayerForOther === 'pending') {
                 localStorage.removeItem('luloPrayerForOther')
+                // Store it so generatePrayer()'s localStorage fallback has something
+                // real to fall back to. It's cleared once the prayer is generated.
+                localStorage.setItem('luloPrayerForOtherName', text)
                 await generatePrayer(text)
                 return
             }
@@ -2798,12 +2361,12 @@ function setupRailSnap() {
                 const lower = text.toLowerCase()
                 if (lower.includes('yes') || lower.includes('yeah') || lower.includes('correct') || lower.includes('right')) {
                     localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
-                    addToChatHistory('lulo', `What's the date? Just tell me naturally — like "March 14" or "the 22nd of June". 💙`)
+                    addToChatHistory('lulo', `What's the date? Just tell me naturally — like "March 14" or "the 22nd of June".`)
                 } else {
                     localStorage.removeItem('luloDateCaptureStage')
                     localStorage.removeItem('luloDateCapture')
                     localStorage.removeItem('luloDateRawText')
-                    addToChatHistory('lulo', `No worries! I'm always listening if you want to share something important with me later. 💙`)
+                    addToChatHistory('lulo', `No worries! I'm always listening if you want to share something important with me later.`)
                 }
                 return
             }
@@ -2841,12 +2404,12 @@ function setupRailSnap() {
                 localStorage.removeItem('luloDateCaptureDate')
 
                 localStorage.setItem('luloDateAskFeelings', label)
-                addToChatHistory('lulo', `I've got it! 💙 One more thing — do you love celebrating your birthday or does it bring mixed feelings? I want to make sure I show up for you in the right way. 😊`)
+                addToChatHistory('lulo', `I've got it! One more thing — do you love celebrating your birthday or does it bring mixed feelings? I want to make sure I show up for you in the right way. 😊`)
                 return
             }
 
             localStorage.setItem('luloDateCaptureStage', 'awaitingLabel')
-            addToChatHistory('lulo', `Got it 💙 And what shall I call this date? For example "my birthday" or "our anniversary".`)
+            addToChatHistory('lulo', `Got it And what shall I call this date? For example "my birthday" or "our anniversary".`)
             return
         }
 
@@ -2876,9 +2439,9 @@ function setupRailSnap() {
 
                 if (captureType === 'personal') {
                     localStorage.setItem('luloDateAskFeelings', label)
-                    addToChatHistory('lulo', `I've got it saved 💙 I'll remember that. One more thing — how do you feel about this day? Do you love celebrating it or does it bring mixed feelings? I want to make sure I show up for you in the right way when it comes around.`)
+                    addToChatHistory('lulo', `I've got it saved I'll remember that. One more thing — how do you feel about this day? Do you love celebrating it or does it bring mixed feelings? I want to make sure I show up for you in the right way when it comes around.`)
                 } else {
-                    addToChatHistory('lulo', `Saved 💙 I'll check in with you gently when this date comes around.`)
+                    addToChatHistory('lulo', `Saved I'll check in with you gently when this date comes around.`)
                 }
                 return
             }
@@ -3213,9 +2776,9 @@ function setupRailSnap() {
                           'failed my test', 'school stress', 'college stress'],
                 mood: 'anxious',
                 reaction: [
-                    `Exam season is tough, ${name}! 💙 Remember — you are more than your results. Let me share something to steady your heart.`,
-                    `${name}, I hear that exam pressure. 💙 Take a breath. God goes before you into that exam room too.`,
-                    `Studies can feel so heavy sometimes, ${name}. 💙 Let me share something to remind you who you are beyond those grades.`
+                    `Exam season is tough, ${name}! Remember — you are more than your results. Let me share something to steady your heart.`,
+                    `${name}, I hear that exam pressure. Take a breath. God goes before you into that exam room too.`,
+                    `Studies can feel so heavy sometimes, ${name}. Let me share something to remind you who you are beyond those grades.`
                 ]
             },
             deadline: {
@@ -3224,9 +2787,9 @@ function setupRailSnap() {
                           'not enough time', 'so much to do', 'behind on'],
                 mood: 'overwhelmed',
                 reaction: [
-                    `Deadlines can feel like walls closing in, ${name}. 💙 Let's find something to help you breathe through this.`,
-                    `One thing at a time, ${name}. 💙 God is not the author of panic. Let me share something to calm your mind.`,
-                    `${name}, you've gotten through tight deadlines before. 💙 Let me remind you where your strength comes from.`
+                    `Deadlines can feel like walls closing in, ${name}. Let's find something to help you breathe through this.`,
+                    `One thing at a time, ${name}. God is not the author of panic. Let me share something to calm your mind.`,
+                    `${name}, you've gotten through tight deadlines before. Let me remind you where your strength comes from.`
                 ]
             },
             work: {
@@ -3235,9 +2798,9 @@ function setupRailSnap() {
                           'promotion', 'work pressure', 'office', 'colleague'],
                 mood: 'overwhelmed',
                 reaction: [
-                    `Work stress is so real, ${name}. 💙 Let me share something to remind you that your value isn't in your job title.`,
-                    `${name}, I hear you. The workplace can be a heavy place sometimes. 💙 Here's something for your heart.`,
-                    `Whatever is happening at work, ${name} — God is your true employer. 💙 Let me share something just for this.`
+                    `Work stress is so real, ${name}. Let me share something to remind you that your value isn't in your job title.`,
+                    `${name}, I hear you. The workplace can be a heavy place sometimes. Here's something for your heart.`,
+                    `Whatever is happening at work, ${name} — God is your true employer. Let me share something just for this.`
                 ]
             },
             financial: {
@@ -3247,8 +2810,8 @@ function setupRailSnap() {
                 mood: 'anxious',
                 reaction: [
                     `Financial pressure is one of the heaviest burdens, ${name}. 💙 Let me share what God says about provision.`,
-                    `${name}, money worries can steal your peace. 💙 Let me remind you who your provider really is.`,
-                    `God has never let His children starve, ${name}. 💙 Let me share something to anchor your trust.`
+                    `${name}, money worries can steal your peace. Let me remind you who your provider really is.`,
+                    `God has never let His children starve, ${name}. Let me share something to anchor your trust.`
                 ]
             },
             grief: {
@@ -3318,8 +2881,8 @@ function setupRailSnap() {
                 mood: 'sick',
                 reaction: [
                     `${name}, health scares are so frightening. 💙 Let me share what God says about healing and His presence in sickness.`,
-                    `I'm sorry you're going through this physically, ${name}. 💙 God is the Great Physician. Let me share something healing.`,
-                    `Your body and your soul matter to God, ${name}. 💙 Let me share something for this difficult season.`
+                    `I'm sorry you're going through this physically, ${name}. God is the Great Physician. Let me share something healing.`,
+                    `Your body and your soul matter to God, ${name}. Let me share something for this difficult season.`
                 ]
             },
             relationship: {
@@ -3331,8 +2894,8 @@ function setupRailSnap() {
                 mood: 'heartbroken',
                 reaction: [
                     `Relationship pain cuts so deep, ${name}. 💙 Let me share something for your heart right now.`,
-                    `${name}, I hear you. Matters of the heart are never simple. 💙 Here's something to hold onto.`,
-                    `God sees what you're going through in your relationships, ${name}. 💙 Let me share something just for this.`
+                    `${name}, I hear you. Matters of the heart are never simple. Here's something to hold onto.`,
+                    `God sees what you're going through in your relationships, ${name}. Let me share something just for this.`
                 ]
             },
             family: {
@@ -3342,8 +2905,8 @@ function setupRailSnap() {
                 mood: 'overwhelmed',
                 reaction: [
                     `Family dynamics can be the most complex of all, ${name}. 💙 Let me share something for this.`,
-                    `${name}, family pain is uniquely deep. 💙 God knows family — He placed us in them. Let me share something.`,
-                    `You can't choose family but you can choose peace, ${name}. 💙 Let me share something to help you find it.`
+                    `${name}, family pain is uniquely deep. God knows family — He placed us in them. Let me share something.`,
+                    `You can't choose family but you can choose peace, ${name}. Let me share something to help you find it.`
                 ]
             },
             burnout: {
@@ -3354,8 +2917,8 @@ function setupRailSnap() {
                 mood: 'tired',
                 reaction: [
                     `Burnout is real and it's serious, ${name}. 💙 This is Lulo telling you — you need rest, not just a pep talk. But first, let me share something.`,
-                    `${name}, when the tank is empty God is still full. 💙 Let me share something for this deeply tired place.`,
-                    `Running on empty is unsustainable, ${name}. 💙 God never asked you to run on your own strength. Let me remind you.`
+                    `${name}, when the tank is empty God is still full. Let me share something for this deeply tired place.`,
+                    `Running on empty is unsustainable, ${name}. God never asked you to run on your own strength. Let me remind you.`
                 ]
             },
             purpose: {
@@ -3364,9 +2927,9 @@ function setupRailSnap() {
                           'feel stuck', 'going nowhere', 'no future', 'meaningless'],
                 mood: 'confused',
                 reaction: [
-                    `${name}, questions of purpose are some of the deepest a person can carry. 💙 Let me share what God says about your why.`,
-                    `Feeling lost is actually the beginning of being found, ${name}. 💙 Let me share something for this season.`,
-                    `${name}, God has not forgotten the plans He has for you. 💙 Let me remind you of that right now.`
+                    `${name}, questions of purpose are some of the deepest a person can carry. Let me share what God says about your why.`,
+                    `Feeling lost is actually the beginning of being found, ${name}. Let me share something for this season.`,
+                    `${name}, God has not forgotten the plans He has for you. Let me remind you of that right now.`
                 ]
             },
             world: {
@@ -3384,10 +2947,10 @@ function setupRailSnap() {
                 ],
                 mood: 'confused',
                 reaction: [
-                    `${name}, that's one of the deepest questions a heart can ask. 💙 The world can feel so heavy sometimes. Let me share something that might bring a little light.`,
-                    `${name}... I hear you. The world can look so dark from where we're standing. 💙 But God hasn't left the building. Let me share something for this moment.`,
-                    `That's a big question, ${name}. 💙 And it's okay to ask it. God can handle our hardest questions. Let me share something that speaks to this.`,
-                    `${name}, even the Psalms are full of that same cry — "why, God?" 💙 You're in good company. Let me share something honest and real.`
+                    `${name}, that's one of the deepest questions a heart can ask. The world can feel so heavy sometimes. Let me share something that might bring a little light.`,
+                    `${name}... I hear you. The world can look so dark from where we're standing. But God hasn't left the building. Let me share something for this moment.`,
+                    `That's a big question, ${name}. And it's okay to ask it. God can handle our hardest questions. Let me share something that speaks to this.`,
+                    `${name}, even the Psalms are full of that same cry — "why, God?" You're in good company. Let me share something honest and real.`
                 ]
             },
             failure: {
@@ -3468,9 +3031,9 @@ function setupRailSnap() {
                 ],
                 mood: 'confused',
                 reaction: [
-                    `${name}, asking that question IS prayer. 💙 There's no perfect formula — God just wants to hear your voice. Let me share something and then pray with you if you'd like.`,
-                    `${name}, prayer is just talking to God like you'd talk to a friend. 💙 He already knows your heart. Let me share something beautiful about this.`,
-                    `${name}, the fact that you want to pray is already God drawing you. 💙 Just start with "God, I don't know what to say" — He'll take it from there. Let me share something.`
+                    `${name}, asking that question IS prayer. There's no perfect formula — God just wants to hear your voice. Let me share something and then pray with you if you'd like.`,
+                    `${name}, prayer is just talking to God like you'd talk to a friend. He already knows your heart. Let me share something beautiful about this.`,
+                    `${name}, the fact that you want to pray is already God drawing you. Just start with "God, I don't know what to say" — He'll take it from there. Let me share something.`
                 ]
             },
             homeless: {
@@ -3497,9 +3060,9 @@ function setupRailSnap() {
                 ],
                 mood: 'loved',
                 reaction: [
-                    `${name}, I love that you're thinking about this! 💙 I can't give specific advice but I can tell you — the fact that you're thinking about it already says a lot. Let me share something about love while you think it through.`,
-                    `The thought behind a gift matters more than the gift itself, ${name}. 💙 Let me share something beautiful about love while you plan.`,
-                    `${name}, what a lovely thing to be thinking about! 💙 Here's something about love to inspire you.`
+                    `${name}, I love that you're thinking about this! I can't give specific advice but I can tell you — the fact that you're thinking about it already says a lot. Let me share something about love while you think it through.`,
+                    `The thought behind a gift matters more than the gift itself, ${name}. Let me share something beautiful about love while you plan.`,
+                    `${name}, what a lovely thing to be thinking about! Here's something about love to inspire you.`
                 ]
             },
                     }
@@ -3523,16 +3086,16 @@ function setupRailSnap() {
                 // Don't start full capture flow — just ask for the date naturally
                 localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
                 localStorage.setItem('luloDateCapture', 'personal')
-                addToChatHistory('lulo', `Oh exciting! When exactly is it? 💙`)
+                addToChatHistory('lulo', `Oh exciting! When exactly is it?`)
                 animateLulo('nod')
                 return
             }
 
             localStorage.setItem('luloDateCaptureStage', 'awaitingConfirmation')
             if (dateMentionType === 'personal') {
-                addToChatHistory('lulo', `Wait — did I just hear something important? 💙 It sounds like you mentioned a special date. Did I get that right?`)
+                addToChatHistory('lulo', `Wait — did I just hear something important? It sounds like you mentioned a special date. Did I get that right?`)
             } else {
-                addToChatHistory('lulo', `I noticed you mentioned a date that might be important — would you like me to remember that for you? 💙`)
+                addToChatHistory('lulo', `I noticed you mentioned a date that might be important — would you like me to remember that for you?`)
             }
             animateLulo('nod')
             return
@@ -3544,13 +3107,12 @@ function setupRailSnap() {
             for (const keyword of data.keywords) {
                 if (lowerInput.includes(keyword)) {
 
-                    // Ask Claude whether this is genuinely about the user's own state
+                    // Is this genuinely about the user's own state? Local, instant.
                     if (!chatThreadOpen) toggleChatThread()
-                    showTyping()
-                    const intent = await classifyIntent(text)
-                    hideTyping()
+                    const intent = classifyIntent(text)
 
                     if (intent === 'OTHER' || intent === 'REQUEST') {
+                        showTyping()
                         // Not the user's own current emotion — let Claude respond naturally
                         await luloThink(text)
                         return
@@ -3692,14 +3254,13 @@ function setupRailSnap() {
             }
 
             if (detectedMood) {
-                // Ask Claude whether this is genuinely the user's own current state
+                // Is this genuinely the user's own current state? Local, instant.
                 if (!chatThreadOpen) toggleChatThread()
-                showTyping()
-                const intent = await classifyIntent(text)
-                hideTyping()
+                const intent = classifyIntent(text)
 
                 if (intent === 'OTHER' || intent === 'REQUEST') {
                     animateLulo('nod')
+                    showTyping()
                     await luloThink(text)
                 } else {
                     const isMidConversation = window._lastFreeChatTimestamp &&
@@ -3752,66 +3313,7 @@ function setupRailSnap() {
             if (localStorage.getItem('luloDailyScriptureShownToday') === new Date().toDateString()) return
             
             if (isSpecialDay) return // Don't fire promise verse on special days
-    const promiseVerses = [
-        { text: "No weapon forged against you will prevail. This is your heritage as a servant of the Lord.", ref: "Isaiah 54:17" },
-        { text: "God will meet all your needs according to the riches of his glory in Christ Jesus.", ref: "Philippians 4:19" },
-        { text: "The Lord will make you the head, not the tail. Always at the top, never at the bottom.", ref: "Deuteronomy 28:13" },
-        { text: "Call to me and I will answer you and tell you great and unsearchable things you do not know.", ref: "Jeremiah 33:3" },
-        { text: "If you remain in me and my words remain in you, ask whatever you wish, and it will be done for you.", ref: "John 15:7" },
-        { text: "Delight yourself in the Lord, and he will give you the desires of your heart.", ref: "Psalm 37:4" },
-        { text: "God is able to do immeasurably more than all you ask or imagine, according to his power at work within you.", ref: "Ephesians 3:20" },
-        { text: "Before you call I will answer; while you are still speaking I will hear.", ref: "Isaiah 65:24" },
-        { text: "I will restore to you the years that the locust has eaten.", ref: "Joel 2:25" },
-        { text: "Ask and it will be given to you; seek and you will find; knock and the door will be opened.", ref: "Matthew 7:7" },
-        { text: "No good thing does God withhold from those whose walk is blameless.", ref: "Psalm 84:11" },
-        { text: "I will open the floodgates of heaven and pour out so much blessing there will not be room enough to store it.", ref: "Malachi 3:10" },
-    ]
-
-    const wisdomQuotes = [
-    { text: "The entrance of your words gives light; it gives understanding to the simple.", ref: "Psalm 119:130" },
-    { text: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.", ref: "Proverbs 3:5-6" },
-    { text: "A wise man will hear and increase learning, and a man of understanding will attain wise counsel.", ref: "Proverbs 1:5" },
-    { text: "The fear of the Lord is the beginning of wisdom, and knowledge of the Holy One is understanding.", ref: "Proverbs 9:10" },
-    { text: "If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault, and it will be given to you.", ref: "James 1:5" },
-    { text: "How much better to get wisdom than gold, to get insight rather than silver.", ref: "Proverbs 16:16" },
-    { text: "The way of fools seems right to them, but the wise listen to advice.", ref: "Proverbs 12:15" },
-    { text: "Plans fail for lack of counsel, but with many advisers they succeed.", ref: "Proverbs 15:22" },
-    { text: "A gentle answer turns away wrath, but a harsh word stirs up anger.", ref: "Proverbs 15:1" },
-    { text: "The heart of the discerning acquires knowledge, for the ears of the wise seek it out.", ref: "Proverbs 18:15" },
-    { text: "Whoever walks with the wise becomes wise, but the companion of fools will suffer harm.", ref: "Proverbs 13:20" },
-    { text: "Better a patient person than a warrior, one with self-control than one who takes a city.", ref: "Proverbs 16:32" },
-    { text: "The prudent see danger and take refuge, but the simple keep going and pay the penalty.", ref: "Proverbs 27:12" },
-    { text: "Pride goes before destruction, a haughty spirit before a fall.", ref: "Proverbs 16:18" },
-    { text: "Start children off on the way they should go, and even when they are old they will not turn from it.", ref: "Proverbs 22:6" },
-    { text: "As iron sharpens iron, so one person sharpens another.", ref: "Proverbs 27:17" },
-    { text: "Above all else, guard your heart, for everything you do flows from it.", ref: "Proverbs 4:23" },
-    { text: "The name of the Lord is a fortified tower; the righteous run to it and are safe.", ref: "Proverbs 18:10" },
-    { text: "Commit to the Lord whatever you do, and he will establish your plans.", ref: "Proverbs 16:3" },
-    { text: "In their hearts humans plan their course, but the Lord establishes their steps.", ref: "Proverbs 16:9" },
-    ]
-
-    const discipleshipQuotes = [
-        { text: "Go and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit.", ref: "Matthew 28:19" },
-        { text: "By this everyone will know that you are my disciples, if you love one another.", ref: "John 13:35" },
-        { text: "Whoever wants to be my disciple must deny themselves and take up their cross daily and follow me.", ref: "Luke 9:23" },
-        { text: "Do not conform to the pattern of this world, but be transformed by the renewing of your mind.", ref: "Romans 12:2" },
-        { text: "Let your light shine before others, that they may see your good deeds and glorify your Father in heaven.", ref: "Matthew 5:16" },
-        { text: "Be imitators of God, therefore, as dearly loved children, and walk in the way of love.", ref: "Ephesians 5:1-2" },
-        { text: "Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.", ref: "Colossians 3:23" },
-        { text: "Let the word of Christ dwell in you richly as you teach and admonish one another with all wisdom.", ref: "Colossians 3:16" },
-        { text: "Fix your thoughts on what is true, and honorable, and right, and pure, and lovely, and admirable.", ref: "Philippians 4:8" },
-        { text: "I have been crucified with Christ and I no longer live, but Christ lives in me.", ref: "Galatians 2:20" },
-        { text: "Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!", ref: "2 Corinthians 5:17" },
-        { text: "Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up.", ref: "Galatians 6:9" },
-        { text: "Be strong in the Lord and in his mighty power. Put on the full armor of God.", ref: "Ephesians 6:10-11" },
-        { text: "Pray continually, give thanks in all circumstances; for this is God's will for you in Christ Jesus.", ref: "1 Thessalonians 5:17-18" },
-        { text: "Your word is a lamp for my feet, a light on my path.", ref: "Psalm 119:105" },
-        { text: "But seek first his kingdom and his righteousness, and all these things will be given to you as well.", ref: "Matthew 6:33" },
-        { text: "I can do all this through him who gives me strength.", ref: "Philippians 4:13" },
-        { text: "For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.", ref: "Ephesians 2:10" },
-        { text: "Therefore encourage one another and build each other up, just as in fact you are doing.", ref: "1 Thessalonians 5:11" },
-        { text: "But grow in the grace and knowledge of our Lord and Savior Jesus Christ.", ref: "2 Peter 3:18" },
-    ]
+    // promiseVerses, wisdomQuotes, discipleshipQuotes moved to lulo-scripture.js (Phase 3)
 
     // 1 in 3 chance — don't fire every session
     if (Math.random() > 0.33) return
@@ -4093,6 +3595,9 @@ function setupRailSnap() {
         function showTyping() {
             const indicator = document.getElementById('typing-indicator')
             const thread = document.getElementById('chat-thread')
+            // Text mode has its own copy — the main thread is hidden now
+            const textTyping = document.getElementById('text-mode-typing')
+            if (textTyping) textTyping.style.display = 'block'
             if (!indicator) return
             indicator.style.display = 'block'
             if (thread) thread.scrollTop = thread.scrollHeight
@@ -4110,6 +3615,8 @@ function setupRailSnap() {
         function hideTyping() {
             const indicator = document.getElementById('typing-indicator')
             if (indicator) indicator.style.display = 'none'
+            const textTyping = document.getElementById('text-mode-typing')
+            if (textTyping) textTyping.style.display = 'none'
             clearTimeout(typingTimeout)
         }
 
@@ -4394,13 +3901,16 @@ function setupRailSnap() {
                 } catch (err) {
                     hideTyping()
                     addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now...`)
+                    addRetryButton()
                 }
 }
         
         async function generatePrayer(prayerForName = null) {
             const name = localStorage.getItem('luloUserName') || 'friend'
             const prayingFor = prayerForName || localStorage.getItem('luloPrayerForOtherName')
+            // Clean up after reading it — this is a one-shot value
             localStorage.removeItem('luloPrayerForOtherName')
+            LuloVoice.stop() // don't talk over the prayer that's about to arrive
             const lastMood = localStorage.getItem('luloLastMood') || null
             const currentMoodForPrayer = currentMood || lastMood || 'seeking comfort'
             const lastRef = localStorage.getItem('luloLastRef') || null
@@ -4444,6 +3954,7 @@ function setupRailSnap() {
             const cardDivider = document.getElementById('card-divider')
 
             box.style.display = 'block'
+            enterScriptureMode() // prayer gets the same centred card treatment
             if (loading) {
                 loading.style.display = 'block'
                 loading.innerText = 'lulo is praying with you... 🙏'
@@ -4461,7 +3972,7 @@ function setupRailSnap() {
 
             // Scroll to prayer box
             setTimeout(() => {
-                box.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                centreCard(box)
             }, 100)
 
             // Build the prompt for Claude
@@ -4513,6 +4024,7 @@ function setupRailSnap() {
                     if (text_el) text_el.innerText = prayer
                     box.style.display = 'block'
                     addToChatHistory('lulo', '🙏 Praying with you...')
+                    LuloVoice.speak(prayer)
                     if (anotherBtn) anotherBtn.style.display = 'none'
 
                     // Show Lulo prayer header
@@ -4555,6 +4067,7 @@ function setupRailSnap() {
                 
                 const fallback = fallbackPrayers[Math.floor(Math.random() * fallbackPrayers.length)]
                 text_el.innerText = fallback
+                LuloVoice.speak(fallback)
 
                 box.style.animation = 'none'
                 void box.offsetHeight
@@ -4754,13 +4267,14 @@ function setupRailSnap() {
         document.getElementById('scripture-ref').innerText = '— ' + verse.ref
         document.getElementById('another-btn').style.display = 'block'
         box.style.display = 'block'
-        box.style.animation = 'none'
-        void box.offsetHeight
-        box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
-        
+        enterScriptureMode()
+        playCardIntro(box)
+        LuloVoice.speak(reactionText)
+        LuloVoice.speak(verse.text + '. ' + verse.ref)
+
         // Lock carousel after emotion is selected
 if (    mood !== 'home') lockCarousel()
-        setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }) }, 100)
+        setTimeout(() => centreCard(box), 100)
         return
     }
     
@@ -4775,21 +4289,21 @@ if (    mood !== 'home') lockCarousel()
             const improvementReactions = [
                 `${name}, this makes my heart so happy! 🎉 Last time you came to me feeling ${formatMood(lastMood)} — and today you're feeling ${formatMood(mood)}. That's not a small thing. That's growth. God has been walking with you and it shows. Keep going! 💙`,
                 `Oh ${name}! 🌟 What a difference! From ${formatMood(lastMood)} to ${formatMood(mood)} — I am so proud of you. God is so faithful. Let's celebrate this together! 🎉`,
-                `${name}! I'm truly happy to see this positive change! 💙 You were carrying ${formatMood(lastMood)} last time — look at you today feeling ${formatMood(mood)}. Never forget how far you've come!`
+                `${name}! I'm truly happy to see this positive change! You were carrying ${formatMood(lastMood)} last time — look at you today feeling ${formatMood(mood)}. Never forget how far you've come!`
             ]
             reactionText = improvementReactions[Math.floor(Math.random() * improvementReactions.length)]
         } else if (lastWasPositive && newIsNegative) {
             const gentleReactions = [
                 `I'm sorry you're going through this, ${name}. 💙 Last time you were feeling ${formatMood(lastMood)} — today feels heavier. That's okay. Life has seasons. I'm still here with you.`,
-                `Oh ${name}... 💙 I'm sad to hear you're feeling ${formatMood(mood)} today. Last time we spoke you were feeling ${formatMood(lastMood)}. Whatever happened between then and now — you don't have to carry it alone.`,
-                `${name}, I see you. 💙 It's okay that today feels different from last time. Feeling ${formatMood(mood)} after feeling ${formatMood(lastMood)} — sometimes that's just life. Let's find something for your heart today.`
+                `Oh ${name}... I'm sad to hear you're feeling ${formatMood(mood)} today. Last time we spoke you were feeling ${formatMood(lastMood)}. Whatever happened between then and now — you don't have to carry it alone.`,
+                `${name}, I see you. It's okay that today feels different from last time. Feeling ${formatMood(mood)} after feeling ${formatMood(lastMood)} — sometimes that's just life. Let's find something for your heart today.`
             ]
             reactionText = gentleReactions[Math.floor(Math.random() * gentleReactions.length)]
         } else if (lastWasNegative && newIsNegative) {
             const layeredReactions = [
                 `Hmm, something feels different today, ${name}. Last time it was ${formatMood(lastMood)} — today it's ${formatMood(mood)}. Life can be so layered sometimes, can't it? Whatever you're carrying right now, I'm here. 💙`,
-                `${name}, I notice things feel different today. Last time was ${formatMood(lastMood)} and today is ${formatMood(mood)}. You're carrying a lot. Let's find something for this together. 💙`,
-                `Oh ${name}... 💙 From ${formatMood(lastMood)} to ${formatMood(mood)} — you've been through it lately haven't you? I see you. Let me find something just for this moment.`
+                `${name}, I notice things feel different today. Last time was ${formatMood(lastMood)} and today is ${formatMood(mood)}. You're carrying a lot. Let's find something for this together.`,
+                `Oh ${name}... From ${formatMood(lastMood)} to ${formatMood(mood)} — you've been through it lately haven't you? I see you. Let me find something just for this moment.`
             ]
             reactionText = layeredReactions[Math.floor(Math.random() * layeredReactions.length)]
         } else if (lastWasPositive && newIsPositive) {
@@ -4860,7 +4374,8 @@ if (    mood !== 'home') lockCarousel()
     }
     if (reactionText) {
     const isBored = mood === 'bored'
-    addToChatHistory('lulo', isBored ? reactionText : reactionText + '\n— ' + verse.ref)
+    // No toast — this reaction is already on screen inside the scripture card
+    addToChatHistory('lulo', isBored ? reactionText : reactionText + '\n— ' + verse.ref, { toast: false })
 }
 
     // Store current verse for share/save
@@ -4875,14 +4390,14 @@ if (    mood !== 'home') lockCarousel()
     document.getElementById('scripture-ref').innerText = '— ' + verse.ref
     document.getElementById('another-btn').style.display = 'block'
     LuloSound.response()
+    LuloVoice.speak(verse.text + '. ' + verse.ref)
 
     box.style.display = 'block'
-    box.style.animation = 'none'
-    void box.offsetHeight
-    box.style.animation = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    enterScriptureMode()
+    playCardIntro(box)
 
     setTimeout(() => {
-        box.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        centreCard(box)
     }, 100)
     
     // Claude-generated meditation prompt tailored to the specific verse and mood
@@ -5005,21 +4520,30 @@ if (    mood !== 'home') lockCarousel()
         let chatHistory = []
         let chatThreadOpen = false
 
-        function addToChatHistory(role, text) {
+        // opts.toast — pass false when the text is already visible on screen
+        // (e.g. the scripture card is showing this exact reaction).
+        function addToChatHistory(role, text, opts = {}) {
             if (!text || !text.trim()) return
             const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
             chatHistory.push({ role, text: text.trim(), time })
             renderChatThread()
-            const container = document.getElementById('chat-thread-container')
-                if (container) {
-                    container.style.display = 'block'
-                    if (!chatThreadOpen) {
-                        toggleChatThread()
-                    }
-                }
+            // Phase 3: no thread on the home page. Bubbles render into the
+            // hidden buffer and text mode mirrors them.
+            chatThreadOpen = true
             const badge = document.getElementById('chat-count-badge')
             if (badge) badge.innerText = chatHistory.length
             localStorage.setItem('luloChatHistory', JSON.stringify(chatHistory.slice(-50))) // Save last 50 messages
+
+            // Keep text-mode-chat in sync while the overlay is open
+            if (isTextModeOpen()) syncTextModeChat()
+
+            // Lulo speaks her own lines
+            if (role === 'lulo') LuloVoice.speak(text)
+
+            // ...and surfaces them, so nothing she says on the home screen is lost
+            if (role === 'lulo' && opts.toast !== false && shouldToast()) {
+                showLuloToast(text)
+            }
 }
 
 function renderChatThread() {
@@ -5030,16 +4554,26 @@ function renderChatThread() {
     const existing = thread.querySelectorAll('.chat-bubble-user, .chat-bubble-lulo')
     existing.forEach(el => el.remove())
     
-    // Add bubbles
+    // Add bubbles.
+    // Message text is written with textContent, never innerHTML — it comes from
+    // the user's own typing and from the API, so treating it as markup would let
+    // a message inject script into the page. The line breaks Lulo relies on are
+    // preserved by `white-space: pre-line` on the bubble, not by <br>.
     chatHistory.forEach(msg => {
         const div = document.createElement('div')
-        if (msg.role === 'user') {
-            div.className = 'chat-bubble-user'
-            div.innerHTML = `${msg.text}<div class="chat-meta">${msg.time}</div>`
-        } else {
-            div.className = 'chat-bubble-lulo'
-            div.innerHTML = `${msg.text}<div class="chat-meta lulo-meta">Lulo · ${msg.time}</div>`
-        }
+        const isUser = msg.role === 'user'
+        div.className = isUser ? 'chat-bubble-user' : 'chat-bubble-lulo'
+
+        const body = document.createElement('span')
+        body.className = 'chat-bubble-text'
+        body.textContent = msg.text
+        div.appendChild(body)
+
+        const meta = document.createElement('div')
+        meta.className = isUser ? 'chat-meta' : 'chat-meta lulo-meta'
+        meta.textContent = isUser ? msg.time : `Lulo · ${msg.time}`
+        div.appendChild(meta)
+
         // Insert before typing indicator so dots always stay at bottom
         const indicator = document.getElementById('typing-indicator')
         thread.insertBefore(div, indicator)
@@ -5048,21 +4582,14 @@ function renderChatThread() {
     if (chatThreadOpen) setTimeout(() => { thread.scrollTop = thread.scrollHeight }, 30)
 }
 
+// Phase 3: the thread is no longer a panel the user opens on the home page.
+// Call sites still say `if (!chatThreadOpen) toggleChatThread()` before showing
+// the typing indicator, so this keeps the flag and the scroll position honest
+// without ever revealing the container on the home page.
 function toggleChatThread() {
-    chatThreadOpen = !chatThreadOpen
+    chatThreadOpen = true
     const thread = document.getElementById('chat-thread')
-    const arrow = document.getElementById('chat-toggle-arrow')
-    const btn = document.getElementById('chat-toggle')
-    if (chatThreadOpen) {
-        thread.style.display = 'flex'
-        if (arrow) arrow.innerText = '↓'
-        if (btn) btn.classList.add('open')
-        setTimeout(() => { thread.scrollTop = thread.scrollHeight }, 30)
-    } else {
-        thread.style.display = 'none'
-        if (arrow) arrow.innerText = '↑'
-        if (btn) btn.classList.remove('open')
-    }
+    if (thread) setTimeout(() => { thread.scrollTop = thread.scrollHeight }, 30)
 }
 
         // LULO GAMES SYSTEM
@@ -5529,18 +5056,18 @@ const LuloSound = {
     }
 }
 
+// Phase 3: the top-left pill now toggles Lulo's *voice*. The Web Audio tone
+// system (LuloSound) is separate and stays on — LuloVoice is additive.
 function toggleSound() {
-    LuloSound.enabled = !LuloSound.enabled
-    const btn = document.getElementById('sound-btn')
-    if (btn) btn.innerText = LuloSound.enabled ? '🔊' : '🔇'
-    if (LuloSound.enabled) LuloSound.response()
+    const on = LuloVoice.toggle() // updateVoiceToggleUI() handles the icon state
+    if (on) LuloSound.response()
 
     // Visible feedback toast
     const existing = document.getElementById('sound-toast')
     if (existing) existing.remove()
     const toast = document.createElement('div')
     toast.id = 'sound-toast'
-    toast.innerText = LuloSound.enabled ? 'Sound on 🔊' : 'Sound off 🔇'
+    toast.innerText = on ? 'Lulo will speak 🔊' : 'Lulo is muted 🔇'
     toast.style.cssText = `
         position: fixed;
         top: 70px;
@@ -5566,13 +5093,575 @@ function autoGrowInput(el) {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px'
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const card = document.getElementById('welcome-history-card')
-    if (card) card.addEventListener('touchend', (e) => {
-        e.preventDefault()
-        toggleHistoryCard()
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 3 — SCRIPTURE OVERLAY, TEXT MODE, VOICE INPUT, NOTIFICATIONS, STREAK
+// ═══════════════════════════════════════════════════════════════════════════
+
+// When the card is in its expanded state it is already fixed-centred on screen,
+// so scrolling to it does nothing useful and can jerk the page. Only scroll
+// when the card is still sitting in the normal document flow.
+function centreCard(el) {
+    if (!el) return
+    if (el.classList.contains('scripture-expanded')) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+// ─── LULO TOAST ─────────────────────────────────────────────────────────────
+// The home screen deliberately has no visible thread, so anything Lulo says
+// there (the bored game offer, a promise verse, a date note) had nowhere to
+// land. This drops a tappable banner down from the top; tapping it opens text
+// mode where the full message is waiting.
+
+let _luloToastTimer = null
+
+function showLuloToast(text) {
+    const toast = document.getElementById('lulo-toast')
+    const textEl = document.getElementById('lulo-toast-text')
+    if (!toast || !textEl || !text) return
+
+    // Strip the leading emoji-only noise but keep the message intact
+    textEl.textContent = String(text).replace(/\s+/g, ' ').trim()
+
+    toast.hidden = false
+    // Force a reflow so the transition runs even on back-to-back toasts
+    void toast.offsetHeight
+    toast.classList.add('toast-in')
+
+    // Longer messages get longer on screen, within reason
+    const dwell = Math.min(11000, Math.max(5000, textEl.textContent.length * 55))
+    clearTimeout(_luloToastTimer)
+    _luloToastTimer = setTimeout(hideLuloToast, dwell)
+}
+
+function hideLuloToast() {
+    const toast = document.getElementById('lulo-toast')
+    if (!toast) return
+    clearTimeout(_luloToastTimer)
+    toast.classList.remove('toast-in')
+    // Wait for the slide-out before removing it from the layout
+    setTimeout(() => { if (!toast.classList.contains('toast-in')) toast.hidden = true }, 450)
+}
+
+function openLuloToast() {
+    hideLuloToast()
+    switchToTextMode()
+}
+
+// Should this message interrupt with a banner?
+function shouldToast() {
+    // Not while text mode is open — they can already see it
+    if (isTextModeOpen()) return false
+    // Not before the main app is on screen
+    const app = document.getElementById('main-app')
+    if (!app || app.style.display === 'none') return false
+    // Not while a full-screen panel owns the view
+    for (const id of ['crisis-screen', 'journal-screen', 'emergency-screen']) {
+        const el = document.getElementById(id)
+        if (el && getComputedStyle(el).display !== 'none') return false
+    }
+    return true
+}
+
+function escapeHTML(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
+
+// ─── SCRIPTURE OVERLAY ──────────────────────────────────────────────────────
+// While a verse is on screen Lulo fades back and the card takes her place.
+
+let _scriptureShownAt = 0
+
+// Re-trigger the card's fade-in. Driven by a class rather than an inline
+// animation so the CSS can pick the right keyframes for the centred card
+// versus the in-flow one; setting it inline here would override that choice.
+function playCardIntro(box) {
+    if (!box) return
+    box.classList.remove('card-intro', 'card-leaving')
+    void box.offsetWidth // force reflow so the animation restarts
+    box.classList.add('card-intro')
+}
+
+function enterScriptureMode() {
+    _scriptureShownAt = Date.now()
+    document.getElementById('lulo-container')?.classList.add('lulo-recede')
+    document.getElementById('carousel-container')?.classList.add('carousel-recede')
+    document.getElementById('scripture-card')?.classList.add('scripture-expanded')
+}
+
+// Put the card away and bring Lulo back — used by the back button and by
+// tapping anywhere outside the card.
+function dismissScriptureCard() {
+    const card = document.getElementById('scripture-card')
+    const prompt = document.getElementById('sick-prayer-prompt')
+    if (prompt) prompt.remove()
+
+    // Fade out in place, then hide. Lulo returns while the card is still
+    // fading, so the two cross over instead of snapping one after the other.
+    if (card && card.classList.contains('scripture-expanded')) {
+        card.classList.remove('card-intro')
+        card.classList.add('card-leaving')
+        document.getElementById('lulo-container')?.classList.remove('lulo-recede')
+        document.getElementById('carousel-container')?.classList.remove('carousel-recede')
+        LuloVoice.stop()
+        // .scripture-expanded has to stay until the fade finishes — it is what
+        // keeps the card centred and selects the outro keyframes.
+        setTimeout(() => {
+            card.style.display = 'none'
+            card.classList.remove('card-leaving', 'scripture-expanded')
+        }, 200)
+        return
+    }
+
+    exitScriptureMode()
+}
+
+function exitScriptureMode() {
+    document.getElementById('lulo-container')?.classList.remove('lulo-recede')
+    document.getElementById('carousel-container')?.classList.remove('carousel-recede')
+    const card = document.getElementById('scripture-card')
+    if (card) {
+        card.classList.remove('scripture-expanded')
+        // Dropping the class alone would leave the card sitting in the normal
+        // flow on top of the mic. Coming back to Lulo means putting it away.
+        card.style.display = 'none'
+    }
+    LuloVoice.stop()
+}
+
+// ─── TEXT MODE ──────────────────────────────────────────────────────────────
+
+function openVoiceOrTextInput() {
+    switchToTextMode()
+}
+
+function isTextModeOpen() {
+    const overlay = document.getElementById('text-mode-overlay')
+    return !!overlay && overlay.style.display !== 'none'
+}
+
+function switchToTextMode() {
+    const overlay = document.getElementById('text-mode-overlay')
+    if (!overlay) return
+    overlay.style.display = 'flex'
+    overlay.setAttribute('aria-hidden', 'false')
+    syncTextModeChat()
+    setTimeout(() => document.getElementById('lulo-input')?.focus(), 150)
+}
+
+function switchToVoiceMode() {
+    const overlay = document.getElementById('text-mode-overlay')
+    if (!overlay) return
+    overlay.style.display = 'none'
+    overlay.setAttribute('aria-hidden', 'true')
+    stopVoiceInput()
+}
+
+// Mirror the real chat thread into the text-mode overlay
+function syncTextModeChat() {
+    const thread = document.getElementById('chat-thread')
+    const textChat = document.getElementById('text-mode-chat')
+    if (!thread || !textChat) return
+    // Clone bubbles only — the typing indicator lives in the real thread
+    textChat.innerHTML = ''
+    thread.querySelectorAll('.chat-bubble-user, .chat-bubble-lulo').forEach(b => {
+        textChat.appendChild(b.cloneNode(true))
     })
-})
+    textChat.scrollTop = textChat.scrollHeight
+}
+
+function updateCharCounter(textarea) {
+    const counter = document.getElementById('char-counter')
+    if (!counter) return
+    const remaining = 2000 - textarea.value.length
+    if (remaining <= 200) {
+        counter.textContent = `${remaining} left`
+        counter.classList.add('near-limit')
+    } else {
+        counter.textContent = ''
+        counter.classList.remove('near-limit')
+    }
+}
+
+// ─── VOICE INPUT ────────────────────────────────────────────────────────────
+
+// Prime mic permission via getUserMedia once — after this Chrome remembers
+// the permission for the origin and SpeechRecognition never re-prompts.
+async function primeMicPermission() {
+    if (localStorage.getItem('luloMicPermGranted') === '1') return true
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach(t => t.stop()) // release immediately
+        localStorage.setItem('luloMicPermGranted', '1')
+        return true
+    } catch {
+        return false // user denied — fall through to text mode
+    }
+}
+
+async function toggleVoiceInput() {
+    if (isVoiceInputActive) { stopVoiceInput(); return }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { switchToTextMode(); return }
+
+    // Establish permission once so Chrome stops asking on every tap
+    const permitted = await primeMicPermission()
+    if (!permitted) { switchToTextMode(); return }
+
+    const r = new SR()
+    r.lang = 'en-US'
+    r.interimResults = false
+    r.maxAlternatives = 1
+    r.continuous = false
+
+    r.onstart = () => {
+        isVoiceInputActive = true
+        document.getElementById('mic-btn')?.classList.add('listening')
+        LuloVoice.stop()
+    }
+    r.onresult = e => {
+        const t = e.results[0][0].transcript
+        stopVoiceInput()
+        const inp = document.getElementById('lulo-input')
+        if (inp) inp.value = t
+        luloListen()
+    }
+    r.onerror = e => {
+        stopVoiceInput()
+        if (e.error === 'not-allowed') {
+            localStorage.removeItem('luloMicPermGranted') // reset so next tap tries again
+            switchToTextMode()
+        }
+    }
+    r.onend = () => stopVoiceInput()
+
+    try {
+        r.start()
+        currentRecognition = r
+    } catch {
+        stopVoiceInput()
+        switchToTextMode()
+    }
+}
+
+function stopVoiceInput() {
+    isVoiceInputActive = false
+    document.getElementById('mic-btn')?.classList.remove('listening')
+    if (currentRecognition) {
+        try { currentRecognition.stop() } catch {}
+        currentRecognition = null
+    }
+}
+
+// ─── NOTIFICATION CENTRE ────────────────────────────────────────────────────
+
+function getNotifications() {
+    try { return JSON.parse(localStorage.getItem('luloNotifications')) || [] } catch { return [] }
+}
+
+function pushNotification({ type, title, body, verseRef = null, verseText = null }) {
+    const notifs = getNotifications()
+    notifs.push({
+        id: Date.now().toString(),
+        type, title, body, verseRef, verseText,
+        timestamp: new Date().toISOString(),
+        read: false
+    })
+    // Keep max 30 notifications
+    if (notifs.length > 30) notifs.splice(0, notifs.length - 30)
+    localStorage.setItem('luloNotifications', JSON.stringify(notifs))
+    updateNotifBadge()
+}
+
+function getUnreadNotifCount() {
+    return getNotifications().filter(n => !n.read).length
+}
+
+function markAllNotifsRead() {
+    const notifs = getNotifications().map(n => ({ ...n, read: true }))
+    localStorage.setItem('luloNotifications', JSON.stringify(notifs))
+    updateNotifBadge()
+}
+
+function updateNotifBadge() {
+    const count = getUnreadNotifCount()
+    const badge = document.getElementById('notif-count')
+    const btn = document.getElementById('notif-btn')
+    if (badge) badge.textContent = count > 0 ? count : ''
+    if (btn) btn.classList.toggle('has-unread', count > 0)
+}
+
+function toggleNotifTray() {
+    const tray = document.getElementById('notif-tray')
+    if (!tray) return
+    const isOpen = tray.style.display !== 'none'
+    tray.style.display = isOpen ? 'none' : 'block'
+    if (!isOpen) {
+        renderNotifTray()
+        markAllNotifsRead()
+    }
+    // Close the other floating panels
+    const more = document.getElementById('more-menu')
+    const sync = document.getElementById('sync-panel')
+    const theme = document.getElementById('theme-panel')
+    if (more) more.style.display = 'none'
+    if (sync) sync.style.display = 'none'
+    if (theme) theme.style.display = 'none'
+}
+
+function renderNotifTray() {
+    const list = document.getElementById('notif-tray-list')
+    if (!list) return
+    const notifs = getNotifications().slice().reverse() // newest first
+    if (notifs.length === 0) {
+        list.innerHTML = '<p class="notif-empty">Nothing yet — Lulo will leave notes here for you</p>'
+        return
+    }
+    list.innerHTML = notifs.map(n => `
+        <div class="notif-item ${n.read ? '' : 'unread'}" onclick="handleNotifTap('${escapeHTML(n.id)}')">
+            <div class="notif-item-title">${escapeHTML(n.title)}</div>
+            <div class="notif-item-body">${escapeHTML((n.body || '').slice(0, 140))}${(n.body || '').length > 140 ? '…' : ''}</div>
+            ${n.verseRef ? `<div class="notif-item-ref">${escapeHTML(n.verseRef)}</div>` : ''}
+            <div class="notif-item-time">${timeAgo(n.timestamp)}</div>
+        </div>
+    `).join('')
+}
+
+function handleNotifTap(id) {
+    const notif = getNotifications().find(n => n.id === id)
+    if (!notif) return
+    toggleNotifTray()
+    if (notif.type === 'daily_scripture' && notif.verseText) {
+        showScriptureFromNotif({ text: notif.verseText, ref: notif.verseRef })
+    }
+}
+
+function showScriptureFromNotif(verse) {
+    const textEl = document.getElementById('scripture-text')
+    const refEl = document.getElementById('scripture-ref')
+    const loading = document.getElementById('loading-text')
+    const anotherBtn = document.getElementById('another-btn')
+    const luloMsgSection = document.getElementById('lulo-message-section')
+    const cardDivider = document.getElementById('card-divider')
+
+    if (loading) loading.style.display = 'none'
+    if (luloMsgSection) luloMsgSection.style.display = 'none'
+    if (cardDivider) cardDivider.style.display = 'none'
+    if (anotherBtn) anotherBtn.style.display = 'none'
+    if (textEl) textEl.textContent = verse.text
+    if (refEl) refEl.textContent = '— ' + (verse.ref || '')
+
+    // Make it saveable/shareable like any other verse
+    currentVerse = { text: verse.text, ref: verse.ref || '', mood: currentMood || '' }
+    const actionsDiv = document.getElementById('scripture-actions')
+    if (actionsDiv) actionsDiv.style.display = 'flex'
+    checkIfSaved()
+
+    const card = document.getElementById('scripture-card')
+    if (card) card.style.display = 'block'
+    enterScriptureMode()
+    LuloVoice.speak(verse.text + '. ' + (verse.ref || ''))
+    setTimeout(() => centreCard(card), 100)
+}
+
+function timeAgo(iso) {
+    const diff = Date.now() - new Date(iso).getTime()
+    const m = Math.floor(diff / 60000)
+    if (m < 1) return 'Just now'
+    if (m < 60) return `${m}m ago`
+    const h = Math.floor(m / 60)
+    if (h < 24) return `${h}h ago`
+    return `${Math.floor(h / 24)}d ago`
+}
+
+// ─── STREAK (consecutive days) ──────────────────────────────────────────────
+// luloSessionCount stays exactly as it was — this is additive.
+
+function updateStreak() {
+    const lastVisit = localStorage.getItem('luloLastVisitTimestamp')
+    const today = new Date().toDateString()
+    const streakKey = 'luloConsecutiveDays'
+    let streak = parseInt(localStorage.getItem(streakKey) || '0', 10)
+
+    if (!lastVisit) {
+        streak = 1
+    } else {
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const lastDate = new Date(
+            isNaN(Number(lastVisit)) ? lastVisit : Number(lastVisit)
+        ).toDateString()
+
+        if (lastDate === today) {
+            // Same day — no change. A brand new install still needs a floor of 1.
+            if (streak < 1) streak = 1
+        } else if (lastDate === yesterday.toDateString()) {
+            streak += 1 // Consecutive day
+        } else {
+            streak = 1 // Gap — reset
+        }
+    }
+
+    localStorage.setItem(streakKey, String(streak))
+    localStorage.setItem('luloLastStreakDate', today)
+
+    // Milestone notification — once per milestone, not once per visit
+    const milestones = [7, 14, 21, 30, 50, 100]
+    const lastMilestone = parseInt(localStorage.getItem('luloLastMilestone') || '0', 10)
+    if (milestones.includes(streak) && streak !== lastMilestone) {
+        localStorage.setItem('luloLastMilestone', String(streak))
+        const name = localStorage.getItem('luloUserName') || 'friend'
+        pushNotification({
+            type: 'streak',
+            title: `${streak}-day streak 🛡`,
+            body: `${name}, you've checked in with yourself ${streak} days in a row. I see you showing up — that takes courage. I'm proud of you.`
+        })
+    }
+
+    updateStreakBadge()
+    return streak
+}
+
+function getStreak() {
+    return parseInt(localStorage.getItem('luloConsecutiveDays') || '1', 10)
+}
+
+function updateStreakBadge() {
+    const streakEl = document.getElementById('streak-count')
+    if (streakEl) streakEl.textContent = getStreak()
+}
+
+// ─── RETRY AFTER A FAILED WORKER CALL ───────────────────────────────────────
+
+function addRetryButton() {
+    const thread = document.getElementById('chat-thread')
+    if (!thread || !_lastUserMessage) return
+    thread.querySelector('.chat-retry')?.remove()
+    const retryEl = document.createElement('div')
+    retryEl.className = 'chat-retry'
+    retryEl.innerHTML = `<button onclick="retryLastMessage()" class="retry-btn">↺ Try again</button>`
+    thread.appendChild(retryEl)
+    thread.scrollTop = thread.scrollHeight
+    syncTextModeChat()
+}
+
+function retryLastMessage() {
+    if (!_lastUserMessage) return
+    document.querySelectorAll('.chat-retry').forEach(el => el.remove())
+    const inp = document.getElementById('lulo-input')
+    if (inp) inp.value = _lastUserMessage
+    // luloListen() rate-limits itself; clear the guard so a deliberate retry lands
+    _luloListenLastCall = 0
+    luloListen()
+}
+
+// ─── BOOT ───────────────────────────────────────────────────────────────────
+
+function initApp() {
+    LuloVoice.load()
+    updateStreak()
+    updateNotifBadge()
+
+    // Device orientation tilt — Lulo leans with the phone
+    if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', e => {
+            if (e.gamma == null) return
+            const x = Math.max(-15, Math.min(15, e.gamma))
+            const y = Math.max(-10, Math.min(10, (e.beta || 0) - 30))
+            const lf = document.getElementById('lulo-face')
+            if (lf) lf.style.transform =
+                `translateY(var(--float-offset,0px)) rotateX(${y * 0.4}deg) rotateY(${x * 0.4}deg)`
+        }, { passive: true })
+    }
+
+    // Swipe anywhere on the bottom bar to open text mode
+    const bar = document.getElementById('bottom-bar')
+    if (bar) {
+        let startX = 0
+        bar.addEventListener('touchstart', e => { startX = e.touches[0].clientX }, { passive: true })
+        bar.addEventListener('touchend', e => {
+            const dx = Math.abs(e.changedTouches[0].clientX - startX)
+            if (dx > 40) switchToTextMode()
+        }, { passive: true })
+    }
+
+    // Lulo toast — tap the body to open the conversation, ✕ to dismiss
+    const toastTap = document.getElementById('lulo-toast-tap')
+    if (toastTap) {
+        toastTap.addEventListener('click', openLuloToast)
+        toastTap.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLuloToast() }
+        })
+    }
+    const toastClose = document.getElementById('lulo-toast-close')
+    if (toastClose) {
+        toastClose.addEventListener('click', e => { e.stopPropagation(); hideLuloToast() })
+    }
+    // Swipe the toast up to dismiss
+    const toastEl = document.getElementById('lulo-toast')
+    if (toastEl) {
+        let tStartY = 0
+        toastEl.addEventListener('touchstart', e => { tStartY = e.touches[0].clientY }, { passive: true })
+        toastEl.addEventListener('touchend', e => {
+            if (tStartY - e.changedTouches[0].clientY > 30) hideLuloToast()
+        }, { passive: true })
+    }
+
+    // Close the notification tray / history panel when tapping outside them
+    document.addEventListener('click', e => {
+        const tray = document.getElementById('notif-tray')
+        const btn = document.getElementById('notif-btn')
+        if (tray && tray.style.display !== 'none' &&
+            !tray.contains(e.target) &&
+            !(btn && btn.contains(e.target))) {
+            tray.style.display = 'none'
+        }
+
+        const history = document.getElementById('history-panel')
+        if (history && history.style.display !== 'none' &&
+            !history.contains(e.target) &&
+            !e.target.closest('#more-menu')) {
+            history.style.display = 'none'
+        }
+
+        // Tap away from the scripture card to dismiss it and bring Lulo back
+        const card = document.getElementById('scripture-card')
+        if (card && card.style.display !== 'none' && !card.contains(e.target)) {
+            // The click that opened the card must not also close it
+            if (Date.now() - _scriptureShownAt < 400) return
+            // A mood card tap is about to render a new verse — let it through
+            if (e.target.closest('.mood-card')) return
+            // So is anything that opens a panel or the input
+            if (e.target.closest('#top-bar, #bottom-bar, #more-menu, #notif-tray, #lulo-toast, #theme-panel, #sync-panel')) return
+            dismissScriptureCard()
+        }
+    })
+
+    // Splash screen is retired — route straight to the right first screen
+    const name = localStorage.getItem('luloUserName')
+    if (name) {
+        showReturningWelcome(name)
+    } else {
+        const nameScreen = document.getElementById('name-screen')
+        if (nameScreen) nameScreen.style.display = 'flex'
+    }
+}
+
+function toggleFirstTimerInfo() {
+    const body = document.getElementById('first-timer-body')
+    const btn = document.getElementById('first-timer-toggle')
+    if (!body || !btn) return
+    const isOpen = body.style.display === 'block'
+    body.style.display = isOpen ? 'none' : 'block'
+    body.setAttribute('aria-hidden', isOpen ? 'true' : 'false')
+    btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true')
+}
+
+document.addEventListener('DOMContentLoaded', initApp)
 
     // PWA SERVICE WORKER
     if ('serviceWorker' in navigator) {
