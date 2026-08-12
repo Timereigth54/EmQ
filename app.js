@@ -2509,10 +2509,15 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
         // Rate-limit guard — prevents hammering the API
         let _luloListenLastCall = 0
+        let _luloListenInflight = false   // true while a fetch is in-flight
+        let _luloSuppressAutoMic = false  // set after an error so onDrainComplete doesn't loop
         const _LULO_RATE_MS = 1500 // minimum ms between API calls
 
         async function luloListen() {
             stopVoiceInput()
+
+            // Don't fire another request while one is already pending
+            if (_luloListenInflight) return
 
             const now = Date.now()
             if (now - _luloListenLastCall < _LULO_RATE_MS) return
@@ -4074,6 +4079,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 conversationHistory = conversationHistory.slice(-20)
             }
 
+            _luloListenInflight = true
             try {
                 const response = await fetch('https://em1-prayer.kayuso2011.workers.dev', {
                     method: 'POST',
@@ -4089,7 +4095,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 if (data.content && data.content[0]) {
                     hideTyping()
                     const responseText = data.content[0].text
-                    
+
                     // Passive gender detection from conversation
                     const lower = responseText.toLowerCase()
                     if (!localStorage.getItem('luloUserGender')) {
@@ -4099,18 +4105,24 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                             localStorage.setItem('luloUserGender', 'female')
                         }
                     }
-                    
+
                     addToChatHistory('lulo', responseText)
                     conversationHistory.push({ role: 'assistant', content: responseText })
                     localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
                 } else {
-                    throw new Error('No response')
+                    throw new Error(`Unexpected response shape: ${JSON.stringify(data).slice(0, 120)}`)
                 }
 
                 } catch (err) {
+                    console.error('[luloListen] API error:', err)
                     hideTyping()
-                    addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now...`)
+                    // Don't speak the error — it would trigger onDrainComplete → mic restart → loop.
+                    // Show it silently in chat only, and let the retry button break the cycle.
+                    _luloSuppressAutoMic = true
+                    addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now...`, { silent: true })
                     addRetryButton()
+                } finally {
+                    _luloListenInflight = false
                 }
 }
         
@@ -4746,8 +4758,8 @@ if (    mood !== 'home') lockCarousel()
             // Keep text-mode-chat in sync while the overlay is open
             if (isTextModeOpen()) syncTextModeChat()
 
-            // Lulo speaks her own lines
-            if (role === 'lulo') LuloVoice.speak(text)
+            // Lulo speaks her own lines (pass opts.silent = true to suppress voice)
+            if (role === 'lulo' && !opts.silent) LuloVoice.speak(text)
 
             // ...and surfaces them, so nothing she says on the home screen is lost
             if (role === 'lulo' && opts.toast !== false && shouldToast()) {
@@ -5814,8 +5826,9 @@ function initApp() {
     LuloVoice.load()
 
     // Auto-restart mic after Lulo finishes speaking — enables continuous conversation.
-    // Only fires when voice is enabled, voice input was the trigger, and mic isn't already on.
+    // Suppressed after API errors so a failed call doesn't loop into itself.
     LuloVoice.onDrainComplete = () => {
+        if (_luloSuppressAutoMic) { _luloSuppressAutoMic = false; return }
         if (LuloVoice.enabled && !isVoiceInputActive) {
             toggleVoiceInput()
         }
