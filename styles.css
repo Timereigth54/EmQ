@@ -303,7 +303,7 @@
                or her 272px image box swallows taps on the cards), so any
                negative margin here pulls it straight over her chin. */
             margin-top: 64px;
-            margin-bottom: 14px;
+            margin-bottom: -8px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -459,8 +459,10 @@
         /* EMOTION CAROUSEL */
         #carousel-container {
             width: 100%;
-            /* Positive, so the rail clears her halo instead of overlapping it */
-            margin: 10px 0 25px 0;
+            /* Sits between Lulo above and the mic below. Her PNG carries
+               transparent padding, so the rail can ride into her layout box
+               without touching the artwork. */
+            margin: -10px 0 25px 0;
             position: relative;
             /* Sitting this close, Lulo's 240px image box overlaps the deck and
                would swallow taps on the cards beneath it. She is not
@@ -476,6 +478,22 @@
             position: relative;
             width: 100%;
             display: block;
+        }
+
+        /* The prompt appears after 15s of inactivity. Reserving its height keeps
+           the rail from jumping down the moment it does. */
+        #carousel-label {
+            height: 16px;
+            line-height: 16px;
+            margin-bottom: 6px;
+            text-align: center;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.32);
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
         }
 
         /* THE GLASS RAIL
