@@ -13,6 +13,7 @@
 let currentRecognition = null   // active SpeechRecognition instance, if any
 let isVoiceInputActive = false  // true while the mic is listening
 let _lastUserMessage = ''       // last thing the user sent — used by the retry button
+let _micTimeout = null          // auto-shutoff timer when mic hears nothing
 
         const firebaseConfig = {
             apiKey: "AIzaSyAiUXWpcqpysOouq-2CWUQQ2GaCUANLzRk",
@@ -2252,6 +2253,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             updateNotifBadge()
             updateStreakBadge()
             updateVoiceToggleUI()
+
+            // Phase 3 welcome — shown once, first time the main app loads
+            if (!localStorage.getItem('luloPhase3WelcomeSeen')) {
+                setTimeout(() => showPhase3Welcome(), 800)
+            }
 
             // Update Lulo's greeting with user's name
             const name = localStorage.getItem('luloUserName')
@@ -5322,8 +5328,14 @@ async function toggleVoiceInput() {
         isVoiceInputActive = true
         document.getElementById('mic-btn')?.classList.add('listening')
         LuloVoice.stop()
+        // Auto-shutoff: if nothing heard after 8s, stop quietly
+        _micTimeout = setTimeout(() => {
+            stopVoiceInput()
+        }, 8000)
     }
     r.onresult = e => {
+        clearTimeout(_micTimeout)
+        _micTimeout = null
         const t = e.results[0][0].transcript
         stopVoiceInput()
         const inp = document.getElementById('lulo-input')
@@ -5349,12 +5361,31 @@ async function toggleVoiceInput() {
 }
 
 function stopVoiceInput() {
+    clearTimeout(_micTimeout)
+    _micTimeout = null
     isVoiceInputActive = false
     document.getElementById('mic-btn')?.classList.remove('listening')
     if (currentRecognition) {
         try { currentRecognition.stop() } catch {}
         currentRecognition = null
     }
+}
+
+// ─── PHASE 3 WELCOME ────────────────────────────────────────────────────────
+
+function showPhase3Welcome() {
+    const el = document.getElementById('phase3-welcome')
+    if (el) el.style.display = 'flex'
+}
+
+function dismissPhase3Welcome() {
+    const el = document.getElementById('phase3-welcome')
+    if (el) {
+        el.style.opacity = '0'
+        el.style.transition = 'opacity 0.3s ease'
+        setTimeout(() => { el.style.display = 'none' }, 300)
+    }
+    localStorage.setItem('luloPhase3WelcomeSeen', '1')
 }
 
 // ─── NOTIFICATION CENTRE ────────────────────────────────────────────────────

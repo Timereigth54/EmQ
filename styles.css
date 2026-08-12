@@ -1834,3 +1834,70 @@
             -webkit-tap-highlight-color: transparent;
         }
         .retry-btn:hover { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.4); }
+        /* ── PHASE 3 WELCOME POPUP ─────────────────────────────────────────────── */
+        #phase3-welcome {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeIn 0.35s ease;
+        }
+        #phase3-welcome-card {
+            background: rgba(12, 12, 32, 0.97);
+            border: 1px solid rgba(0, 255, 120, 0.25);
+            border-radius: 28px;
+            padding: 32px 28px 28px;
+            max-width: 340px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0, 200, 100, 0.12), 0 20px 60px rgba(0,0,0,0.5);
+            animation: slideUpFade 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #phase3-welcome-lulo {
+            font-size: 3rem;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 0 12px rgba(0,255,100,0.4));
+        }
+        #phase3-welcome-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 14px;
+            letter-spacing: -0.3px;
+            font-family: 'Inter', sans-serif;
+        }
+        #phase3-welcome-body {
+            font-size: 0.88rem;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.75;
+            margin-bottom: 24px;
+            font-family: 'Inter', sans-serif;
+        }
+        #phase3-welcome-body strong {
+            color: rgba(0,255,120,0.9);
+            font-weight: 600;
+        }
+        #phase3-welcome-btn {
+            background: rgba(0,200,100,0.12);
+            border: 1.5px solid rgba(0,255,120,0.45);
+            color: rgba(0,255,120,0.95);
+            padding: 13px 36px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+            width: 100%;
+        }
+        #phase3-welcome-btn:hover {
+            background: rgba(0,200,100,0.22);
+            box-shadow: 0 0 20px rgba(0,255,100,0.2);
+        }
