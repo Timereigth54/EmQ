@@ -62,10 +62,20 @@ const LuloVoice = {
         this._drain()
     },
 
-    async _drain() {
+    // Set this from app.js to be notified when the queue drains after speaking.
+    // Used to auto-restart the mic for continuous conversation.
+    onDrainComplete: null,
+
+    async _drain(fromRecursion = false) {
         if (this._speaking) return
         const next = this._queue.shift()
-        if (next === undefined) return
+        if (next === undefined) {
+            // Queue is empty — if we just finished speaking, notify the caller
+            if (fromRecursion && typeof this.onDrainComplete === 'function') {
+                this.onDrainComplete()
+            }
+            return
+        }
         this._speaking = true
         try {
             await this._utter(next)
@@ -73,7 +83,7 @@ const LuloVoice = {
             // A failed line should never stall the queue
         }
         this._speaking = false
-        if (this.enabled) this._drain()
+        if (this.enabled) this._drain(true)
     },
 
     // Resolves when this line has finished playing

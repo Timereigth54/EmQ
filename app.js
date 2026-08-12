@@ -5800,6 +5800,15 @@ function retryLastMessage() {
 
 function initApp() {
     LuloVoice.load()
+
+    // Auto-restart mic after Lulo finishes speaking — enables continuous conversation.
+    // Only fires when voice is enabled, voice input was the trigger, and mic isn't already on.
+    LuloVoice.onDrainComplete = () => {
+        if (LuloVoice.enabled && !isVoiceInputActive) {
+            toggleVoiceInput()
+        }
+    }
+
     updateStreak()
     updateNotifBadge()
 
