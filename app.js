@@ -442,47 +442,52 @@ function setTheme(theme) {
             backBtn: 'rgba(0,212,255,0.3)',
             backBtnText: 'rgba(0,212,255,0.8)',
         },
+        // ─── THE THRONE ROOM ─────────────────────────────────────────
+        // Revelation 4: jasper and carnelian, an emerald rainbow around the
+        // throne, a sea of glass like crystal, and seven torches of fire.
+        // Every colour below is one of those, so the theme is lit from above
+        // rather than tinted from a palette.
         light: {
-            bg: '#faf8ff',
-            bgBefore: 'rgba(201,168,76,0.08)',
-            bgAfter: 'rgba(180,160,220,0.08)',
-            cardBg: 'rgba(255,255,255,0.7)',
-            cardBorder: 'rgba(180,160,220,0.2)',
-            text: '#3d3550',
-            textMuted: '#9b8fb0',
-            accent: '#c9a84c',
-            gold: '#c9a84c',
-            inputBg: 'rgba(255,255,255,0.8)',
-            inputBorder: 'rgba(201,168,76,0.2)',
-            inputText: '#3d3550',
-            inputPlaceholder: '#9b8fb0',
-            sendBtn: 'linear-gradient(135deg,#c9a84c,#b8963e)',
-            luloGlow: 'rgba(201,168,76,0.2)',
-            luloFilter: 'drop-shadow(0 0 25px rgba(201,168,76,0.5))',
-            carouselBg: 'linear-gradient(180deg,rgba(245,240,255,0.9) 0%,rgba(250,248,255,0.8) 50%,rgba(245,240,255,0.9) 100%)',
-            carouselBorder: 'rgba(180,160,220,0.2)',
-            activeSlotBorder: 'rgba(201,168,76,0.4)',
-            activeSlotGlow: 'rgba(201,168,76,0.1)',
-            activeSlotLine: 'rgba(201,168,76,0.6)',
-            emotionLabel: '#9b8fb0',
-            emotionLabelActive: '#c9a84c',
-            bottomBar: 'linear-gradient(to top,#faf8ff 60%,transparent)',
-            scrollbar: '#c9a84c',
-            appName: '#9b8fb0',
-            chatBubbleUserBg: 'rgba(201,168,76,0.15)',
-            chatBubbleUserBorder: 'rgba(201,168,76,0.35)',
-            chatBubbleUserText: '#3d3550',
-            chatBubbleLuloBg: 'rgba(255,255,255,0.8)',
-            chatBubbleLuloBorder: 'rgba(201,168,76,0.2)',
-            chatBubbleLuloText: '#5a4a7a',
-            scriptureFont: "'Palatino Linotype', Georgia, serif",
-            glassScreenBg: 'rgba(250,248,255,0.98)',
-            glassCardBg: 'rgba(255,255,255,0.7)',
-            glassCardBorder: 'rgba(180,160,220,0.2)',
-            glassCardText: '#3d3550',
-            glassCardTitle: '#c9a84c',
-            backBtn: 'rgba(201,168,76,0.3)',
-            backBtnText: '#c9a84c',
+            bg: 'radial-gradient(ellipse 92% 40% at 50% 0%, rgba(217,164,65,0.45) 0%, transparent 62%), radial-gradient(ellipse 130% 26% at 50% 19%, rgba(30,122,90,0.24) 0%, transparent 72%), radial-gradient(ellipse 62% 42% at 10% 64%, rgba(194,84,46,0.16) 0%, transparent 64%), radial-gradient(ellipse 72% 46% at 90% 72%, rgba(116,190,222,0.30) 0%, transparent 64%), radial-gradient(circle 320px at 50% 46%, rgba(255,255,255,0.90) 0%, transparent 72%), linear-gradient(170deg, #FDF7EA 0%, #EFF6F6 46%, #E3EEF2 100%)',
+            bgBefore: 'rgba(217,164,65,0.12)',
+            bgAfter: 'rgba(116,190,222,0.12)',
+            cardBg: 'rgba(255,255,255,0.88)',
+            cardBorder: 'rgba(23,50,60,0.10)',
+            text: '#17323C',
+            textMuted: '#5C7480',
+            accent: '#1E7A5A',
+            gold: '#D9A441',
+            inputBg: 'rgba(255,255,255,0.94)',
+            inputBorder: 'rgba(23,50,60,0.12)',
+            inputText: '#17323C',
+            inputPlaceholder: '#7D939C',
+            sendBtn: 'linear-gradient(135deg,#1E7A5A,#166049)',
+            luloGlow: 'rgba(30,122,90,0.22)',
+            luloFilter: 'drop-shadow(0 6px 20px rgba(23,50,60,0.22))',
+            carouselBg: 'linear-gradient(180deg,rgba(255,255,255,0.88) 0%,rgba(244,251,251,0.78) 50%,rgba(255,255,255,0.88) 100%)',
+            carouselBorder: 'rgba(23,50,60,0.10)',
+            activeSlotBorder: 'rgba(30,122,90,0.42)',
+            activeSlotGlow: 'rgba(30,122,90,0.12)',
+            activeSlotLine: 'rgba(30,122,90,0.62)',
+            emotionLabel: '#5C7480',
+            emotionLabelActive: '#1E7A5A',
+            bottomBar: 'linear-gradient(to top, #E3EEF2 55%, transparent)',
+            scrollbar: 'rgba(30,122,90,0.35)',
+            appName: '#17323C',
+            chatBubbleUserBg: 'linear-gradient(135deg, rgba(217,164,65,0.26), rgba(194,84,46,0.12))',
+            chatBubbleUserBorder: 'rgba(194,133,60,0.40)',
+            chatBubbleUserText: '#4A3312',
+            chatBubbleLuloBg: 'rgba(255,255,255,0.96)',
+            chatBubbleLuloBorder: 'rgba(30,122,90,0.20)',
+            chatBubbleLuloText: '#17323C',
+            scriptureFont: "'Spectral', Georgia, serif",
+            glassScreenBg: 'rgba(238,246,247,0.985)',
+            glassCardBg: 'rgba(255,255,255,0.90)',
+            glassCardBorder: 'rgba(23,50,60,0.10)',
+            glassCardText: '#17323C',
+            glassCardTitle: '#1E7A5A',
+            backBtn: 'rgba(30,122,90,0.38)',
+            backBtnText: '#1E7A5A',
         },
         soft: {
             bg: '#fff8f8',
@@ -517,7 +522,7 @@ function setTheme(theme) {
             chatBubbleLuloBg: 'rgba(255,255,255,0.8)',
             chatBubbleLuloBorder: 'rgba(255,180,180,0.2)',
             chatBubbleLuloText: '#5a4040',
-            scriptureFont: "'Palatino Linotype', Georgia, serif",
+            scriptureFont: "'Spectral', Georgia, serif",
             glassScreenBg: 'rgba(255,248,248,0.98)',
             glassCardBg: 'rgba(255,255,255,0.8)',
             glassCardBorder: 'rgba(255,180,180,0.2)',
@@ -573,6 +578,9 @@ function setTheme(theme) {
 
     const t = themes[theme] || themes.dark
     const isLight = theme === 'light'
+    // The t2 artwork set is drawn for light backgrounds — the default PNGs rely
+    // on mix-blend-mode: screen and disappear against anything pale.
+    const isT2 = theme === 'soft' || theme === 'midnight' || theme === 'light'
 
     // BODY
     // The dark theme's galaxy background lives in styles.css. Setting the
@@ -587,7 +595,7 @@ function setTheme(theme) {
     // APP NAME — the Phase 3 wordmark is the centre of the top bar and stays
     // full strength. t.appName is the old muted value and would grey it out.
     const appName = document.getElementById('app-name')
-    if (appName) appName.style.color = isLight ? '#3d3550' : 'white'
+    if (appName) appName.style.color = isLight ? t.text : 'white'
 
     // BOTTOM BAR
     const bottomBar = document.getElementById('bottom-bar')
@@ -613,7 +621,18 @@ function setTheme(theme) {
     const luloGlow = document.getElementById('lulo-glow')
     if (luloGlow) luloGlow.style.background = `radial-gradient(circle, ${t.luloGlow} 0%, transparent 70%)`
     const luloImg = document.getElementById('lulo-img')
-    if (luloImg) luloImg.style.filter = t.luloFilter
+    if (luloImg) {
+        luloImg.style.filter = t.luloFilter
+        // `screen` blends toward white, so on a pale ground the default artwork
+        // washes out completely. The t2 set is drawn for light backgrounds and
+        // composites normally.
+        luloImg.style.mixBlendMode = isT2 ? 'normal' : 'screen'
+    }
+    const toastAvatar = document.getElementById('lulo-toast-avatar')
+    if (toastAvatar) {
+        toastAvatar.style.mixBlendMode = isT2 ? 'normal' : 'screen'
+        toastAvatar.src = isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'
+    }
 
     // CAROUSEL
     const ringOuter = document.getElementById('ring-outer')
@@ -621,7 +640,7 @@ function setTheme(theme) {
         ringOuter.style.background = t.carouselBg
         ringOuter.style.borderColor = t.carouselBorder
         ringOuter.style.boxShadow = isLight
-            ? '0 0 30px rgba(201,168,76,0.1), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(201,168,76,0.1)'
+            ? '0 0 30px rgba(30,122,90,0.1), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(30,122,90,0.1)'
             : '0 0 30px rgba(0,255,100,0.06), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.2)'
     }
     
@@ -634,7 +653,7 @@ function setTheme(theme) {
     // EMOTION LABELS
     document.querySelectorAll('.emotion-btn .label').forEach(label => {
         label.style.color = t.emotionLabel
-        label.style.fontFamily = isLight ? "'Palatino Linotype', Georgia, serif" : "'Inter', sans-serif"
+        label.style.fontFamily = isLight ? "'Spectral', Georgia, serif" : "'Inter', sans-serif"
     })
     document.querySelectorAll('.emotion-btn.active .label').forEach(label => {
         label.style.color = t.emotionLabelActive
@@ -710,10 +729,10 @@ function setTheme(theme) {
         btn.style.color = t.backBtnText
     })
     document.querySelectorAll('.screen-title').forEach(t2 => {
-        t2.style.color = isLight ? '#3d3550' : 'white'
+        t2.style.color = isLight ? '#17323C' : 'white'
     })
     document.querySelectorAll('.screen-subtitle').forEach(s => {
-        s.style.color = isLight ? '#9b8fb0' : 'rgba(255,255,255,0.35)'
+        s.style.color = isLight ? '#5C7480' : 'rgba(255,255,255,0.35)'
     })
 
     // SCROLLBAR
@@ -739,21 +758,88 @@ function setTheme(theme) {
             letter-spacing: 0.1px !important;
         }
         /* MOOD CARD DECK — themed */
+        #carousel-wrapper::before {
+            background: ${t.carouselBg} !important;
+            border-color: ${t.carouselBorder} !important;
+            box-shadow: ${isLight
+                ? '0 8px 28px rgba(23,50,60,0.10), inset 0 1px 0 rgba(255,255,255,0.9)'
+                : '0 8px 32px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.18)'
+            } !important;
+        }
         .mood-card {
-            background: ${isLight ? 'rgba(255,255,255,0.75)' : 'rgba(22,22,48,0.8)'} !important;
+            background: ${isLight ? 'rgba(255,255,255,0.82)' : 'rgba(22,22,48,0.8)'} !important;
             border-color: ${t.carouselBorder} !important;
         }
         .mood-card .card-label {
             color: ${t.emotionLabel} !important;
-            font-family: ${isLight ? "'Palatino Linotype', Georgia, serif" : "'Inter', sans-serif"} !important;
+            font-family: ${isLight ? "'Spectral', Georgia, serif" : "'Inter', sans-serif"} !important;
         }
         .mood-card.active .card-label { color: ${t.emotionLabelActive} !important; }
+        /* The fixed frame owns the highlight, so the LULO card stays quiet */
         .mood-card.lulo-center-card {
-            background: ${isLight ? 'rgba(201,168,76,0.1)' : 'rgba(0,200,100,0.1)'} !important;
-            border-color: ${isLight ? 'rgba(201,168,76,0.55)' : 'rgba(0,255,120,0.55)'} !important;
+            background: ${isLight ? 'rgba(30,122,90,0.10)' : 'rgba(0,220,120,0.10)'} !important;
+            border-color: ${isLight ? 'rgba(30,122,90,0.28)' : 'rgba(0,255,120,0.28)'} !important;
         }
-        .mood-card.lulo-center-card .card-label {
-            color: ${isLight ? '#c9a84c' : 'rgba(0,255,120,0.9)'} !important;
+        .mood-card.in-frame {
+            background: transparent !important;
+            border-color: transparent !important;
+        }
+        .mood-card.in-frame .card-label { color: ${t.emotionLabelActive} !important; }
+        /* The expanded scripture card is dark glass by default, which leaves
+           deepwater ink sitting on dark grey in the light themes. */
+        #scripture-card.scripture-expanded {
+            background: ${isLight ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.07)'} !important;
+            border-color: ${isLight ? 'rgba(23,50,60,0.12)' : 'rgba(255,255,255,0.15)'} !important;
+            box-shadow: ${isLight
+                ? '0 18px 50px rgba(23,50,60,0.20), inset 0 1px 0 rgba(255,255,255,0.9)'
+                : '0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'} !important;
+        }
+        #scripture-scrim {
+            background: ${isLight ? 'rgba(23,50,60,0.26)' : 'rgba(4,4,14,0.55)'} !important;
+        }
+        #scripture-card.scripture-expanded #scripture-text {
+            color: ${isLight ? t.text : 'rgba(255,255,255,0.92)'} !important;
+        }
+        #scripture-back-btn { color: ${isLight ? t.textMuted : 'rgba(255,255,255,0.35)'} !important; }
+        #another-btn, .scripture-action-btn {
+            color: ${t.accent} !important;
+            border-color: ${t.accent} !important;
+        }
+
+        /* Chrome that was only ever written for the dark theme. Without these
+           the greeting, the swipe hint and the top pills stay white-on-white. */
+        #welcome-message { color: ${isLight ? t.text : 'white'} !important; }
+        #welcome-subtext { color: ${t.textMuted} !important; }
+        #carousel-label { color: ${t.textMuted} !important; }
+        .hint-label { color: ${isLight ? 'rgba(23,50,60,0.55)' : 'rgba(255,255,255,0.32)'} !important; }
+        .hint-arrow { color: ${isLight ? 'rgba(30,122,90,0.55)' : 'rgba(0,212,255,0.38)'} !important; }
+        .top-pill {
+            background: ${isLight ? 'rgba(255,255,255,0.88)' : 'rgba(20,20,45,0.75)'} !important;
+            border-color: ${t.cardBorder} !important;
+            color: ${t.text} !important;
+        }
+        .top-pill:hover, .top-pill:active {
+            background: ${isLight ? 'rgba(255,255,255,1)' : 'rgba(30,30,60,0.9)'} !important;
+        }
+        #streak-count { color: ${t.text} !important; }
+        .shield-icon { color: ${isLight ? t.text : 'rgba(255,255,255,0.92)'} !important; }
+        #sound-btn:not(.voice-active) { color: ${isLight ? t.textMuted : 'rgba(255,255,255,0.45)'} !important; }
+        #mic-btn {
+            background: ${isLight
+                ? 'radial-gradient(circle at 35% 32%, #ffffff, #dfe7f3)'
+                : 'radial-gradient(circle at 35% 35%, rgba(80,80,105,0.92), rgba(25,25,48,0.96))'} !important;
+            border-color: ${isLight ? 'rgba(23,50,60,0.14)' : 'rgba(255,255,255,0.14)'} !important;
+            box-shadow: ${isLight
+                ? '0 6px 22px rgba(23,50,60,0.18), inset 0 1px 0 rgba(255,255,255,0.9)'
+                : '0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)'} !important;
+        }
+        #deck-frame {
+            border-color: ${isLight ? 'rgba(30,122,90,0.65)' : 'rgba(0,255,120,0.7)'} !important;
+            background: ${isLight ? 'rgba(30,122,90,0.07)' : 'rgba(0,220,120,0.10)'} !important;
+            box-shadow: ${isLight
+                ? '0 0 22px rgba(30,122,90,0.18), inset 0 0 20px rgba(30,122,90,0.06)'
+                : '0 0 26px rgba(0,255,100,0.30), 0 0 60px rgba(0,220,90,0.15), inset 0 0 24px rgba(0,255,120,0.10)'
+            } !important;
         }
         ${isGalaxy ? '' : `body { background: ${t.bg} !important; color: ${t.text} !important; }`}
         ${isGalaxy ? `body { color: ${t.text} !important; }` : ''}
@@ -787,8 +873,8 @@ function setTheme(theme) {
         }
 
         #scripture-inner {
-            background: ${isLight ? 'rgba(201,168,76,0.08)' : 'rgba(255,255,255,0.04)'} !important;
-            border-color: ${isLight ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.08)'} !important;
+            background: ${isLight ? 'rgba(30,122,90,0.08)' : 'rgba(255,255,255,0.04)'} !important;
+            border-color: ${isLight ? 'rgba(30,122,90,0.25)' : 'rgba(255,255,255,0.08)'} !important;
         }
 
         /* JOURNAL TABS */
@@ -796,27 +882,27 @@ function setTheme(theme) {
             color: ${isLight ? 'rgba(61,53,80,0.4)' : 'rgba(255,255,255,0.3)'} !important;
         }
         .journal-tab.active {
-            color: ${isLight ? '#c9a84c' : 'rgba(100,255,200,0.9)'} !important;
-            background: ${isLight ? 'rgba(201,168,76,0.1)' : 'rgba(100,255,200,0.1)'} !important;
-            border-color: ${isLight ? 'rgba(201,168,76,0.3)' : 'rgba(100,255,200,0.2)'} !important;
+            color: ${isLight ? '#1E7A5A' : 'rgba(100,255,200,0.9)'} !important;
+            background: ${isLight ? 'rgba(30,122,90,0.1)' : 'rgba(100,255,200,0.1)'} !important;
+            border-color: ${isLight ? 'rgba(30,122,90,0.3)' : 'rgba(100,255,200,0.2)'} !important;
         }
         .journal-mood {
-            color: ${isLight ? '#c9a84c' : 'rgba(0,212,255,0.8)'} !important;
+            color: ${isLight ? '#1E7A5A' : 'rgba(0,212,255,0.8)'} !important;
         }
         .journal-ref {
-            color: ${isLight ? '#9b8fb0' : 'rgba(255,255,255,0.35)'} !important;
+            color: ${isLight ? '#5C7480' : 'rgba(255,255,255,0.35)'} !important;
         }
         .journal-time {
-            color: ${isLight ? '#9b8fb0' : 'rgba(255,255,255,0.25)'} !important;
+            color: ${isLight ? '#5C7480' : 'rgba(255,255,255,0.25)'} !important;
         }
         .favourite-verse {
-            color: ${isLight ? '#3d3550' : 'rgba(255,255,255,0.8)'} !important;
+            color: ${isLight ? '#17323C' : 'rgba(255,255,255,0.8)'} !important;
         }
         .favourite-ref {
-            color: ${isLight ? '#c9a84c' : 'rgba(100,255,200,0.7)'} !important;
+            color: ${isLight ? '#1E7A5A' : 'rgba(100,255,200,0.7)'} !important;
         }
         .favourite-meta {
-            color: ${isLight ? '#9b8fb0' : 'rgba(255,255,255,0.2)'} !important;
+            color: ${isLight ? '#5C7480' : 'rgba(255,255,255,0.2)'} !important;
         }
     `
     document.head.appendChild(style)
@@ -832,7 +918,7 @@ function setTheme(theme) {
             ? 'linear-gradient(160deg, rgba(255,255,255,0.85), rgba(250,245,255,0.75))'
             : 'linear-gradient(160deg, rgba(30,30,55,0.85), rgba(15,15,30,0.75))'
         themePanel.style.border = isLight
-            ? '1px solid rgba(201,168,76,0.18)'
+            ? '1px solid rgba(30,122,90,0.18)'
             : '1px solid rgba(255,255,255,0.08)'
     }
 
@@ -844,19 +930,27 @@ function setTheme(theme) {
     // Update active theme circle
     document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'))
 
+    // Save the preference BEFORE redrawing Lulo. updateLuloMood() reads the
+    // theme back out of localStorage to choose between the two artwork sets, so
+    // writing it afterwards left every theme switch showing the previous
+    // theme's face — dark artwork on the light background, and vice versa.
+    localStorage.setItem('luloTheme', theme)
+
     // Update Lulo's face immediately when theme changes
     updateLuloMood(currentMood || 'home')
 
     // Update carousel home slot image
     const homeBtn = document.querySelector('.home-btn img')
     if (homeBtn) {
-        const isT2 = theme === 'soft' || theme === 'midnight'
         homeBtn.src = isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'
         homeBtn.style.mixBlendMode = isT2 ? 'normal' : 'screen'
     }
-    
-    // Save preference
-    localStorage.setItem('luloTheme', theme)
+
+    // The deck's LULO card carries the same artwork
+    document.querySelectorAll('.lulo-center-card .card-emoji').forEach(img => {
+        img.src = isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'
+        img.style.mixBlendMode = isT2 ? 'normal' : 'screen'
+    })
 }
 
 function loadSavedTheme() {
@@ -880,46 +974,121 @@ function selectMood(item) {
     setTimeout(() => showScripture(item.mood), 300)
 }
 
+// The deck scrolls forever. Three identical copies of the emotion list are laid
+// end to end and we start in the middle one; when the user drifts into an outer
+// copy the scroll position jumps back by exactly one copy width. Every card is
+// pixel-identical to its twin, so the jump is invisible.
+const DECK_COPIES = 3
+const DECK_MID_COPY = 1
+let _deckUnitWidth = 0
+
 function buildCarousel() {
     const container = document.getElementById('mood-buttons')
     if (!container) return
     container.innerHTML = ''
+    _deckUnitWidth = 0
 
-    // Insert the LULO card in the middle of the emotion list
+    // The LULO card sits in the middle of each copy
     const insertAt = Math.floor(emotionList.length / 2)
+    const t2Themes = ['soft', 'midnight', 'light']
+    const isT2 = t2Themes.includes(localStorage.getItem('luloTheme'))
 
-    emotionList.forEach((mood, i) => {
-        if (i === insertAt) {
-            const luloCard = document.createElement('div')
-            luloCard.className = 'mood-card lulo-center-card'
-            const isT2 = localStorage.getItem('luloTheme') === 'soft' || localStorage.getItem('luloTheme') === 'midnight'
-            luloCard.innerHTML = `
-                <img class="card-emoji" src="${isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'}"
-                     alt="Lulo"
-                     style="width:42px;height:42px;object-fit:contain;${isT2 ? '' : 'mix-blend-mode:screen;'}filter:drop-shadow(0 0 6px rgba(0,255,100,0.45));"/>
-                <div class="card-label">LULO</div>`
-            luloCard.addEventListener('click', () => openVoiceOrTextInput())
-            container.appendChild(luloCard)
-        }
+    for (let copy = 0; copy < DECK_COPIES; copy++) {
+        emotionList.forEach((mood, i) => {
+            if (i === insertAt) {
+                const luloCard = document.createElement('div')
+                luloCard.className = 'mood-card lulo-center-card'
+                luloCard.dataset.copy = copy
+                luloCard.dataset.slot = 'lulo'
+                luloCard.innerHTML = `
+                    <img class="card-emoji" src="${isT2 ? 'images/lulo_t2.png' : 'images/lulo.png'}"
+                         alt="Lulo"
+                         style="width:42px;height:42px;object-fit:contain;${isT2 ? '' : 'mix-blend-mode:screen;'}filter:drop-shadow(0 0 6px rgba(0,255,100,0.45));"/>
+                    <div class="card-label">LULO</div>`
+                luloCard.addEventListener('click', () => openVoiceOrTextInput())
+                container.appendChild(luloCard)
+            }
 
-        const card = document.createElement('div')
-        card.className = 'mood-card'
-        card.dataset.mood = mood.mood
-        card.innerHTML = `<div class="card-emoji">${mood.emoji}</div><div class="card-label">${mood.label}</div>`
-        card.addEventListener('click', () => {
-            if (isCarouselLocked()) return
-            container.querySelectorAll('.mood-card.active').forEach(c => c.classList.remove('active'))
-            card.classList.add('active')
-            selectMood(mood)
+            const card = document.createElement('div')
+            card.className = 'mood-card'
+            card.dataset.mood = mood.mood
+            card.dataset.copy = copy
+            card.innerHTML = `<div class="card-emoji">${mood.emoji}</div><div class="card-label">${mood.label}</div>`
+            card.addEventListener('click', () => {
+                if (isCarouselLocked()) return
+                container.querySelectorAll('.mood-card.active').forEach(c => c.classList.remove('active'))
+                card.classList.add('active')
+                selectMood(mood)
+            })
+            container.appendChild(card)
         })
-        container.appendChild(card)
-    })
+    }
 
-    // Centre the LULO card on load
+    container.addEventListener('scroll', onDeckScroll, { passive: true })
+
+    // Start centred on the LULO card of the middle copy
     setTimeout(() => {
-        const luloCard = container.querySelector('.lulo-center-card')
-        if (luloCard) luloCard.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' })
+        const cards = container.querySelectorAll('.mood-card')
+        const perCopy = cards.length / DECK_COPIES
+        // One copy's width, measured from a card to its twin in the next copy
+        if (cards.length > perCopy) {
+            _deckUnitWidth = cards[perCopy].offsetLeft - cards[0].offsetLeft
+        }
+        const mid = container.querySelector(`.lulo-center-card[data-copy="${DECK_MID_COPY}"]`)
+        if (mid) mid.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' })
+        onDeckScroll()
     }, 50)
+}
+
+// Keep the scroll position inside the middle copy.
+// The band is half-open — [u, 2u) — and exactly one copy wide. A closed band
+// would let a position sitting on the boundary bounce between the two edges
+// forever, since each jump would land it back on the opposite edge.
+function wrapDeck(container) {
+    const u = _deckUnitWidth
+    if (!u) return
+    const x = container.scrollLeft
+    if (x >= u && x < u * 2) return
+
+    let next = x
+    while (next < u) next += u
+    while (next >= u * 2) next -= u
+
+    // Snap fights an instant scrollLeft change on iOS, so lift it for the jump
+    const snap = container.style.scrollSnapType
+    container.style.scrollSnapType = 'none'
+    container.scrollLeft = next
+    requestAnimationFrame(() => { container.style.scrollSnapType = snap || '' })
+}
+
+// The frame is fixed; the cards move through it. This marks whichever card is
+// currently inside it so the highlight belongs to the frame, not to any card.
+let _deckScrollRaf = null
+function onDeckScroll() {
+    if (_deckScrollRaf) return
+    _deckScrollRaf = requestAnimationFrame(() => {
+        _deckScrollRaf = null
+        const wrapper = document.getElementById('carousel-wrapper')
+        const container = document.getElementById('mood-buttons')
+        if (!wrapper || !container) return
+
+        wrapDeck(container)
+
+        const frameCentre = wrapper.getBoundingClientRect().left + wrapper.offsetWidth / 2
+        let closest = null
+        let closestDist = Infinity
+
+        container.querySelectorAll('.mood-card').forEach(card => {
+            const r = card.getBoundingClientRect()
+            const dist = Math.abs((r.left + r.width / 2) - frameCentre)
+            if (dist < closestDist) { closestDist = dist; closest = card }
+        })
+
+        container.querySelectorAll('.mood-card.in-frame').forEach(c => {
+            if (c !== closest) c.classList.remove('in-frame')
+        })
+        if (closest) closest.classList.add('in-frame')
+    })
 }
 
 // enterMainApp() still calls these by their original names
@@ -1308,8 +1477,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
     if (cardDivider) cardDivider.style.display = 'none'
     if (anotherBtn) anotherBtn.style.display = 'none'
 
-    const tonguesTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : 'rgba(255,255,255,0.85)'
-    const tonguesBtnColor = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+    const tonguesTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : 'rgba(255,255,255,0.85)'
+    const tonguesBtnColor = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
 
     textEl.innerHTML = `
         <p style="color:${tonguesTextColor};font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
@@ -1338,8 +1507,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 document.getElementById('lulo-reaction').innerText = `${name}... this changes everything. 💙`
                 animateLulo('nod')
 
-                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
-                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : '#e0f4ff'
+                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
 
                 text.innerHTML = `
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
@@ -1361,8 +1530,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 document.getElementById('lulo-reaction').innerText = `That's okay, ${name}. 💙`
                 animateLulo('nod')
 
-                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#3d3550' : '#e0f4ff'
-                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#c9a84c' : '#00d4ff'
+                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : '#e0f4ff'
+                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
 
                 text.innerHTML = `
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
@@ -2106,22 +2275,35 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             // If notifications are granted, also fire a real browser notification
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                scheduleNextNotification()
+                scheduleNextNotification(verse)
             }
         }
 
-        function scheduleNextNotification() {
-            // Browsers don't support true scheduled notifications without a service worker push server,
-            // so this fires a gentle reminder the next time the service worker wakes up, if supported
-            if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
-                navigator.serviceWorker.ready.then(registration => {
-                    registration.showNotification('Em_Q', {
-                        body: 'lulo saved something for you today',
-                        icon: '/EmQ/favicon-96x96.png',
-                        tag: 'daily-scripture'
-                    })
+        // Fires the day's scripture as a system notification.
+        //
+        // There is no push server, so this can only fire while the page is
+        // alive — it cannot wake the phone tomorrow morning. It used to fire
+        // unconditionally from checkDailyScripture(), which meant it popped up
+        // while the user was already looking at the app. Now it only fires when
+        // the app is in the background, where a notification is the only way to
+        // reach them.
+        function scheduleNextNotification(verse) {
+            if (document.visibilityState === 'visible') return
+            if (!('serviceWorker' in navigator)) return
+            if (!('showNotification' in ServiceWorkerRegistration.prototype)) return
+
+            const body = verse && verse.text
+                ? `${verse.text}${verse.ref ? ' — ' + verse.ref : ''}`
+                : 'Lulo saved something for you today.'
+
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification("Today's scripture", {
+                    body,
+                    icon: '/EmQ/web-app-manifest-192x192.png',
+                    badge: '/EmQ/favicon-96x96.png',
+                    tag: 'daily-scripture'
                 })
-            }
+            }).catch(() => {})
         }
         
         async function triggerDateCelebration(dateObj, name) {
@@ -4093,7 +4275,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         const img = document.getElementById('lulo-img')
         const luloGlow = document.getElementById('lulo-glow')
         const currentTheme = localStorage.getItem('luloTheme') || 'dark'
-        const isT2 = currentTheme === 'soft' || currentTheme === 'midnight'
+        const isT2 = currentTheme === 'soft' || currentTheme === 'midnight' || currentTheme === 'light'
 
         const moodFaces = {
             happy: isT2 ? 'images/lulo_t2_happy.png' : 'images/lulo_happy.png',
@@ -4474,10 +4656,10 @@ if (    mood !== 'home') lockCarousel()
         
 
             const isLight = localStorage.getItem('luloTheme') === 'light'
-            const btnColor = isLight ? '#c9a84c' : 'rgba(0,255,100,0.9)'
-            const btnBorder = isLight ? 'rgba(201,168,76,0.4)' : 'rgba(0,255,100,0.3)'
-            const btnBg = isLight ? 'rgba(201,168,76,0.1)' : 'rgba(0,255,100,0.1)'
-            const textColor = isLight ? '#3d3550' : 'rgba(255,255,255,0.6)'
+            const btnColor = isLight ? '#1E7A5A' : 'rgba(0,255,100,0.9)'
+            const btnBorder = isLight ? 'rgba(30,122,90,0.4)' : 'rgba(0,255,100,0.3)'
+            const btnBg = isLight ? 'rgba(30,122,90,0.1)' : 'rgba(0,255,100,0.1)'
+            const textColor = isLight ? '#17323C' : 'rgba(255,255,255,0.6)'
 
             const prayerPrompt = document.createElement('div')
             prayerPrompt.id = 'sick-prayer-prompt'
@@ -5182,6 +5364,13 @@ function escapeHTML(str) {
 
 let _scriptureShownAt = 0
 
+function hideScriptureScrim() {
+    const scrim = document.getElementById('scripture-scrim')
+    if (!scrim) return
+    scrim.classList.remove('scrim-on')
+    setTimeout(() => { if (!scrim.classList.contains('scrim-on')) scrim.hidden = true }, 280)
+}
+
 // Re-trigger the card's fade-in. Driven by a class rather than an inline
 // animation so the CSS can pick the right keyframes for the centred card
 // versus the in-flow one; setting it inline here would override that choice.
@@ -5194,6 +5383,8 @@ function playCardIntro(box) {
 
 function enterScriptureMode() {
     _scriptureShownAt = Date.now()
+    const scrim = document.getElementById('scripture-scrim')
+    if (scrim) { scrim.hidden = false; void scrim.offsetWidth; scrim.classList.add('scrim-on') }
     document.getElementById('lulo-container')?.classList.add('lulo-recede')
     document.getElementById('carousel-container')?.classList.add('carousel-recede')
     document.getElementById('scripture-card')?.classList.add('scripture-expanded')
@@ -5211,6 +5402,7 @@ function dismissScriptureCard() {
     if (card && card.classList.contains('scripture-expanded')) {
         card.classList.remove('card-intro')
         card.classList.add('card-leaving')
+        hideScriptureScrim()
         document.getElementById('lulo-container')?.classList.remove('lulo-recede')
         document.getElementById('carousel-container')?.classList.remove('carousel-recede')
         LuloVoice.stop()
@@ -5227,6 +5419,7 @@ function dismissScriptureCard() {
 }
 
 function exitScriptureMode() {
+    hideScriptureScrim()
     document.getElementById('lulo-container')?.classList.remove('lulo-recede')
     document.getElementById('carousel-container')?.classList.remove('carousel-recede')
     const card = document.getElementById('scripture-card')
@@ -5378,7 +5571,9 @@ function showPhase3Welcome() {
     if (el) el.style.display = 'flex'
 }
 
-function dismissPhase3Welcome() {
+// skip = true when dismissed via "Not now". The primary button says "Turn on
+// her voice", so it has to actually turn it on — a control keeps its promise.
+function dismissPhase3Welcome(skip = false) {
     const el = document.getElementById('phase3-welcome')
     if (el) {
         el.style.opacity = '0'
@@ -5386,6 +5581,8 @@ function dismissPhase3Welcome() {
         setTimeout(() => { el.style.display = 'none' }, 300)
     }
     localStorage.setItem('luloPhase3WelcomeSeen', '1')
+
+    if (!skip && !LuloVoice.enabled) toggleSound()
 }
 
 // ─── NOTIFICATION CENTRE ────────────────────────────────────────────────────

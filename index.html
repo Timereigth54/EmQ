@@ -270,8 +270,8 @@
         <div id="lulo-glow"></div>
         <div id="lulo-face">
             <img id="lulo-img" src="images/lulo.png" alt="Lulo" style="
-                width: 240px;
-                height: 240px;
+                width: 272px;
+                height: 272px;
                 object-fit: contain;
                 mix-blend-mode: screen;
                 filter: drop-shadow(0 0 25px rgba(0,255,100,0.5));
@@ -294,6 +294,9 @@
     <div id="carousel-container">
         <div id="carousel-label"></div>
         <div id="carousel-wrapper">
+            <!-- Fixed centre frame. It never moves; the cards scroll through it,
+                 and whichever card is inside it is the one in focus. -->
+            <div id="deck-frame" aria-hidden="true"></div>
             <!-- MOOD CARD DECK -->
             <div id="mood-buttons"></div>
         </div>
@@ -434,6 +437,12 @@
 </div>
 
 <!-- NOTIFICATION TRAY -->
+<!-- Dim behind the centred scripture card. This has to be its own page-level
+     element: the card is centred with a transform, and a `position: fixed`
+     child of a transformed element sizes to that element instead of the
+     viewport — so as a pseudo-element it only ever covered the card. -->
+<div id="scripture-scrim" hidden></div>
+
 <!-- LULO TOAST — pops down when Lulo says something while you're on the home
      screen, where there is no visible thread. Tapping it opens text mode. -->
 <div id="lulo-toast" role="status" aria-live="polite" hidden>
@@ -447,21 +456,24 @@
     <button id="lulo-toast-close" aria-label="Dismiss">✕</button>
 </div>
 
-<!-- PHASE 3 WELCOME POPUP -->
-<div id="phase3-welcome" style="display:none;" aria-modal="true" role="dialog">
+<!-- WELCOME POPUP — shown once, when voice first becomes available. -->
+<div id="phase3-welcome" style="display:none;" aria-modal="true" role="dialog" aria-labelledby="phase3-welcome-title">
     <div id="phase3-welcome-card">
-        <div id="phase3-welcome-lulo">🌱</div>
-        <h2 id="phase3-welcome-title">Welcome to Phase 3</h2>
+        <img id="phase3-welcome-lulo" src="images/lulo.png" alt="" aria-hidden="true"/>
+        <p id="phase3-welcome-eyebrow">Something new</p>
+        <h2 id="phase3-welcome-title">Lulo can speak now.</h2>
         <p id="phase3-welcome-body">
-            Lulo has a voice now.<br>
-            Tap <strong>🔊</strong> in the top bar to turn it on —
-            then just speak to her and she'll speak back.
-            <br><br>
-            You can also swipe the mic to switch to text anytime.
+            Turn her voice on and she'll read every reply aloud, in her own voice.
         </p>
+        <ul id="phase3-welcome-list">
+            <li><span class="pw-key">Speaker</span><span>Top left. Turns her voice on and off.</span></li>
+            <li><span class="pw-key">Mic</span><span>Hold a conversation out loud.</span></li>
+            <li><span class="pw-key">Swipe</span><span>Slide the mic sideways to type instead.</span></li>
+        </ul>
         <button id="phase3-welcome-btn" onclick="dismissPhase3Welcome()">
-            Let's go 💙
+            Turn on her voice
         </button>
+        <button id="phase3-welcome-skip" onclick="dismissPhase3Welcome(true)">Not now</button>
     </div>
 </div>
 

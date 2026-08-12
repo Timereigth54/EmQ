@@ -1,4 +1,4 @@
-const CACHE = 'emq-v28'
+const CACHE = 'emq-v29'
 
 // App shell — core files served cache-first
 const SHELL_ASSETS = [
@@ -91,7 +91,23 @@ self.addEventListener('activate', e => {
     )
 })
 
-// ─── FETCH: stale-while-revalidate for shell, cache-first for images ──────────
+// ─── NOTIFICATION TAP ─────────────────────────────────────────────────────────
+// Without this, tapping an Em_Q notification does nothing at all: the banner
+// dismisses and the app never opens. Focus an existing window if one is around,
+// otherwise launch the app.
+self.addEventListener('notificationclick', e => {
+    e.notification.close()
+    e.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => {
+            for (const w of windows) {
+                if ('focus' in w) return w.focus()
+            }
+            if (self.clients.openWindow) return self.clients.openWindow('/EmQ/')
+        })
+    )
+})
+
+// ─── FETCH: network-first for shell, cache-first for images ───────────────────
 self.addEventListener('fetch', e => {
     const url = new URL(e.request.url)
 
@@ -103,19 +119,24 @@ self.addEventListener('fetch', e => {
     const isImage = url.pathname.includes('/images/')
 
     if (isShell) {
-        // Stale-while-revalidate: serve cached version instantly, update cache in background
+        // Network-first for the shell.
+        //
+        // This used to be stale-while-revalidate, which always served the cached
+        // copy and refreshed it in the background — so a deploy only became
+        // visible on the *second* launch. Going to the network first means the
+        // current build loads straight away; the cache is still written on every
+        // success, so offline continues to work from the last good copy.
         e.respondWith(
-            caches.open(CACHE).then(cache => {
-                return cache.match(e.request).then(cached => {
-                    const networkFetch = fetch(e.request).then(response => {
+            caches.open(CACHE).then(cache =>
+                fetch(e.request)
+                    .then(response => {
                         if (response && response.status === 200) {
                             cache.put(e.request, response.clone())
                         }
                         return response
-                    }).catch(() => null)
-                    return cached || networkFetch
-                })
-            })
+                    })
+                    .catch(() => cache.match(e.request))
+            )
         )
     } else if (isImage) {
         // Cache-first for images — they don't change often

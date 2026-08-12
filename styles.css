@@ -1,4 +1,9 @@
- @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+/* Spectral is Lulo's reading voice in the light themes and on the welcome
+   screen. It replaces the old 'Palatino Linotype' stack, which existed only on
+   Windows — iOS fell through to Georgia and Android to Noto Serif, so the light
+   theme rendered in three different faces with three different metrics. */
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -294,8 +299,10 @@
            Pushed down the screen so the mood deck below sits inside comfortable
            one-handed thumb reach rather than up in the stretch zone. */
         #lulo-container {
-            margin-top: 120px;
-            margin-bottom: -10px;
+            margin-top: 84px;
+            /* Grew by 32px and moved up 36px — this soaks up the extra height so
+               the rail below does not shift. */
+            margin-bottom: -42px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -319,8 +326,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 220px;
-            height: 220px;
+            width: 250px;
+            height: 250px;
             background: radial-gradient(circle, rgba(0,255,100,0.35) 0%, rgba(0,180,255,0.08) 60%, transparent 80%);
             border-radius: 50%;
             animation: pulse-glow 3s ease-in-out infinite;
@@ -341,8 +348,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 240px;
-            height: 240px;
+            width: 272px;
+            height: 272px;
             margin-bottom: -25px;
         }
 
@@ -471,6 +478,52 @@
             display: block;
         }
 
+        /* THE GLASS RAIL
+           A layer behind the cards rather than a background on the wrapper, so
+           the centre frame's glow can spill past the rail edge instead of being
+           clipped by an overflow rule. */
+        #carousel-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: 4px 0;
+            border-radius: 26px;
+            background: linear-gradient(180deg,
+                rgba(255,255,255,0.08) 0%,
+                rgba(255,255,255,0.03) 50%,
+                rgba(255,255,255,0.07) 100%);
+            border: 1px solid rgba(255,255,255,0.10);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.30),
+                inset 0 1px 0 rgba(255,255,255,0.10),
+                inset 0 -1px 0 rgba(0,0,0,0.18);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* THE FIXED CENTRE FRAME
+           This is the one part of the deck that never moves. Cards scroll
+           through it and the card currently inside it is the one in focus, so
+           the frame — not the card — carries the highlight. */
+        #deck-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 98px;
+            height: 98px;
+            border-radius: 24px;
+            border: 2px solid rgba(0, 255, 120, 0.7);
+            background: rgba(0, 220, 120, 0.10);
+            box-shadow:
+                0 0 26px rgba(0,255,100,0.30),
+                0 0 60px rgba(0,220,90,0.15),
+                inset 0 0 24px rgba(0,255,120,0.10);
+            pointer-events: none;
+            z-index: 4;
+        }
+
         /* Carousel recedes while a scripture is on screen */
         #carousel-container.carousel-recede {
             opacity: 0.3;
@@ -480,6 +533,9 @@
 
         /* THE CARD DECK — horizontal scroller */
         #mood-buttons {
+            /* Above the glass rail, below the centre frame */
+            position: relative;
+            z-index: 1;
             display: flex;
             flex-direction: row;
             align-items: center;
@@ -552,15 +608,25 @@
         }
 
         /* LULO center card */
+        /* The LULO card is still the one that opens a conversation, but the
+           highlight now belongs to #deck-frame — otherwise two things glow and
+           the fixed frame stops reading as fixed. */
         .mood-card.lulo-center-card {
             width: 88px;
             height: 88px;
-            background: rgba(0, 220, 120, 0.16);
-            border: 2px solid rgba(0, 255, 120, 0.7);
-            box-shadow:
-                0 0 26px rgba(0,255,100,0.35),
-                0 0 60px rgba(0,220,90,0.18),
-                inset 0 0 24px rgba(0,255,120,0.12);
+            background: rgba(0, 220, 120, 0.10);
+            border: 1px solid rgba(0, 255, 120, 0.28);
+        }
+
+        /* The card currently sitting inside the frame */
+        .mood-card.in-frame {
+            transform: scale(1.04);
+            border-color: transparent;
+            background: transparent;
+        }
+        .mood-card.in-frame .card-label {
+            color: rgba(0,255,140,0.95);
+            font-weight: 700;
         }
         .mood-card.lulo-center-card .card-label {
             color: rgba(190,255,215,0.98);
@@ -594,6 +660,19 @@
             from { opacity: 0; transform: scale(0.98); }
             to   { opacity: 1; transform: scale(1); }
         }
+
+        /* Page dim behind the centred card */
+        #scripture-scrim {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 4, 14, 0.55);
+            z-index: 150;
+            opacity: 0;
+            transition: opacity 0.26s ease;
+            pointer-events: none;
+        }
+        #scripture-scrim[hidden] { display: none; }
+        #scripture-scrim.scrim-on { opacity: 1; }
 
         #scripture-card.card-intro { animation: scriptureFadeFlow 0.26s ease-out; }
         #scripture-card.scripture-expanded.card-intro { animation: scriptureFadeCentre 0.26s ease-out; }
@@ -671,15 +750,6 @@
                 0 8px 40px rgba(0,0,0,0.4),
                 inset 0 1px 0 rgba(255,255,255,0.12);
             padding: 28px 24px;
-        }
-        /* Dim the page behind the centred card */
-        #scripture-card.scripture-expanded::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: rgba(4, 4, 14, 0.55);
-            z-index: -1;
-            pointer-events: none;
         }
 
         /* Premium scripture text */
@@ -1835,12 +1905,18 @@
         }
         .retry-btn:hover { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.4); }
         /* ── PHASE 3 WELCOME POPUP ─────────────────────────────────────────────── */
+        /* ─── WELCOME ─────────────────────────────────────────────────
+           Shown once, when voice first becomes available. Lulo herself is the
+           hero rather than an emoji, the headline is set in Spectral to match
+           her reading voice, and the three lines below are a legend for
+           controls that already exist on screen — not a numbered sequence,
+           because nothing here has to be done in order. */
         #phase3-welcome {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(4, 6, 18, 0.72);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 9000;
             display: flex;
             align-items: center;
@@ -1849,55 +1925,107 @@
             animation: fadeIn 0.35s ease;
         }
         #phase3-welcome-card {
-            background: rgba(12, 12, 32, 0.97);
-            border: 1px solid rgba(0, 255, 120, 0.25);
+            position: relative;
+            background:
+                radial-gradient(ellipse 120% 70% at 50% 0%, rgba(0,255,130,0.12) 0%, transparent 62%),
+                rgba(12, 14, 32, 0.97);
+            border: 1px solid rgba(0, 255, 120, 0.22);
             border-radius: 28px;
-            padding: 32px 28px 28px;
+            padding: 30px 26px 22px;
             max-width: 340px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 0 60px rgba(0, 200, 100, 0.12), 0 20px 60px rgba(0,0,0,0.5);
-            animation: slideUpFade 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 60px rgba(0, 200, 100, 0.10), 0 20px 60px rgba(0,0,0,0.55);
+            animation: scriptureFadeFlow 0.42s cubic-bezier(0.22, 1, 0.36, 1);
         }
         #phase3-welcome-lulo {
-            font-size: 3rem;
-            margin-bottom: 14px;
-            filter: drop-shadow(0 0 12px rgba(0,255,100,0.4));
+            width: 84px;
+            height: 84px;
+            object-fit: contain;
+            mix-blend-mode: screen;
+            filter: drop-shadow(0 0 22px rgba(0,255,100,0.45));
+            margin-bottom: 10px;
+        }
+        #phase3-welcome-eyebrow {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 2.4px;
+            text-transform: uppercase;
+            color: rgba(0,255,140,0.72);
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
         }
         #phase3-welcome-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 14px;
-            letter-spacing: -0.3px;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Spectral', Georgia, serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.96);
+            line-height: 1.25;
+            letter-spacing: -0.2px;
+            margin-bottom: 10px;
         }
         #phase3-welcome-body {
-            font-size: 0.88rem;
-            color: rgba(255,255,255,0.55);
-            line-height: 1.75;
-            margin-bottom: 24px;
+            font-size: 0.86rem;
+            color: rgba(255,255,255,0.52);
+            line-height: 1.7;
+            margin-bottom: 20px;
             font-family: 'Inter', sans-serif;
         }
-        #phase3-welcome-body strong {
-            color: rgba(0,255,120,0.9);
-            font-weight: 600;
+        #phase3-welcome-list {
+            list-style: none;
+            text-align: left;
+            margin: 0 0 22px;
+            padding: 14px 4px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #phase3-welcome-list li {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.55);
+            font-family: 'Inter', sans-serif;
+        }
+        .pw-key {
+            flex-shrink: 0;
+            width: 58px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: rgba(0,255,140,0.78);
         }
         #phase3-welcome-btn {
-            background: rgba(0,200,100,0.12);
+            background: rgba(0,200,100,0.14);
             border: 1.5px solid rgba(0,255,120,0.45);
-            color: rgba(0,255,120,0.95);
-            padding: 13px 36px;
+            color: rgba(0,255,140,0.95);
+            padding: 14px 30px;
             border-radius: 50px;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 600;
             font-family: 'Inter', sans-serif;
             cursor: pointer;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             transition: all 0.25s ease;
             width: 100%;
+            -webkit-tap-highlight-color: transparent;
         }
-        #phase3-welcome-btn:hover {
-            background: rgba(0,200,100,0.22);
-            box-shadow: 0 0 20px rgba(0,255,100,0.2);
+        #phase3-welcome-btn:hover { background: rgba(0,220,110,0.24); }
+        #phase3-welcome-skip {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.34);
+            font-size: 0.78rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            padding: 12px 10px 4px;
+            width: 100%;
+            -webkit-tap-highlight-color: transparent;
         }
+        #phase3-welcome-skip:hover { color: rgba(255,255,255,0.7); }
+
