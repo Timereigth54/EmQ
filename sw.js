@@ -1,4 +1,4 @@
-const CACHE = 'emq-v30'
+const CACHE = 'emq-v33'
 
 // App shell — core files served cache-first
 const SHELL_ASSETS = [
@@ -7,6 +7,7 @@ const SHELL_ASSETS = [
     '/EmQ/styles.css',
     '/EmQ/lulo-scripture.js',
     '/EmQ/lulo-voice.js',
+    '/EmQ/lulo-wave.js',
     '/EmQ/app.js',
     '/EmQ/site.webmanifest',
 ]

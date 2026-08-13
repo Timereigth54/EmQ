@@ -15,6 +15,17 @@ let isVoiceInputActive = false  // true while the mic is listening
 let _lastUserMessage = ''       // last thing the user sent — used by the retry button
 let _micTimeout = null          // auto-shutoff timer when mic hears nothing
 
+// Escape user-controlled strings before inserting into innerHTML.
+// Keeps name/input from being treated as markup if it contains < > & etc.
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
+
         const firebaseConfig = {
             apiKey: "AIzaSyAiUXWpcqpysOouq-2CWUQQ2GaCUANLzRk",
             authDomain: "emq-companion.firebaseapp.com",
@@ -624,9 +635,28 @@ function setTheme(theme) {
     const sendBtn = document.getElementById('send-btn')
     if (sendBtn) sendBtn.style.background = t.sendBtn
 
+    // The voice traces are drawn to canvas, so they can't inherit a colour —
+    // hand them the theme's accent as raw channels.
+    // `typeof`, not `window.LuloWave`: a top-level const in a classic script is
+    // script-scoped and never becomes a property of window, so the window check
+    // is always false and silently skips the whole block.
+    if (typeof LuloWave !== 'undefined') {
+        LuloWave.setColour(isLight ? '30,122,90' : '0,255,120')
+        // Her bars keep their spectrum in every theme; on a pale ground they
+        // drop the glow and deepen, or they read as highlighter.
+        LuloWave.light = isLight
+    }
+
     // LULO GLOW
     const luloGlow = document.getElementById('lulo-glow')
-    if (luloGlow) luloGlow.style.background = `radial-gradient(circle, ${t.luloGlow} 0%, transparent 70%)`
+    if (luloGlow) {
+        luloGlow.style.background = `radial-gradient(circle, ${t.luloGlow} 0%, transparent 70%)`
+        // The outer bloom is mood-coloured and updateLuloMood owns it, but a
+        // theme change can land without a mood change — leaving the last
+        // theme's bloom hanging in the new room.
+        luloGlow.style.setProperty('--lulo-bloom',
+            isT2 ? 'rgba(255,255,255,0.05)' : 'rgba(0,255,120,0.12)')
+    }
     const luloImg = document.getElementById('lulo-img')
     if (luloImg) {
         luloImg.style.filter = t.luloFilter
@@ -745,7 +775,36 @@ function setTheme(theme) {
     // SCROLLBAR
     const style = document.getElementById('dynamic-theme') || document.createElement('style')
     style.id = 'dynamic-theme'
+    // The colour the room fades into at its edges. It has to be the theme's own
+    // ground colour, not a black wash — on the pale themes a dark vignette
+    // reads as dirt on the glass rather than as distance.
+    const edgeTint = {
+        dark:     'rgba(5,5,16,0.92)',
+        light:    'rgba(227,238,242,0.94)',
+        soft:     'rgba(255,240,240,0.94)',
+        midnight: 'rgba(10,5,10,0.94)',
+    }[theme] || 'rgba(5,5,16,0.92)'
     style.innerHTML = `
+        :root { --edge-tint: ${edgeTint}; }
+        /* Screen blending builds toward white, so on a pale ground the default
+           artwork disappears. The t2 set composites normally. */
+        #lulo-presence-img {
+            mix-blend-mode: ${isT2 ? 'normal' : 'screen'} !important;
+        }
+        /* Her presence behind a card has to survive the background it is read
+           against: brighter on the pale themes, where a screen-blended ghost
+           at 46% would vanish entirely. */
+        #lulo-presence.presence-on { opacity: ${isLight ? 0.24 : 0.3} !important; }
+        /* Text mode keeps its dark ground in every theme — its chrome is
+           written for one, and a pale overlay leaves the header invisible.
+           So the watermark is read against dark whatever the theme is. */
+        #text-mode-lulo { opacity: 0.13 !important; }
+        #carousel-wrapper::after {
+            background: radial-gradient(ellipse,
+                ${isLight ? 'rgba(30,122,90,0.14)' : 'rgba(0,255,120,0.16)'} 0%,
+                ${isLight ? 'rgba(30,122,90,0.05)' : 'rgba(0,220,140,0.06)'} 45%,
+                transparent 72%) !important;
+        }
         ::-webkit-scrollbar-thumb { background: ${t.scrollbar}; border-radius: 2px; }
         .chat-bubble-lulo { 
             background: ${t.chatBubbleLuloBg} !important; 
@@ -793,21 +852,47 @@ function setTheme(theme) {
         }
         .mood-card.in-frame .card-label { color: ${t.emotionLabelActive} !important; }
         /* The expanded scripture card is dark glass by default, which leaves
-           deepwater ink sitting on dark grey in the light themes. */
+           deepwater ink sitting on dark grey in the light themes. Both versions
+           are near-opaque: the verse is read against Lulo now, and a pane you
+           can see the room through is a pane you have to fight to read. */
         #scripture-card.scripture-expanded {
-            background: ${isLight ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.07)'} !important;
-            border-color: ${isLight ? 'rgba(23,50,60,0.12)' : 'rgba(255,255,255,0.15)'} !important;
+            background: ${isLight ? 'rgba(255,255,255,0.98)' : 'rgba(7,8,20,0.9)'} !important;
+            border-color: ${isLight ? 'rgba(23,50,60,0.14)' : 'rgba(255,255,255,0.18)'} !important;
             box-shadow: ${isLight
-                ? '0 18px 50px rgba(23,50,60,0.20), inset 0 1px 0 rgba(255,255,255,0.9)'
-                : '0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)'} !important;
+                ? '0 20px 60px rgba(23,50,60,0.26), inset 0 1px 0 rgba(255,255,255,0.95)'
+                : '0 18px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14)'} !important;
         }
+        /* Radial, and lightest at the centre — Lulo is standing behind the card
+           and has to stay readable through the dim. */
         #scripture-scrim {
-            background: ${isLight ? 'rgba(23,50,60,0.26)' : 'rgba(4,4,14,0.55)'} !important;
+            background: radial-gradient(ellipse 70% 55% at 50% 44%,
+                ${isLight ? 'rgba(23,50,60,0.12)' : 'rgba(4,4,14,0.30)'} 0%,
+                ${isLight ? 'rgba(23,50,60,0.28)' : 'rgba(4,4,14,0.58)'} 60%,
+                ${isLight ? 'rgba(23,50,60,0.36)' : 'rgba(4,4,14,0.72)'} 100%) !important;
         }
+        /* The verse is the point of the screen. Full opacity, full weight, and
+           a shadow underneath it — on the pale themes an ink-dark shadow would
+           smear, so it lifts off a white halo instead. */
+        /* Weight is not set here on purpose — the card owns it, and a longer
+           prayer steps it down. See .card-longform in styles.css. */
         #scripture-card.scripture-expanded #scripture-text {
-            color: ${isLight ? t.text : 'rgba(255,255,255,0.92)'} !important;
+            color: ${isLight ? '#0A1F27' : '#ffffff'} !important;
+            text-shadow: ${isLight
+                ? '0 1px 0 rgba(255,255,255,0.95), 0 2px 12px rgba(23,50,60,0.22)'
+                : '0 1px 1px rgba(0,0,0,0.55), 0 0 18px rgba(255,255,255,0.3), 0 0 40px rgba(150,255,205,0.18)'} !important;
         }
-        #scripture-back-btn { color: ${isLight ? t.textMuted : 'rgba(255,255,255,0.35)'} !important; }
+        #scripture-card.scripture-expanded #scripture-ref {
+            color: ${isLight ? '#0F5540' : '#6ce9ff'} !important;
+            text-shadow: ${isLight
+                ? '0 1px 0 rgba(255,255,255,0.95)'
+                : '0 1px 1px rgba(0,0,0,0.8), 0 0 16px rgba(0,190,255,0.55)'} !important;
+        }
+        /* Everything else on the card comes up with it — a sharp verse over
+           half-lit controls reads as two different cards. */
+        #scripture-card.scripture-expanded #lulo-message-text {
+            color: ${isLight ? '#14614A' : 'rgba(190,255,220,0.96)'} !important;
+        }
+        #scripture-back-btn { color: ${isLight ? t.text : 'rgba(255,255,255,0.7)'} !important; }
         #another-btn, .scripture-action-btn {
             color: ${t.accent} !important;
             border-color: ${t.accent} !important;
@@ -829,7 +914,13 @@ function setTheme(theme) {
             background: ${isLight ? 'rgba(255,255,255,1)' : 'rgba(30,30,60,0.9)'} !important;
         }
         #streak-count { color: ${t.text} !important; }
-        .shield-icon { color: ${isLight ? t.text : 'rgba(255,255,255,0.92)'} !important; }
+        /* The heart paints its own silver gradient, so it needs no colour per
+           theme — only a shadow to keep it off a pale background. */
+        .heart-icon {
+            filter: ${isLight
+                ? 'drop-shadow(0 1px 1px rgba(23,50,60,0.35))'
+                : 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))'} !important;
+        }
         #sound-btn:not(.voice-active) { color: ${isLight ? t.textMuted : 'rgba(255,255,255,0.45)'} !important; }
         #mic-btn {
             background: ${isLight
@@ -879,8 +970,12 @@ function setTheme(theme) {
             letter-spacing: 0.1px !important;
         }
 
-        /* SCRIPTURE CARD TEXT */
-        #scripture-text {
+        /* SCRIPTURE CARD TEXT
+           Scoped to the in-flow card only. Unscoped with !important, this was
+           overriding the expanded card's weight from a stylesheet the expanded
+           rules can't outrank — the verse was being set in Light 300 no matter
+           what the card asked for. */
+        #scripture-card:not(.scripture-expanded) #scripture-text {
             font-weight: ${isLight ? '500' : '300'} !important;
         }
 
@@ -1048,6 +1143,11 @@ function buildCarousel() {
         }
         const mid = container.querySelector(`.lulo-center-card[data-copy="${DECK_MID_COPY}"]`)
         if (mid) mid.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' })
+        // Cache the geometry the depth pass runs on, then place every card in
+        // the room before the first frame is painted — without this the deck
+        // appears flat and pops into perspective on the first scroll.
+        measureDeck()
+        _deckLastScroll = container.scrollLeft
         onDeckScroll()
     }, 50)
 }
@@ -1073,33 +1173,96 @@ function wrapDeck(container) {
     requestAnimationFrame(() => { container.style.scrollSnapType = snap || '' })
 }
 
+// ─── THE DECK IN DEPTH ──────────────────────────────────────────────────────
+// Every card's position along the road is one number: its signed distance from
+// the centre of the screen, -1 at the left edge through 0 dead centre to 1 at
+// the right. The scroll handler writes that number (and its magnitude) to the
+// card as --p / --a; the stylesheet turns it into scale, turn, lift, fade and
+// emoji size. Splitting it this way means the handler does two property writes
+// per card and no layout reads at all, which is what keeps a 45-card deck at
+// frame rate on a phone.
+//
+// Card geometry is measured once after build and cached: the cards never move
+// relative to the scroller, only the scroll position changes.
+const _deckGeom = { width: 0, cards: [] }
+
+function measureDeck() {
+    const container = document.getElementById('mood-buttons')
+    if (!container) return
+    _deckGeom.width = container.clientWidth
+    _deckGeom.cards = Array.from(container.querySelectorAll('.mood-card'))
+    for (const card of _deckGeom.cards) {
+        card._cx = card.offsetLeft + card.offsetWidth / 2
+        card._p = undefined
+    }
+}
+
 // The frame is fixed; the cards move through it. This marks whichever card is
 // currently inside it so the highlight belongs to the frame, not to any card.
 let _deckScrollRaf = null
 let _lastFramedMood = null
+let _deckLastScroll = 0
+let _deckVelocity = 0
+let _deckIdleTimer = null
+
 function onDeckScroll() {
     if (_deckScrollRaf) return
     _deckScrollRaf = requestAnimationFrame(() => {
         _deckScrollRaf = null
-        const wrapper = document.getElementById('carousel-wrapper')
         const container = document.getElementById('mood-buttons')
-        if (!wrapper || !container) return
+        if (!container) return
 
         wrapDeck(container)
+        if (!_deckGeom.cards.length || !_deckGeom.width) measureDeck()
 
-        const frameCentre = wrapper.getBoundingClientRect().left + wrapper.offsetWidth / 2
+        const scroll = container.scrollLeft
+        const origin = scroll + _deckGeom.width / 2
+        // How far a card travels before it is fully away. Wider than the half
+        // screen on purpose: at exactly half, the second card out lands on the
+        // edge already fully receded and the road reads as three cards and a
+        // void instead of as a gradient running off into the distance.
+        const span = Math.max(1, _deckGeom.width * 0.62)
+
         let closest = null
         let closestDist = Infinity
 
-        container.querySelectorAll('.mood-card').forEach(card => {
-            const r = card.getBoundingClientRect()
-            const dist = Math.abs((r.left + r.width / 2) - frameCentre)
-            if (dist < closestDist) { closestDist = dist; closest = card }
-        })
+        for (const card of _deckGeom.cards) {
+            const dx = card._cx - origin
+            const abs = Math.abs(dx)
+            if (abs < closestDist) { closestDist = abs; closest = card }
 
-        container.querySelectorAll('.mood-card.in-frame').forEach(c => {
+            let p = dx / span
+            if (p > 1) p = 1
+            else if (p < -1) p = -1
+            // Below a thousandth of the span there is nothing to see, and the
+            // deck wrap makes most of these zero-delta every frame anyway.
+            if (card._p !== undefined && Math.abs(card._p - p) < 0.004) continue
+            card._p = p
+            card.style.setProperty('--p', p.toFixed(3))
+            card.style.setProperty('--a', Math.abs(p).toFixed(3))
+        }
+
+        // Lulo leans with the room. Driven by scroll speed rather than by the
+        // centred card's offset — that offset is a sawtooth, and it snapped her
+        // back every time the nearest card changed. Speed decays to nothing
+        // when the deck stops, so she settles upright.
+        const delta = scroll - _deckLastScroll
+        _deckLastScroll = scroll
+        // Ignore the wrap jump: a whole copy-width in one frame is bookkeeping,
+        // not a gesture.
+        if (Math.abs(delta) < _deckGeom.width) {
+            _deckVelocity = _deckVelocity * 0.55 + delta * 0.45
+            setSceneTilt(Math.max(-1, Math.min(1, _deckVelocity / 26)))
+        }
+        clearTimeout(_deckIdleTimer)
+        _deckIdleTimer = setTimeout(() => { _deckVelocity = 0; setSceneTilt(0) }, 170)
+
+        // Scrolling the deck is answering the question, so the hint goes away
+        if (Math.abs(delta) > 0.5) noteActivity()
+
+        for (const c of container.querySelectorAll('.mood-card.in-frame')) {
             if (c !== closest) c.classList.remove('in-frame')
-        })
+        }
         if (closest) {
             closest.classList.add('in-frame')
             // Update Lulo's face to match the centred card
@@ -1110,6 +1273,72 @@ function onDeckScroll() {
             }
         }
     })
+}
+
+// One number for which way the room is turning. The transition on
+// #lulo-container smooths it, so this can be written as often as the scroll
+// fires without any easing of its own.
+function setSceneTilt(t) {
+    document.documentElement.style.setProperty('--scene-tilt', t.toFixed(3))
+}
+
+// The road is as wide as the screen, so a rotation changes everything about it.
+let _deckResizeTimer = null
+window.addEventListener('resize', () => {
+    clearTimeout(_deckResizeTimer)
+    _deckResizeTimer = setTimeout(() => { measureDeck(); onDeckScroll() }, 120)
+})
+
+// ─── THE HINT ───────────────────────────────────────────────────────────────
+// "How are you feeling?" is a nudge for someone who has gone quiet, not a
+// heading over the deck. It leaves the moment anything happens and only comes
+// back after a long silence — and never while a conversation is on screen,
+// where it would be asking a question that has already been answered.
+const HINT_IDLE_MS = 45000
+let _hintTimer = null
+
+function conversationIsOpen() {
+    if (isTextModeOpen()) return true
+    const card = document.getElementById('scripture-card')
+    if (card && getComputedStyle(card).display !== 'none') return true
+    for (const id of ['crisis-screen', 'journal-screen', 'emergency-screen']) {
+        const el = document.getElementById(id)
+        if (el && getComputedStyle(el).display !== 'none') return true
+    }
+    return false
+}
+
+function showCarouselHint() {
+    const label = document.getElementById('carousel-label')
+    if (!label) return
+    // Still busy — don't nudge, just wait out another silence.
+    if (conversationIsOpen()) { scheduleCarouselHint(); return }
+    label.innerText = 'HOW ARE YOU FEELING?'
+    label.classList.add('hint-on')
+}
+
+function hideCarouselHint() {
+    document.getElementById('carousel-label')?.classList.remove('hint-on')
+}
+
+function scheduleCarouselHint() {
+    clearTimeout(_hintTimer)
+    _hintTimer = setTimeout(showCarouselHint, HINT_IDLE_MS)
+}
+
+// Any sign of life puts the hint away and restarts the silence.
+function noteActivity() {
+    hideCarouselHint()
+    scheduleCarouselHint()
+}
+
+function startCarouselHint() {
+    const label = document.getElementById('carousel-label')
+    if (label) label.innerText = ''
+    hideCarouselHint()
+    scheduleCarouselHint()
+    document.addEventListener('pointerdown', noteActivity, { passive: true })
+    document.addEventListener('keydown', noteActivity, { passive: true })
 }
 
 // enterMainApp() still calls these by their original names
@@ -2427,30 +2656,25 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             const lastMood = localStorage.getItem('luloLastMood')
             updateLuloMood(lastMood || 'home')
-            const label = document.getElementById('carousel-label')
-            if (label) label.innerText = ''
-
-            // Show label after 15 seconds of inactivity
-            let inactivityTimer = setTimeout(() => {
-                if (label && !currentMood) {
-                    label.style.transition = 'opacity 1s ease'
-                    label.style.opacity = '0'
-                    label.innerText = 'HOW ARE YOU FEELING?'
-                    setTimeout(() => { label.style.opacity = '1' }, 100)
-                }
-            }, 15000)
-
-            // Reset timer on any interaction
-            document.addEventListener('click', () => {
-                clearTimeout(inactivityTimer)
-                if (label && !currentMood) label.innerText = ''
-            }, { once: true })
+            startCarouselHint()
             setTimeout(() => setupRailSnap(), 300)
             document.getElementById('welcome-screen').style.display = 'none'
             setTimeout(() => LuloSound.welcome(), 400)
             const app = document.getElementById('main-app')
             app.style.display = 'flex'
             document.getElementById('bottom-bar').style.display = 'flex'
+
+            // SHE IS ALREADY THERE
+            // Opening EmQ is walking into a room Lulo is standing in: she
+            // comes forward out of depth first, her greeting follows a beat
+            // later, the deck settles in last. Classes are added after the
+            // screen is displayed so the animations run from frame one rather
+            // than playing to nobody behind display:none.
+            requestAnimationFrame(() => {
+                document.getElementById('lulo-container')?.classList.add('lulo-arrive')
+                document.getElementById('home-greeting')?.classList.add('greeting-arrive')
+                document.getElementById('carousel-container')?.classList.add('deck-arrive')
+            })
 
             // Restore the badges now that the top bar is on screen
             updateNotifBadge()
@@ -3779,7 +4003,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             if (favourites.length === 0) {
                 container.innerHTML = `<p style="color:rgba(255,255,255,0.25);text-align:center;font-size:0.85rem;padding:30px 0;">
-                    No saved scriptures yet, ${name}. 💙<br>Tap ⭐ on any scripture to save it here.
+                    No saved scriptures yet, ${escapeHtml(name)}. 💙<br>Tap ⭐ on any scripture to save it here.
                 </p>`
                 return
             }
@@ -4392,8 +4616,41 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
         // Update glow
         const glow = moodGlows[mood] || 'rgba(0,255,100,0.5)'
-        if (img) img.style.filter = `drop-shadow(0 0 25px ${glow})`
-        if (luloGlow) luloGlow.style.background = `radial-gradient(circle, ${glow.replace('0.5', '0.15')} 0%, transparent 70%)`
+        // On a dark ground the mood colour is light coming off her. On a pale
+        // one the same value is a coloured outline traced around her edge, so
+        // there she gets a real cast shadow and only a breath of the colour.
+        if (img) img.style.filter = isT2
+            ? `drop-shadow(0 8px 20px rgba(23,50,60,0.20)) drop-shadow(0 0 26px ${glow.replace('0.5', '0.20')})`
+            : `drop-shadow(0 0 32px ${glow})`
+        if (luloGlow) {
+            luloGlow.style.background =
+                `radial-gradient(circle, ${glow.replace('0.5', isT2 ? '0.13' : '0.34')} 0%, ${glow.replace('0.5', isT2 ? '0.06' : '0.12')} 40%, transparent 78%)`
+            // The wide outer bloom. Additive light needs a dark room: on the
+            // pale themes the same value reads as a coloured smudge, so it
+            // comes down to a whisper there.
+            luloGlow.style.setProperty('--lulo-bloom', glow.replace('0.5', isT2 ? '0.06' : '0.13'))
+        }
+
+        // She wears the same face everywhere she appears in the room — behind
+        // the cards and at the end of the text thread — or the illusion breaks
+        // the moment a verse opens and a different Lulo is standing there.
+        const nextFace = moodFaces[mood] || 'images/lulo.png'
+        const elsewhere = [
+            document.getElementById('lulo-presence-img'),
+            document.getElementById('text-mode-lulo'),
+        ]
+        for (const el of elsewhere) {
+            if (!el) continue
+            // .src reads back absolute, so compare against what we last set
+            if (el.dataset.face !== nextFace) {
+                el.dataset.face = nextFace
+                el.src = nextFace
+            }
+            el.style.mixBlendMode = isT2 ? 'normal' : 'screen'
+        }
+        const presenceGlow = document.getElementById('lulo-presence-glow')
+        if (presenceGlow) presenceGlow.style.background =
+            `radial-gradient(circle, ${glow.replace('0.5', '0.11')} 0%, transparent 70%)`
     }
 
         function formatMood(mood) {
@@ -4476,6 +4733,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         animateLulo('nod')
         // Still save to memory and show scripture
         localStorage.setItem('luloLastMood', mood)
+        noteEmotionStreak(mood)
         localStorage.setItem('luloLastRef', verse.ref)
         localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
         localStorage.setItem('luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
@@ -4571,6 +4829,7 @@ if (    mood !== 'home') lockCarousel()
     // silent daily catch-up never overwrites the user's real last-chosen emotion
     if (!passive) {
         localStorage.setItem('luloLastMood', mood)
+        noteEmotionStreak(mood)
         localStorage.setItem('luloLastRef', verse.ref)
         localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
         logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
@@ -5414,6 +5673,19 @@ function playCardIntro(box) {
     box.classList.add('card-intro')
 }
 
+// Lulo does not leave when a card opens — she steps back and the card comes
+// forward in front of her. #lulo-container fades on the page (it has to: it is
+// trapped inside #app's stacking context, under every overlay) and
+// #lulo-presence picks her up at page level, between the scrim and the card.
+// The two cross over, so what you see is one Lulo moving into depth.
+function setLuloPresence(on) {
+    const layer = document.getElementById('lulo-presence')
+    if (layer) layer.classList.toggle('presence-on', !!on)
+    document.body.classList.toggle('room-focus', !!on)
+    // She has moved, so her voice trace moves with her
+    if (typeof LuloWave !== 'undefined') LuloWave.syncTraces()
+}
+
 function enterScriptureMode() {
     _scriptureShownAt = Date.now()
     const scrim = document.getElementById('scripture-scrim')
@@ -5421,6 +5693,29 @@ function enterScriptureMode() {
     document.getElementById('lulo-container')?.classList.add('lulo-recede')
     document.getElementById('carousel-container')?.classList.add('carousel-recede')
     document.getElementById('scripture-card')?.classList.add('scripture-expanded')
+    setLuloPresence(true)
+    // A verse is on screen — nothing to nudge about
+    hideCarouselHint()
+    clearTimeout(_hintTimer)
+}
+
+// The card holds a two-line verse, a paragraph-long prayer, a joke, whatever
+// Lulo has to say — and they can't all be set at the same size. This picks the
+// scale from the length of what actually landed in the element.
+//
+// Driven by an observer rather than by the callers: six different flows write
+// into #scripture-text, some of them asynchronously after the card is already
+// open, and any one of them forgetting to re-fit would leave a wall of
+// extra-bold on screen.
+function fitCardText() {
+    const el = document.getElementById('scripture-text')
+    const card = document.getElementById('scripture-card')
+    if (!el || !card) return
+    const n = el.innerText.trim().length
+    card.classList.toggle('card-medium', n > 150 && n <= 280)
+    card.classList.toggle('card-longform', n > 280)
+    // The card just changed height, so her voice trace may need to move
+    if (typeof LuloWave !== 'undefined') LuloWave.place()
 }
 
 // Put the card away and bring Lulo back — used by the back button and by
@@ -5438,6 +5733,8 @@ function dismissScriptureCard() {
         hideScriptureScrim()
         document.getElementById('lulo-container')?.classList.remove('lulo-recede')
         document.getElementById('carousel-container')?.classList.remove('carousel-recede')
+        setLuloPresence(false)
+        scheduleCarouselHint()
         LuloVoice.stop()
         // .scripture-expanded has to stay until the fade finishes — it is what
         // keeps the card centred and selects the outro keyframes.
@@ -5455,6 +5752,8 @@ function exitScriptureMode() {
     hideScriptureScrim()
     document.getElementById('lulo-container')?.classList.remove('lulo-recede')
     document.getElementById('carousel-container')?.classList.remove('carousel-recede')
+    setLuloPresence(false)
+    scheduleCarouselHint()
     const card = document.getElementById('scripture-card')
     if (card) {
         card.classList.remove('scripture-expanded')
@@ -5558,6 +5857,7 @@ async function toggleVoiceInput() {
     r.onstart = () => {
         isVoiceInputActive = true
         document.getElementById('mic-btn')?.classList.add('listening')
+        LuloWave.micStart()
         LuloVoice.stop()
         // "No-speech" guard: if the mic opens but nothing is said, close after 10s.
         // Cleared as soon as speech is detected — doesn't affect active speakers.
@@ -5569,11 +5869,15 @@ async function toggleVoiceInput() {
         // Let the browser (or onspeechend) decide when they're done.
         clearTimeout(_micTimeout)
         _micTimeout = null
+        // The ring stops idling and starts reacting: this is the one moment
+        // the recogniser tells us a voice is actually there.
+        LuloWave.micSpeaking(true)
     }
 
     r.onspeechend = () => {
         // User stopped talking — give a 2.5s grace period in case they pause
         // mid-thought, then close the mic and send what we have.
+        LuloWave.micSpeaking(false)
         clearTimeout(_micTimeout)
         _micTimeout = setTimeout(() => {
             if (currentRecognition) {
@@ -5620,6 +5924,7 @@ function stopVoiceInput() {
     _micTimeout = null
     isVoiceInputActive = false
     document.getElementById('mic-btn')?.classList.remove('listening')
+    LuloWave.micStop()
     if (currentRecognition) {
         try { currentRecognition.stop() } catch {}
         currentRecognition = null
@@ -5820,9 +6125,88 @@ function getStreak() {
     return parseInt(localStorage.getItem('luloConsecutiveDays') || '1', 10)
 }
 
+// ─── THE EMOTION STREAK ─────────────────────────────────────────────────────
+// The badge used to count consecutive days opened, which measured loyalty to
+// the app. This measures how long a feeling has been carried instead: the
+// clock starts when a feeling is first chosen and resets the moment a
+// different one is. Two weeks of joy is worth seeing. So is two weeks of
+// heaviness — the number is the same, but what Lulo says about it is not.
+
+const POSITIVE_MOODS = [
+    'happy', 'joyful', 'excited', 'peaceful', 'loved', 'encouraged',
+    'grateful', 'hopeful', 'expecting', 'praise',
+]
+
+function noteEmotionStreak(mood) {
+    if (!mood || mood === 'home') return
+    if (localStorage.getItem('luloStreakMood') !== mood) {
+        // A different feeling — the clock starts again from today
+        localStorage.setItem('luloStreakMood', mood)
+        localStorage.setItem('luloStreakStart', String(Date.now()))
+        localStorage.removeItem('luloEmotionMilestone')
+    }
+    updateStreakBadge()
+    checkEmotionMilestone(mood)
+}
+
+// Whole days, counting the first one. Both ends are floored to midnight so an
+// evening check-in followed by a morning one is two days, not one.
+function getEmotionStreakDays() {
+    const start = parseInt(localStorage.getItem('luloStreakStart') || '0', 10)
+    if (!start) return 0
+    const from = new Date(start); from.setHours(0, 0, 0, 0)
+    const to = new Date(); to.setHours(0, 0, 0, 0)
+    return Math.floor((to - from) / 86400000) + 1
+}
+
+// The pill is narrow, so the unit grows with the span rather than the number
+function formatStreakSpan(days) {
+    if (days <= 0) return ''
+    if (days < 7) return days + 'd'
+    if (days < 28) return Math.floor(days / 7) + 'w'
+    return Math.max(1, Math.floor(days / 30)) + 'mo'
+}
+
 function updateStreakBadge() {
     const streakEl = document.getElementById('streak-count')
-    if (streakEl) streakEl.textContent = getStreak()
+    if (!streakEl) return
+    const days = getEmotionStreakDays()
+    const mood = localStorage.getItem('luloStreakMood')
+    streakEl.textContent = formatStreakSpan(days)
+    const pill = document.getElementById('notif-btn')
+    if (pill) {
+        pill.title = mood && days
+            ? `Feeling ${formatMood(mood)} — ${days} day${days === 1 ? '' : 's'}`
+            : 'Notifications'
+    }
+}
+
+function checkEmotionMilestone(mood) {
+    const days = getEmotionStreakDays()
+    const milestones = [7, 14, 30, 60]
+    if (!milestones.includes(days)) return
+    if (parseInt(localStorage.getItem('luloEmotionMilestone') || '0', 10) === days) return
+    localStorage.setItem('luloEmotionMilestone', String(days))
+
+    const name = localStorage.getItem('luloUserName') || 'friend'
+    const span = days < 28 ? `${Math.floor(days / 7)} week${days >= 14 ? 's' : ''}` : `${days} days`
+    const kind = formatMood(mood)
+
+    // A long run of joy is worth celebrating. A long run of heaviness is not a
+    // trophy — the same milestone becomes a hand on the shoulder instead.
+    if (POSITIVE_MOODS.includes(mood)) {
+        pushNotification({
+            type: 'streak',
+            title: `${span} of feeling ${kind} 💚`,
+            body: `${name}, you've been ${kind} for ${span} now. I've been watching that grow and it is good to see. Whatever is behind it, hold onto it.`
+        })
+    } else {
+        pushNotification({
+            type: 'streak',
+            title: `${span} of feeling ${kind} 💙`,
+            body: `${name}, you've told me you're ${kind} for ${span} now. That's a long time to carry something. I'm not counting it to keep score — I just don't want you carrying it alone. Can we talk about it?`
+        })
+    }
 }
 
 // ─── RETRY AFTER A FAILED WORKER CALL ───────────────────────────────────────
@@ -5854,6 +6238,18 @@ function retryLastMessage() {
 function initApp() {
     LuloVoice.load()
 
+    // Voice made visible — the ring around the mic and the bars under Lulo.
+    LuloWave.init()
+
+    // Keep the card's type scaled to whatever is written into it
+    const verseEl = document.getElementById('scripture-text')
+    if (verseEl && window.MutationObserver) {
+        new MutationObserver(fitCardText)
+            .observe(verseEl, { childList: true, characterData: true, subtree: true })
+    }
+    LuloVoice.onSpeechStart = () => LuloWave.speakStart()
+    LuloVoice.onSpeechEnd   = () => LuloWave.speakStop()
+
     // Auto-restart mic after Lulo finishes speaking — enables continuous conversation.
     // Suppressed after API errors so a failed call doesn't loop into itself.
     LuloVoice.onDrainComplete = () => {
@@ -5866,15 +6262,19 @@ function initApp() {
     updateStreak()
     updateNotifBadge()
 
-    // Device orientation tilt — Lulo leans with the phone
+    // Device orientation tilt — Lulo leans with the phone.
+    // Written as custom properties on the root rather than as a transform on
+    // #lulo-face: her float is a keyframe animation, and an animated property
+    // beats an inline style, so the old direct write never once reached the
+    // screen. The room's transform composes these with the deck's --scene-tilt.
     if (window.DeviceOrientationEvent) {
         window.addEventListener('deviceorientation', e => {
             if (e.gamma == null) return
-            const x = Math.max(-15, Math.min(15, e.gamma))
-            const y = Math.max(-10, Math.min(10, (e.beta || 0) - 30))
-            const lf = document.getElementById('lulo-face')
-            if (lf) lf.style.transform =
-                `translateY(var(--float-offset,0px)) rotateX(${y * 0.4}deg) rotateY(${x * 0.4}deg)`
+            const yaw   = Math.max(-15, Math.min(15, e.gamma)) * 0.32
+            const pitch = Math.max(-10, Math.min(10, (e.beta || 0) - 30)) * 0.26
+            const root = document.documentElement.style
+            root.setProperty('--device-yaw', yaw.toFixed(2) + 'deg')
+            root.setProperty('--device-pitch', pitch.toFixed(2) + 'deg')
         }, { passive: true })
     }
 

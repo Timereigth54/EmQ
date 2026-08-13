@@ -1,4 +1,8 @@
- @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+/* 800 is here for one thing: the verse on the expanded card. Without a real
+   extra-bold cut the browser synthesises one by smearing the 700, which is
+   exactly the soft, thickened look the verse was trying to get away from. */
 
 /* Spectral is Lulo's reading voice in the light themes and on the welcome
    screen. It replaces the old 'Palatino Linotype' stack, which existed only on
@@ -6,6 +10,18 @@
    theme rendered in three different faces with three different metrics. */
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ─── THE ROOM ────────────────────────────────────────────────────
+           Everything on the home screen is staged as one 3D space: Lulo
+           stands in it, the deck runs through it on a horizon, and the
+           edges of that space dissolve into the sides of the screen rather
+           than stopping at a border. --edge-tint is the colour the room
+           fades into; setTheme() rewrites it per theme. */
+        :root {
+            --edge-tint: rgba(5,5,16,0.92);
+            --room-depth: 820px;
+            --scene-tilt: 0;
+        }
 
         /* DEEP SPACE GALAXY — dark theme default.
            setTheme() overwrites background-color for light/soft/midnight. */
@@ -56,6 +72,39 @@
             z-index: 0;
             opacity: 0.4;
         }
+
+        /* THE SIDE WALLS OF THE ROOM
+           Two soft gradient walls pinned to the viewport edges. Anything that
+           travels outward — the deck rail, the cards, the frame — walks into
+           them and dissolves, so nothing on the home screen ever ends at a
+           hard edge. Painted above #app (z-index 1) and below every overlay. */
+        #scene-edges {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background:
+                linear-gradient(90deg,
+                    var(--edge-tint) 0%,
+                    rgba(0,0,0,0) 17%,
+                    rgba(0,0,0,0) 83%,
+                    var(--edge-tint) 100%);
+            opacity: 0.9;
+            transition: opacity 0.4s ease;
+            /* Faded out at the top and bottom of the screen. Full-height walls
+               put a third of a stop of tint over the sound button and the menu
+               pill, which are inside the outer band — the depth cue is only
+               needed where the room actually runs off the edge. */
+            -webkit-mask-image: linear-gradient(180deg,
+                transparent 0%, rgba(0,0,0,0.5) 12%, #000 26%,
+                #000 82%, rgba(0,0,0,0.5) 94%, transparent 100%);
+                    mask-image: linear-gradient(180deg,
+                transparent 0%, rgba(0,0,0,0.5) 12%, #000 26%,
+                #000 82%, rgba(0,0,0,0.5) 94%, transparent 100%);
+        }
+        /* The walls close in a little while a card is open, which pushes the
+           eye to the centre of the room. */
+        body.room-focus #scene-edges { opacity: 1; }
 
         /* MAIN CONTAINER */
         #app {
@@ -156,7 +205,7 @@
             gap: 0;
         }
 
-        .shield-icon { color: rgba(255,255,255,0.92); flex-shrink: 0; }
+        .heart-icon { flex-shrink: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
 
         /* Muted vs speaking — the slash only shows when voice is off */
         #sound-btn .snd-slash { display: none; }
@@ -231,6 +280,22 @@
         #home-greeting.greeting-dismissed {
             opacity: 0;
             pointer-events: none;
+        }
+
+        /* Lulo arrives first and the greeting follows her, a beat behind —
+           she is the one saying it, so she has to be there before the words
+           are. Same stagger for the deck, which settles in last. */
+        #home-greeting.greeting-arrive { animation: roomArrive 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.42s both; }
+        #carousel-container.deck-arrive { animation: roomArrive 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.62s both; }
+
+        @keyframes roomArrive {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #home-greeting.greeting-arrive,
+            #carousel-container.deck-arrive { animation: none; }
         }
 
         #welcome-message {
@@ -309,26 +374,42 @@
            one-handed thumb reach rather than up in the stretch zone. */
         #lulo-container {
             /* Lulo sits clear of the rail. The rail paints above her (it has to,
-               or her 272px image box swallows taps on the cards), so any
-               negative margin here pulls it straight over her chin. */
-            margin-top: 64px;
-            margin-bottom: -8px;
+               or her image box swallows taps on the cards), so any negative
+               margin here pulls it straight over her chin. */
+            margin-top: 48px;
+            margin-bottom: -14px;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* She stands in the room rather than on the page: the deck's scroll
+               position drives --scene-tilt, and she turns with it. The parallax
+               is small on purpose — enough to read as depth, not as a gimmick. */
+            transform:
+                perspective(var(--room-depth))
+                translateX(calc(var(--scene-tilt) * -14px))
+                rotateY(calc(var(--scene-tilt) * 9deg + var(--device-yaw, 0deg)))
+                rotateX(var(--device-pitch, 0deg))
+                translateZ(var(--lulo-z, 0px))
+                scale(var(--lulo-scale, 1));
+            transform-style: preserve-3d;
+            transition:
+                opacity 0.45s ease,
+                filter 0.45s ease,
+                transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+            will-change: transform;
         }
 
-        /* Lulo hidden state — when scripture or text mode is active */
-        #lulo-container {
-            transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
-        }
+        /* Lulo steps back into the room while a card is open. She does not
+           leave — the card is simply nearer to you than she is, and
+           #lulo-presence carries her the rest of the way behind it. */
         #lulo-container.lulo-recede {
             opacity: 0;
-            filter: blur(6px);
-            transform: scale(0.88);
+            filter: blur(7px);
+            --lulo-z: -180px;
+            --lulo-scale: 0.94;
             pointer-events: none;
-            transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
+            transition: opacity 0.42s ease, filter 0.42s ease, transform 0.42s ease;
         }
 
         #lulo-glow {
@@ -336,31 +417,158 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 250px;
-            height: 250px;
-            background: radial-gradient(circle, rgba(0,255,100,0.35) 0%, rgba(0,180,255,0.08) 60%, transparent 80%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle,
+                rgba(0,255,100,0.42) 0%,
+                rgba(0,220,140,0.20) 38%,
+                rgba(0,180,255,0.08) 62%,
+                transparent 80%);
             border-radius: 50%;
             animation: pulse-glow 3s ease-in-out infinite;
         }
 
+        /* A second, wider bloom that breathes out of phase with the first.
+           One glow reads as a sticker behind her; two reads as light she is
+           actually giving off into the room. */
+        #lulo-glow::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 420px;
+            height: 420px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            /* Colour comes from whatever Lulo is feeling — updateLuloMood()
+               writes --lulo-bloom. Hardcoding the green left a lime cloud
+               hanging in the middle of the pale themes. */
+            background: radial-gradient(circle,
+                var(--lulo-bloom, rgba(0,255,120,0.13)) 0%,
+                transparent 72%);
+            animation: pulse-bloom 6.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
         @keyframes pulse-glow {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.75; }
+            50% { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
+        }
+
+        @keyframes pulse-bloom {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.55; }
+            50%      { transform: translate(-50%, -50%) scale(1.12); opacity: 0.9; }
         }
 
         #lulo-face {
             font-size: 110px;
-            animation: float 3s ease-in-out infinite;
+            animation: float 3.4s ease-in-out infinite;
             position: relative;
             z-index: 1;
             cursor: pointer;
-            transition: transform 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 272px;
-            height: 272px;
+            width: 304px;
+            height: 304px;
             margin-bottom: 0;
+        }
+
+        /* HER VOICE, DRAWN
+           A row of bars that is flat until she speaks. Fixed, and parked by
+           LuloWave.place() — under her on the home screen, below the card when
+           she has stepped behind one. z-index puts it above the scrim and
+           below the card, in the same slice of the room she is standing in. */
+        #lulo-wave {
+            position: fixed;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, top 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+            z-index: 156;
+        }
+        #lulo-wave.wave-on { opacity: 1; }
+
+        /* SHE ARRIVES
+           On open she comes forward out of the room to meet you: up from
+           depth, blur clearing, glow blooming. The float picks up where the
+           arrival lands, so there is no seam between the two. */
+        #lulo-container.lulo-arrive #lulo-face {
+            animation:
+                luloArrive 1.05s cubic-bezier(0.16, 1, 0.3, 1) both,
+                float 3.4s ease-in-out infinite 1.05s;
+        }
+        #lulo-container.lulo-arrive #lulo-glow {
+            animation: luloGlowArrive 1.3s cubic-bezier(0.16, 1, 0.3, 1) both,
+                       pulse-glow 3s ease-in-out infinite 1.3s;
+        }
+
+        @keyframes luloArrive {
+            0%   { opacity: 0; transform: translateY(34px) scale(0.78); filter: blur(10px); }
+            60%  { opacity: 1; filter: blur(0px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
+        }
+        @keyframes luloGlowArrive {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* LULO BEHIND EVERYTHING
+           A page-level layer that sits above the scrim and below every card,
+           so a verse, a prayer or a joke reads as something held up in front
+           of her rather than something that replaced her. Page-level because
+           #app is its own stacking context — nothing inside it can ever paint
+           above a fixed overlay. */
+        #lulo-presence {
+            position: fixed;
+            /* Higher than she stands on the home screen. The card is centred on
+               the viewport, so at her own height she would be reading her face
+               out through the verse; up here her eyes clear the top edge and
+               the card reads as something she is holding out to you. */
+            top: 34%;
+            left: 50%;
+            width: 380px;
+            height: 380px;
+            transform: translate(-50%, -50%) scale(0.94);
+            z-index: 155;
+            opacity: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+            will-change: opacity, transform;
+        }
+        /* Far enough back to be atmosphere rather than a second thing to read.
+           She is company while you take in the card, not competition for it —
+           the blur does most of that work, since a sharp face behind text pulls
+           the eye onto it no matter how far the opacity comes down. */
+        #lulo-presence.presence-on {
+            opacity: 0.3;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        #lulo-presence-img {
+            width: 320px;
+            height: 320px;
+            object-fit: contain;
+            mix-blend-mode: screen;
+            filter: blur(7px) drop-shadow(0 0 44px rgba(0,255,100,0.4));
+            animation: float 6s ease-in-out infinite;
+        }
+        /* Kept small and faint on purpose. A wide bloom here sits directly
+           behind the card and lifts its background toward green, which is what
+           was quietly draining the contrast out of the verse. */
+        #lulo-presence-glow {
+            position: absolute;
+            top: 42%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,100,0.22) 0%, transparent 70%);
+            animation: pulse-bloom 7s ease-in-out infinite;
         }
 
         /* AMBIENT HALO BELOW LULO */
@@ -467,7 +675,14 @@
 
         /* EMOTION CAROUSEL */
         #carousel-container {
-            width: 100%;
+            /* Full-bleed. The deck is a road running through the room, so it
+               has to reach the sides of the screen and fade out there — inside
+               #app's 380px column it would stop at two hard edges instead.
+               align-items:center on #app centres the overflow on both sides. */
+            /* Capped so a desktop window gets a road proportioned to the app
+               column rather than a rail running the width of a monitor. */
+            width: min(100vw, 520px);
+            max-width: 100vw;
             /* Sits between Lulo above and the mic below. Her PNG carries
                transparent padding, so the rail can ride into her layout box
                without touching the artwork. */
@@ -487,11 +702,22 @@
             position: relative;
             width: 100%;
             display: block;
+            /* The stage the cards are standing on. Each card carries its own
+               perspective() in its transform — #mood-buttons scrolls, and an
+               overflow container can never hold a shared 3D context — but the
+               depth value lives here so the whole room agrees on one focal
+               length. */
+            perspective: var(--room-depth);
+            perspective-origin: 50% 50%;
         }
 
         /* The prompt appears after 15s of inactivity. Reserving its height keeps
            the rail from jumping down the moment it does. */
+        /* The nudge. Its height is reserved whether or not it is showing, so
+           the deck doesn't jump when it arrives — see showCarouselHint(). */
         #carousel-label {
+            opacity: 0;
+            transition: opacity 0.9s ease;
             height: 16px;
             line-height: 16px;
             margin-bottom: 6px;
@@ -504,6 +730,7 @@
             font-family: 'Inter', sans-serif;
             pointer-events: none;
         }
+        #carousel-label.hint-on { opacity: 1; }
 
         /* THE GLASS RAIL
            A layer behind the cards rather than a background on the wrapper, so
@@ -527,6 +754,34 @@
                 inset 0 -1px 0 rgba(0,0,0,0.18);
             pointer-events: none;
             z-index: 0;
+            /* The rail has no ends. Masking the whole layer takes the border,
+               the glass and the shadow out together, so it reads as a surface
+               running past the screen rather than a panel with two edges. */
+            -webkit-mask-image: linear-gradient(90deg,
+                transparent 0%, rgba(0,0,0,0.55) 9%, #000 26%,
+                #000 74%, rgba(0,0,0,0.55) 91%, transparent 100%);
+                    mask-image: linear-gradient(90deg,
+                transparent 0%, rgba(0,0,0,0.55) 9%, #000 26%,
+                #000 74%, rgba(0,0,0,0.55) 91%, transparent 100%);
+        }
+
+        /* The floor the deck runs along — a soft pool of light under the cards
+           that keeps the eye at the centre of the road. */
+        #carousel-wrapper::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -6px;
+            width: 300px;
+            height: 34px;
+            transform: translateX(-50%);
+            background: radial-gradient(ellipse,
+                rgba(0,255,120,0.16) 0%,
+                rgba(0,220,140,0.06) 45%,
+                transparent 72%);
+            filter: blur(9px);
+            pointer-events: none;
+            z-index: 0;
         }
 
         /* THE FIXED CENTRE FRAME
@@ -538,9 +793,9 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 98px;
-            height: 98px;
-            border-radius: 24px;
+            width: 108px;
+            height: 108px;
+            border-radius: 26px;
             border: 2px solid rgba(0, 255, 120, 0.7);
             background: rgba(0, 220, 120, 0.10);
             box-shadow:
@@ -566,42 +821,55 @@
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 10px;
+            gap: 14px;
             overflow-x: auto;
             /* Half-viewport side padding lets the first and last card reach the
                centre, so scroll-snap can actually centre them. */
-            padding: 12px calc(50% - 45px);
+            padding: 20px calc(50% - 45px);
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             -ms-overflow-style: none;
             width: 100%;
-            /* Depth: the centred card reads at full strength and the deck falls
-               away toward both edges (100% → 65% → 40%). A mask keys off screen
-               position rather than card index, so the fade stays put while the
-               deck scrolls underneath it. Purely visual — edge cards stay
-               tappable, unlike an opacity/pointer-events approach. */
+            /* The far end of the road. The per-card scale and turn carry most
+               of the depth; this takes the last of it away so cards leave the
+               room instead of clipping at a boundary. Position-keyed, not
+               index-keyed, so the fade stays put while the deck scrolls
+               underneath it — and edge cards stay tappable. */
             -webkit-mask-image: linear-gradient(90deg,
-                rgba(0,0,0,0.40) 0%,
-                rgba(0,0,0,0.65) 20%,
-                rgba(0,0,0,1)    37%,
-                rgba(0,0,0,1)    63%,
-                rgba(0,0,0,0.65) 80%,
-                rgba(0,0,0,0.40) 100%);
+                rgba(0,0,0,0)    0%,
+                rgba(0,0,0,0.35) 8%,
+                rgba(0,0,0,0.82) 22%,
+                rgba(0,0,0,1)    34%,
+                rgba(0,0,0,1)    66%,
+                rgba(0,0,0,0.82) 78%,
+                rgba(0,0,0,0.35) 92%,
+                rgba(0,0,0,0)    100%);
                     mask-image: linear-gradient(90deg,
-                rgba(0,0,0,0.40) 0%,
-                rgba(0,0,0,0.65) 20%,
-                rgba(0,0,0,1)    37%,
-                rgba(0,0,0,1)    63%,
-                rgba(0,0,0,0.65) 80%,
-                rgba(0,0,0,0.40) 100%);
+                rgba(0,0,0,0)    0%,
+                rgba(0,0,0,0.35) 8%,
+                rgba(0,0,0,0.82) 22%,
+                rgba(0,0,0,1)    34%,
+                rgba(0,0,0,1)    66%,
+                rgba(0,0,0,0.82) 78%,
+                rgba(0,0,0,0.35) 92%,
+                rgba(0,0,0,0)    100%);
         }
         #mood-buttons::-webkit-scrollbar { display: none; }
 
+        /* THE CARDS IN DEPTH
+           --p is the card's signed distance from the centre of the screen
+           (-1 far left → 0 dead centre → 1 far right) and --a its magnitude.
+           onDeckScroll() writes those two numbers and nothing else; every
+           depth cue below is derived from them in CSS, which keeps the scroll
+           handler to two property writes per card and lets the press, hover
+           and theme states stay in the stylesheet where they belong. */
         .mood-card {
+            --p: 0;
+            --a: 1;
             flex-shrink: 0;
-            width: 78px;
-            height: 78px;
+            width: 76px;
+            height: 76px;
             background: rgba(22, 22, 48, 0.72);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 20px;
@@ -614,17 +882,38 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 4px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07);
-            transition: all 0.22s ease;
+            /* transform and opacity are driven per frame — a transition on
+               either would smear them a fifth of a second behind the thumb. */
+            transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
             scroll-snap-align: center;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            transform:
+                perspective(var(--room-depth))
+                translateY(calc(var(--a) * 8px))
+                rotateY(calc(var(--p) * 30deg))
+                scale(calc(1.24 - var(--a) * 0.42));
+            opacity: calc(1 - var(--a) * 0.32);
+            will-change: transform, opacity;
         }
         .mood-card:active, .mood-card.active {
             background: rgba(0,180,255,0.12);
             border-color: rgba(0,180,255,0.35);
-            transform: scale(1.06);
         }
-        .mood-card .card-emoji { font-size: 1.65rem; line-height: 1; }
+        /* Press feedback lives on the emoji: the card's own transform is the
+           depth channel and cannot be borrowed for a tap. */
+        .mood-card:active .card-emoji { transform: scale(0.9); }
+
+        .mood-card .card-emoji {
+            font-size: 1.65rem;
+            line-height: 1;
+            /* Nearer the centre, nearer to you. The card is already growing;
+               the emoji grows faster inside it, which is what sells the
+               approach as distance rather than as a size change. */
+            transform: scale(calc(1 + (1 - var(--a)) * 0.34));
+            transform-origin: center;
+            transition: transform 0.12s ease;
+        }
         .mood-card .card-label {
             font-size: 0.62rem;
             color: rgba(255,255,255,0.72);
@@ -632,6 +921,8 @@
             text-align: center;
             font-family: 'Inter', sans-serif;
             letter-spacing: 0.2px;
+            /* Too far to read is too far to label */
+            opacity: calc(1.08 - var(--a) * 1.25);
         }
 
         /* LULO center card */
@@ -639,17 +930,23 @@
            highlight now belongs to #deck-frame — otherwise two things glow and
            the fixed frame stops reading as fixed. */
         .mood-card.lulo-center-card {
-            width: 88px;
-            height: 88px;
+            width: 84px;
+            height: 84px;
             background: rgba(0, 220, 120, 0.10);
             border: 1px solid rgba(0, 255, 120, 0.28);
         }
 
-        /* The card currently sitting inside the frame */
+        /* The card currently sitting inside the frame. Its chrome drops away
+           so what stands in the frame is the emoji itself, at full size, with
+           nothing boxed around it. */
         .mood-card.in-frame {
-            transform: scale(1.04);
             border-color: transparent;
             background: transparent;
+            box-shadow: none;
+        }
+        .mood-card.in-frame .card-emoji {
+            filter: drop-shadow(0 6px 16px rgba(0,0,0,0.45))
+                    drop-shadow(0 0 18px rgba(0,255,120,0.30));
         }
         .mood-card.in-frame .card-label {
             color: rgba(0,255,140,0.95);
@@ -661,6 +958,29 @@
             font-size: 0.68rem;
             letter-spacing: 1.2px;
             text-transform: uppercase;
+        }
+
+        /* A room you can't stand to be moved through.
+           Depth stays — the size gradient is how the deck is read, not
+           decoration — but the turn, the drift and every loop stop. */
+        @media (prefers-reduced-motion: reduce) {
+            .mood-card {
+                transform: scale(calc(1.18 - var(--a) * 0.34));
+            }
+            #lulo-container,
+            #lulo-container.lulo-arrive #lulo-face,
+            #lulo-container.lulo-arrive #lulo-glow,
+            #lulo-face,
+            #lulo-glow,
+            #lulo-glow::after,
+            #lulo-presence-img,
+            #lulo-presence-glow {
+                animation: none !important;
+            }
+            #lulo-container {
+                transform: scale(var(--lulo-scale, 1));
+                transition: opacity 0.3s ease;
+            }
         }
 
         /* SCRIPTURE CARD */
@@ -689,10 +1009,16 @@
         }
 
         /* Page dim behind the centred card */
+        /* Lighter than a modal dim would normally be, and radial rather than
+           flat: the card needs separation from the home screen, but Lulo is
+           standing in the middle of this and has to stay readable through it. */
         #scripture-scrim {
             position: fixed;
             inset: 0;
-            background: rgba(4, 4, 14, 0.55);
+            background: radial-gradient(ellipse 70% 55% at 50% 44%,
+                rgba(4,4,14,0.30) 0%,
+                rgba(4,4,14,0.58) 60%,
+                rgba(4,4,14,0.72) 100%);
             z-index: 150;
             opacity: 0;
             transition: opacity 0.26s ease;
@@ -768,33 +1094,82 @@
             overscroll-behavior: contain;
             z-index: 200;
             margin: 0;
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            border: 1px solid rgba(255,255,255,0.15);
+            /* Dark glass, not clear glass. The card is now read against Lulo
+               and the room behind her, and a 7% white pane put the verse on
+               whatever happened to be behind it. */
+            /* Near-solid. White text is already at #fff and cannot get any
+               brighter — what reads as "dim" is the room showing through the
+               pane behind it. Contrast is the only lever left, so the glass
+               gives up most of its transparency and keeps only the blur. */
+            background: rgba(7, 8, 20, 0.9);
+            backdrop-filter: blur(34px) saturate(125%);
+            -webkit-backdrop-filter: blur(34px) saturate(125%);
+            border: 1px solid rgba(255,255,255,0.18);
             border-radius: 28px;
             box-shadow:
-                0 8px 40px rgba(0,0,0,0.4),
-                inset 0 1px 0 rgba(255,255,255,0.12);
+                0 18px 60px rgba(0,0,0,0.55),
+                0 0 0 1px rgba(0,0,0,0.25),
+                inset 0 1px 0 rgba(255,255,255,0.14);
             padding: 28px 24px;
         }
 
-        /* Premium scripture text */
+        /* THE VERSE
+           This is the thing the whole screen exists to deliver, so it is the
+           sharpest, brightest, heaviest text in the app — pure white at full
+           opacity, with a shadow that lifts it off the glass. */
         #scripture-card.scripture-expanded #scripture-text {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: rgba(255,255,255,0.92);
-            line-height: 1.75;
-            letter-spacing: -0.2px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.62;
+            letter-spacing: -0.35px;
             font-family: 'Inter', sans-serif;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            /* A wide dark shadow under white text greys its own edges — the
+               halo bleeds into the antialiasing and the glyph reads softer,
+               not sharper. One tight contact shadow for definition, then light
+               instead: a white bloom that makes the letters look lit from
+               behind rather than printed on. */
+            text-shadow:
+                0 1px 1px rgba(0,0,0,0.55),
+                0 0 18px rgba(255,255,255,0.3),
+                0 0 40px rgba(150,255,205,0.18);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
+        /* TYPE THAT FITS WHAT IT IS SAYING
+           A verse is a line and a half, and it can afford to be the loudest
+           thing on the screen. A prayer is a paragraph — at the same size it
+           becomes fifteen lines of extra-bold shouting, and the card runs past
+           the mic. Same colour, same shadow, same full opacity; only the scale
+           comes down. fitCardText() sets these from the text's own length. */
+        #scripture-card.scripture-expanded.card-medium #scripture-text {
+            font-size: 1.12rem;
+            font-weight: 700;
+            line-height: 1.66;
+            letter-spacing: -0.2px;
+        }
+        #scripture-card.scripture-expanded.card-longform #scripture-text {
+            font-size: 1.02rem;
+            font-weight: 700;
+            line-height: 1.72;
+            letter-spacing: -0.1px;
+            text-shadow:
+                0 1px 1px rgba(0,0,0,0.5),
+                0 0 14px rgba(255,255,255,0.24);
+        }
+
         #scripture-card.scripture-expanded #scripture-ref {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: rgba(0, 212, 255, 0.8);
-            letter-spacing: 1.5px;
+            font-size: 0.86rem;
+            font-weight: 800;
+            color: #6ce9ff;
+            letter-spacing: 2px;
             text-transform: uppercase;
+            text-shadow:
+                0 1px 1px rgba(0,0,0,0.8),
+                0 0 16px rgba(0,190,255,0.55);
+            -webkit-font-smoothing: antialiased;
         }
         /* The expanded card carries its own glass — drop the inner shell's */
         #scripture-card.scripture-expanded #scripture-inner {
@@ -809,8 +1184,8 @@
             display: none;
             background: none;
             border: none;
-            color: rgba(255,255,255,0.35);
-            font-size: 0.72rem;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.74rem;
             font-family: 'Inter', sans-serif;
             letter-spacing: 1px;
             cursor: pointer;
@@ -910,6 +1285,27 @@
             box-shadow: inset 0 2px 6px rgba(0,0,0,0.75), inset 0 -1px 0 rgba(255,255,255,0.06);
             pointer-events: none;
         }
+        /* THE MIC AND ITS RING
+           The dock exists only to give the ring something to be centred on —
+           the ring has to overhang the button on every side, and the button
+           itself is the flex item. */
+        #mic-dock {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #mic-wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.28s ease;
+        }
+        #mic-wave.wave-on { opacity: 1; }
+
         #mic-btn:active { transform: scale(0.95); }
         #mic-btn.listening {
             box-shadow:
@@ -979,7 +1375,7 @@
         #text-mode-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(5, 5, 18, 0.96);
+            background: rgba(5, 5, 18, 0.94);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             z-index: 500;
@@ -989,6 +1385,36 @@
             transform: translateX(-50%);
             width: 100%;
             animation: slideUpFade 0.3s ease;
+            overflow: hidden;
+        }
+
+        /* She is in this room too. Typing to Lulo should not mean typing into
+           an empty box — she waits behind the thread at the far end of it.
+           A sibling layer would paint over the whole overlay (its children
+           share its stacking context), so she lives inside it at z-index 0
+           and everything else is lifted to 1. */
+        #text-mode-lulo {
+            position: absolute;
+            top: 38%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            transform: translate(-50%, -50%);
+            object-fit: contain;
+            mix-blend-mode: screen;
+            opacity: 0.14;
+            filter: blur(1px) drop-shadow(0 0 40px rgba(0,255,100,0.35));
+            pointer-events: none;
+            z-index: 0;
+            animation: float 7s ease-in-out infinite;
+        }
+        #text-mode-header,
+        #text-mode-chat,
+        #text-mode-typing,
+        #text-input-row { position: relative; z-index: 1; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #text-mode-lulo { animation: none; }
         }
         @keyframes slideUpFade {
             from { opacity: 0; transform: translateX(-50%) translateY(24px); }
@@ -1190,12 +1616,13 @@
         }
 
         .scripture-action-btn {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.45);
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.22);
+            color: rgba(255,255,255,0.92);
             padding: 7px 18px;
             border-radius: 50px;
-            font-size: 0.72rem;
+            font-size: 0.74rem;
+            font-weight: 600;
             cursor: pointer;
             font-family: 'Inter', sans-serif;
             letter-spacing: 1px;
@@ -1579,13 +2006,24 @@
             #top-bar           { grid-area: bar; padding: 8px 0 2px; }
             #home-greeting     { grid-area: greet; align-self: end; padding: 0; }
             #lulo-container    { grid-area: lulo; align-self: start; margin: 4px 0 0; }
-            #carousel-container{ grid-area: deck; margin: 0 0 76px; }
+            /* The deck is a grid cell here, not the width of the room — the
+               full-bleed rule would push it across Lulo and off the screen. */
+            #carousel-container{ grid-area: deck; margin: 0 0 76px; width: 100%; max-width: 100%; }
+
+            /* Half a screen high: she has to be smaller to still be whole. */
+            #lulo-presence     { width: 260px; height: 260px; top: 50%; }
+            #lulo-presence-img { width: 220px; height: 220px; }
+            #lulo-presence-glow{ width: 280px; height: 280px; }
+            #text-mode-lulo    { width: 200px; height: 200px; }
+            /* Her bars would land on the deck in the right-hand column */
+            #lulo-wave         { display: none; }
 
             /* Lulo scales to the short axis. The inline width/height on the img
                are why these need !important. */
             #lulo-face  { width: 152px; height: 152px; margin-bottom: 0; }
             #lulo-img   { width: 152px !important; height: 152px !important; }
             #lulo-glow  { width: 146px; height: 146px; }
+            #lulo-glow::after { width: 230px; height: 230px; }
             #lulo-face::after { width: 96px; height: 18px; bottom: -10px; }
 
             #welcome-message { font-size: 0.95rem; line-height: 1.25; }

@@ -12,9 +12,10 @@
 // ─── LULO VOICE ENGINE ───────────────────────────────────────────────────────
 const LuloVoice = {
     enabled: false,
-    // Paste RunPod endpoint URL here after deployment (see voice-server/DEPLOY.md).
-    // Remember to add the same origin to connect-src in index.html's CSP meta tag.
-    endpoint: null,
+    // TTS route on the existing Cloudflare Worker.
+    // The Worker proxies to RunPod and keeps the RunPod API key server-side.
+    // Set to null to fall back to Web Speech API.
+    endpoint: 'https://em1-prayer.kayuso2011.workers.dev/tts',
     currentAudio: null,
 
     // Lulo often says two things at once — a reaction bubble and then the verse.
@@ -65,6 +66,20 @@ const LuloVoice = {
     // Set this from app.js to be notified when the queue drains after speaking.
     // Used to auto-restart the mic for continuous conversation.
     onDrainComplete: null,
+
+    // Fired when a line actually starts and stops *sounding* — not when it is
+    // queued or requested. The visualiser under Lulo hangs off these, so they
+    // have to track the audio rather than the intent: a TTS fetch can take a
+    // second, and a line drawn talking before any sound arrives reads as a
+    // glitch. Never let a listener's exception break speech.
+    onSpeechStart: null,
+    onSpeechEnd: null,
+
+    _fire(which) {
+        const fn = which === 'start' ? this.onSpeechStart : this.onSpeechEnd
+        if (typeof fn !== 'function') return
+        try { fn() } catch { /* a visualiser must never silence her */ }
+    },
 
     // Screen Wake Lock — keeps the screen on while Lulo is talking so audio
     // isn't killed by the OS when the display goes off.
@@ -127,11 +142,14 @@ const LuloVoice = {
                     const url = URL.createObjectURL(blob)
                     const audio = new Audio(url)
                     this.currentAudio = audio
+                    let sounding = false
                     const done = () => {
                         URL.revokeObjectURL(url)
                         if (this.currentAudio === audio) this.currentAudio = null
+                        if (sounding) { sounding = false; this._fire('end') }
                         resolve()
                     }
+                    audio.onplaying = () => { sounding = true; this._fire('start') }
                     audio.onended = done
                     audio.onerror = done
                     audio.play().catch(done)
@@ -145,10 +163,16 @@ const LuloVoice = {
     },
 
     _fallback(text, onDone) {
-        const finish = onDone || (() => {})
-        if (!('speechSynthesis' in window)) { finish(); return }
+        const done = onDone || (() => {})
+        if (!('speechSynthesis' in window)) { done(); return }
         const u = new SpeechSynthesisUtterance(text)
         u.rate = 0.88; u.pitch = 1.08; u.volume = 1
+        let sounding = false
+        const finish = () => {
+            if (sounding) { sounding = false; this._fire('end') }
+            done()
+        }
+        u.onstart = () => { sounding = true; this._fire('start') }
         u.onend = finish
         u.onerror = finish
         const go = () => {
@@ -169,6 +193,9 @@ const LuloVoice = {
         if (this.currentAudio) { this.currentAudio.pause(); this.currentAudio = null }
         if ('speechSynthesis' in window) speechSynthesis.cancel()
         this._releaseWakeLock()
+        // Cutting her off mid-sentence has to put the trace down too — pause()
+        // and cancel() fire neither onended nor onend.
+        this._fire('end')
     }
 }
 

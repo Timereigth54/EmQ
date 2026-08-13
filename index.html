@@ -10,7 +10,7 @@
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self' data:;
-        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://www.google-analytics.com;
+        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://www.google-analytics.com https://*.proxy.runpod.net;
         frame-ancestors 'none';
     ">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -241,11 +241,27 @@
         <!-- RIGHT: streak shield + menu -->
         <div id="top-icons">
             <div class="top-pill" id="notif-btn" onclick="toggleNotifTray()" title="Notifications">
-                <svg class="shield-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                    <path d="M12 2.6 20 5.4v6c0 4.6-3.2 8.5-8 9.9-4.8-1.4-8-5.3-8-9.9v-6L12 2.6Z"
-                          fill="currentColor"/>
-                    <path d="m8.4 11.8 2.5 2.5 4.7-4.7" fill="none" stroke="#0b0b1e"
-                          stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- The streak is a feeling carried, not a target hit, so the
+                     badge is a heart rather than a shield. Silver: struck metal
+                     reads as something kept, and it stays legible on both the
+                     dark and the pale themes without being restyled. -->
+                <svg class="heart-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="silverHeart" x1="0" y1="0" x2="0.35" y2="1">
+                            <stop offset="0%"   stop-color="#ffffff"/>
+                            <stop offset="32%"  stop-color="#dfe4ec"/>
+                            <stop offset="58%"  stop-color="#a8b1c1"/>
+                            <stop offset="100%" stop-color="#79839a"/>
+                        </linearGradient>
+                        <linearGradient id="silverHeartSheen" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%"   stop-color="#ffffff" stop-opacity=".9"/>
+                            <stop offset="45%"  stop-color="#ffffff" stop-opacity="0"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M12 21s-7.6-4.7-9.4-9.2C1.2 8.3 3.1 4.6 6.6 4.1c2.2-.3 4.2.8 5.4 2.6 1.2-1.8 3.2-2.9 5.4-2.6 3.5.5 5.4 4.2 4 7.7C19.6 16.3 12 21 12 21Z"
+                          fill="url(#silverHeart)" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>
+                    <path d="M8.2 6.1c-1.9.2-3 1.9-2.7 3.8.5-1.5 1.5-2.6 2.9-3.1.5-.2.4-.7-.2-.7Z"
+                          fill="url(#silverHeartSheen)"/>
                 </svg>
                 <span id="streak-count">1</span><span id="notif-count"></span>
             </div>
@@ -270,11 +286,11 @@
         <div id="lulo-glow"></div>
         <div id="lulo-face">
             <img id="lulo-img" src="images/lulo.png" alt="Lulo" style="
-                width: 272px;
-                height: 272px;
+                width: 300px;
+                height: 300px;
                 object-fit: contain;
                 mix-blend-mode: screen;
-                filter: drop-shadow(0 0 25px rgba(0,255,100,0.5));
+                filter: drop-shadow(0 0 32px rgba(0,255,100,0.55));
             "/>
             <div id="lulo-emoji-overlay" style="
                 position: absolute;
@@ -443,6 +459,27 @@
      viewport — so as a pseudo-element it only ever covered the card. -->
 <div id="scripture-scrim" hidden></div>
 
+<!-- LULO, BEHIND EVERYTHING — she does not leave when a card opens. This layer
+     paints above the scrim and below the card, so a verse, a prayer or a joke
+     is something she is holding out to you rather than something that took
+     her place. Page-level: #app is its own stacking context and nothing
+     inside it can paint above a fixed overlay. -->
+<div id="lulo-presence" aria-hidden="true">
+    <div id="lulo-presence-glow"></div>
+    <img id="lulo-presence-img" src="images/lulo.png" alt=""/>
+</div>
+
+<!-- HER VOICE — one bar wave, wherever she happens to be standing.
+     Page-level and fixed: on the home screen it is parked under her, and when
+     she steps behind a card it moves below it. A copy in each place would mean
+     two of her voice, and a child of #lulo-container would be dimmed to
+     nothing the moment she recedes. -->
+<canvas id="lulo-wave" aria-hidden="true"></canvas>
+
+<!-- The side walls of the room. Everything that travels outward fades into
+     these instead of stopping at an edge. -->
+<div id="scene-edges" aria-hidden="true"></div>
+
 <!-- LULO TOAST — pops down when Lulo says something while you're on the home
      screen, where there is no visible thread. Tapping it opens text mode. -->
 <div id="lulo-toast" role="status" aria-live="polite" hidden>
@@ -496,6 +533,9 @@
 <!-- BOTTOM BAR — VOICE MODE (default) -->
 <div id="bottom-bar" style="display:none;">
     <div id="voice-input-area">
+      <div id="mic-dock">
+        <!-- Your voice, ringing the mic while you speak -->
+        <canvas id="mic-wave" aria-hidden="true"></canvas>
         <button id="mic-btn" onclick="toggleVoiceInput()" aria-label="Speak to Lulo">
             <span id="mic-icon" aria-hidden="true">
                 <svg viewBox="0 0 48 48" width="34" height="34">
@@ -526,6 +566,7 @@
                 </svg>
             </span>
         </button>
+      </div>
         <div id="swipe-to-text-hint" onclick="switchToTextMode()">
             <span class="hint-label">Swipe to text</span>
             <div class="hint-track">
@@ -539,6 +580,8 @@
 
 <!-- TEXT MODE OVERLAY — full page, hidden by default -->
 <div id="text-mode-overlay" style="display:none;" aria-hidden="true">
+    <!-- She waits at the far end of the thread -->
+    <img id="text-mode-lulo" src="images/lulo.png" alt="" aria-hidden="true"/>
     <div id="text-mode-header">
         <button id="text-mode-close" onclick="switchToVoiceMode()" aria-label="Back to voice">✕ Back</button>
         <span id="text-mode-title">Talk to Lulo</span>
@@ -569,6 +612,7 @@
 
 <script src="lulo-scripture.js"></script>
 <script src="lulo-voice.js"></script>
+<script src="lulo-wave.js"></script>
 <script src="app.js"></script>
 
 </body>
