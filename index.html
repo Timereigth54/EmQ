@@ -418,8 +418,10 @@
     <div style="display:flex;gap:10px;justify-content:center;">
         <div class="theme-option active" style="background:linear-gradient(135deg,#080818,#0d1b4b);" onclick="setTheme('dark');toggleThemePanel()" title="Dark"></div>
         <div class="theme-option" style="background:linear-gradient(135deg,#faf8ff,#f0eaff);" onclick="setTheme('light');toggleThemePanel()" title="Cloud of Angels"></div>
-        <div class="theme-option" style="background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:2px solid rgba(255,200,200,0.5);" onclick="setTheme('soft');toggleThemePanel()" title="Soft"></div>
-        <div class="theme-option" style="background:linear-gradient(135deg,#080818,#1a0a0a);border:2px solid rgba(255,255,255,0.15);" onclick="setTheme('midnight');toggleThemePanel()" title="Midnight Egg"></div>
+        <!-- These two show the actual photograph they set. The gradient behind
+             the image is what you see while it loads, or if it is missing. -->
+        <div class="theme-option" style="background:linear-gradient(135deg,#FDF6E4,#E9D9AE);background-image:url('images/bg-throne-portrait.jpg'),linear-gradient(135deg,#FDF6E4,#E9D9AE);background-size:cover;background-position:center;border:2px solid rgba(180,140,55,0.45);" onclick="setTheme('soft');toggleThemePanel()" title="The Throne Room"></div>
+        <div class="theme-option" style="background:linear-gradient(135deg,#0B0A2A,#1B1046);background-image:url('images/bg-universe-portrait.jpg'),linear-gradient(135deg,#0B0A2A,#1B1046);background-size:cover;background-position:center;border:2px solid rgba(190,175,255,0.35);" onclick="setTheme('midnight');toggleThemePanel()" title="Midnight Egg"></div>
     </div>
     <p id="theme-panel-sublabel" style="font-size:0.65rem;color:rgba(255,255,255,0.2);text-align:center;margin-top:10px;letter-spacing:1px;">More themes coming soon</p>
 </div>

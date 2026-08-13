@@ -1,4 +1,4 @@
-const CACHE = 'emq-v33'
+const CACHE = 'emq-v34'
 
 // App shell — core files served cache-first
 const SHELL_ASSETS = [
@@ -140,9 +140,23 @@ self.addEventListener('fetch', e => {
             )
         )
     } else if (isImage) {
-        // Cache-first for images — they don't change often
+        // Cache-first for images — they don't change often.
+        //
+        // A miss now writes what it fetched. Without the put, anything outside
+        // IMAGE_ASSETS was re-fetched on every load and never available
+        // offline — which the theme backgrounds depend on, and they are far
+        // too large to precache on install.
         e.respondWith(
-            caches.match(e.request).then(cached => cached || fetch(e.request))
+            caches.match(e.request).then(cached => {
+                if (cached) return cached
+                return fetch(e.request).then(response => {
+                    if (response && response.status === 200 && response.type === 'basic') {
+                        const copy = response.clone()
+                        caches.open(CACHE).then(cache => cache.put(e.request, copy))
+                    }
+                    return response
+                })
+            })
         )
     }
     // Everything else (fonts, GA, Firebase) goes straight to network

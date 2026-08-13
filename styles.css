@@ -44,6 +44,66 @@
             overflow-x: hidden;
         }
 
+        /* ─── THE PHOTOGRAPHED ROOMS (themes 3 and 4) ─────────────────────
+           Themes 1 and 2 paint their sky with gradients. These two stand in a
+           photograph instead.
+
+           Two layers, in this order: a veil, then the photo. The veil is what
+           makes a photograph usable as an interface background — it is opaque
+           at the top and bottom, where the top bar and the mic sit and need a
+           quiet ground, and nearly clear across the middle third, where Lulo
+           stands and the picture should be allowed to be a picture.
+
+           Both layers are `fixed`, so the room stays put while content scrolls
+           through it, and the orientation swap is a media query rather than a
+           JS resize handler — a phone turned sideways gets the landscape crop
+           of the same scene, not a letterboxed portrait one.
+
+           background-color underneath is what shows while the photo loads, and
+           what remains if it 404s: the theme stays usable either way. */
+        body.theme-throne,
+        body.theme-universe {
+            background-image: var(--room-veil), var(--room-photo);
+            background-size: cover, cover;
+            background-position: center center, center center;
+            background-repeat: no-repeat, no-repeat;
+            background-attachment: fixed, fixed;
+        }
+
+        body.theme-throne {
+            --room-photo: url('images/bg-throne-portrait.jpg');
+            --room-veil: linear-gradient(180deg,
+                rgba(255,252,244,0.88) 0%,
+                rgba(255,252,244,0.42) 15%,
+                rgba(255,251,240,0.24) 42%,
+                rgba(255,250,236,0.40) 68%,
+                rgba(250,243,226,0.92) 100%);
+            background-color: #F3EEE2;
+        }
+
+        body.theme-universe {
+            --room-photo: url('images/bg-universe-portrait.jpg');
+            --room-veil: linear-gradient(180deg,
+                rgba(4,4,16,0.86) 0%,
+                rgba(4,4,16,0.40) 15%,
+                rgba(5,4,20,0.22) 42%,
+                rgba(4,4,16,0.42) 68%,
+                rgba(3,3,12,0.94) 100%);
+            background-color: #05050F;
+        }
+
+        @media (orientation: landscape) {
+            body.theme-throne   { --room-photo: url('images/bg-throne-land.jpg'); }
+            body.theme-universe { --room-photo: url('images/bg-universe-land.jpg'); }
+        }
+
+        /* The ambient blooms are lighting for an empty sky. Over a photograph
+           that already has its own light, they read as haze on the lens. */
+        body.theme-throne::before,
+        body.theme-throne::after,
+        body.theme-universe::before,
+        body.theme-universe::after { opacity: 0.12; }
+
         /* AMBIENT BACKGROUND GLOW */
         body::before {
             content: '';
