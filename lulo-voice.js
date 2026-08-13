@@ -205,5 +205,5 @@ function updateVoiceToggleUI() {
     // The button holds an inline SVG — the muted/speaking states are pure CSS,
     // so never write textContent here or the icon gets destroyed.
     btn.classList.toggle('voice-active', LuloVoice.enabled)
-    btn.title = LuloVoice.enabled ? 'Voice ON — tap to mute' : 'Voice OFF — tap to enable'
+    btn.title = LuloVoice.enabled ? 'Voice ON, tap to mute' : 'Voice OFF, tap to enable'
 }

@@ -341,7 +341,7 @@ function buildLastConversationSummary() {
         else when = 'last month'
     }
     const opener = when ? when.charAt(0).toUpperCase() + when.slice(1) : 'Last time'
-    return `${opener}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.`
+    return `${opener}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" from ${lastRef} together.`
 }
 
 // Kept so the old touchend binding stays harmless
@@ -407,6 +407,13 @@ document.addEventListener('click', (e) => {
         }
     }
 })
+
+// ─── THE PHOTOGRAPHED ROOMS ─────────────────────────────────────────────────
+// Themes 3 and 4 stand in a photograph. Flip this to false and they go back to
+// painted gradients: no image is requested, the classes that carry the photo
+// are never applied, and each theme falls back to the `bg` in its own palette.
+// Nothing else needs touching, and nothing breaks. That is the whole switch.
+const PHOTO_ROOMS = true
 
 // ─── WHICH LULO, AND HOW SHE COMPOSITES ─────────────────────────────────────
 // These used to be one flag (isT2), which forced two unrelated decisions to
@@ -652,9 +659,9 @@ function setTheme(theme) {
     // by the stylesheet — it needs a media query for the orientation crop, and
     // an inline `background` here would flatten the veil and the photo into one
     // shorthand and wipe both.
-    const isPhotoRoom = theme === 'soft' || theme === 'midnight'
-    document.body.classList.toggle('theme-throne', theme === 'soft')
-    document.body.classList.toggle('theme-universe', theme === 'midnight')
+    const isPhotoRoom = PHOTO_ROOMS && (theme === 'soft' || theme === 'midnight')
+    document.body.classList.toggle('theme-throne', isPhotoRoom && theme === 'soft')
+    document.body.classList.toggle('theme-universe', isPhotoRoom && theme === 'midnight')
     document.body.style.background = (isGalaxy || isPhotoRoom) ? '' : t.bg
     // The `background` shorthand resets background-attachment to `scroll`, which
     // leaves the lit themes' gradient scrolling away with the content while the
@@ -1467,18 +1474,18 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             if (level === 'crisis') {
                 title.innerText = `${name}, I hear you. 💙`
-                message.innerText = `What you're sharing right now matters deeply to me. I care about you more than you know — but I have to be honest with you. What you're going through is beyond what I'm able to help with, and you deserve real, professional support right now.\n\nYour life has immeasurable value. Please reach out for help.`
+                message.innerText = `What you're sharing right now matters deeply to me. I care about you more than you know, and I have to be honest with you. What you're going through is beyond what I'm able to help with, and you deserve real, professional support right now.\n\nYour life has immeasurable value. Please reach out for help.`
 
                 // Random crisis verse
                 const verse = boundaryVerses.crisis[Math.floor(Math.random() * boundaryVerses.crisis.length)]
                 verseText.innerText = verse.text
-                verseRef.innerText = `— ${verse.ref}`
+                verseRef.innerText = `${verse.ref}`
                 scriptureBox.style.display = 'block'
 
                 // Crisis resources
                 resourcesText.innerHTML = `🆘 <strong>Crisis Support Lines:</strong><br><br>
                 🇺🇸 USA: Call or text <strong>988</strong> (Suicide & Crisis Lifeline)<br>
-                🇬🇧 UK: Call <strong>116 123</strong> (Samaritans — free, 24/7)<br>
+                🇬🇧 UK: Call <strong>116 123</strong> (Samaritans, free and open 24/7)<br>
                 🇿🇦 South Africa: <strong>0800 567 567</strong> (SADAG)<br>
                 🇨🇦 Canada: Call or text <strong>988</strong><br>
                 🇦🇺 Australia: <strong>13 11 14</strong> (Lifeline)<br>
@@ -1495,7 +1502,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 resources.style.display = 'none'
 
                 // Ask gentle follow up question
-                question.innerText = `Do you have someone in your life — a trusted friend, family member, or counsellor — that you feel safe talking to about this?`
+                question.innerText = `Is there someone in your life you feel safe talking to about this? A trusted friend, a family member, or a counsellor.`
                 followup.style.display = 'block'
             }
             LuloSound.crisis()
@@ -1517,15 +1524,15 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             if (crisisFollowUpStage === 0) {
                 if (answer === 'yes') {
-                    message.innerText = `I'm really glad you have someone. 💙 Please reach out to them — today if you can. You don't have to carry this alone.\n\nAnd if what you're going through is serious, please also consider speaking with a professional counsellor. There is no weakness in asking for help. It takes incredible courage.`
+                    message.innerText = `I'm really glad you have someone. 💙 Please reach out to them today if you can. You don't have to carry this alone.\n\nAnd if what you're going through is serious, please also consider speaking with a professional counsellor. There is no weakness in asking for help. It takes incredible courage.`
                 } else {
-                    message.innerText = `${name}, I'm so sorry you've been carrying this without someone to lean on. That takes so much out of a person. 💙\n\nI want to gently encourage you to reach out to a professional counsellor — someone trained to walk through this with you. You deserve that kind of care and support.`
+                    message.innerText = `${name}, I'm so sorry you've been carrying this without someone to lean on. That takes so much out of a person. 💙\n\nI want to gently encourage you to reach out to a professional counsellor, someone trained to walk through this with you. You deserve that kind of care and support.`
 
                     resourcesText.innerHTML = `🌿 <strong>Finding Professional Support:</strong><br><br>
                     Consider speaking with a licensed counsellor or therapist in your area. Many offer sliding scale fees or free sessions.<br><br>
-                    🌍 <strong>Psychology Today</strong> — psychologytoday.com/us/therapists<br>
-                    🌍 <strong>BetterHelp</strong> — betterhelp.com (online therapy)<br>
-                    🌍 <strong>Open Path</strong> — openpathcollective.org (affordable therapy)<br><br>
+                    🌍 <strong>Psychology Today</strong>: psychologytoday.com/us/therapists<br>
+                    🌍 <strong>BetterHelp</strong>: betterhelp.com (online therapy)<br>
+                    🌍 <strong>Open Path</strong>: openpathcollective.org (affordable therapy)<br><br>
                     Your church pastor or community leader may also be a wonderful first step. 💙`
                     resources.style.display = 'block'
                 }
@@ -1533,7 +1540,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 // Show a therapy verse
                 const verse = boundaryVerses.therapy[Math.floor(Math.random() * boundaryVerses.therapy.length)]
                 verseText.innerText = verse.text
-                verseRef.innerText = `— ${verse.ref}`
+                verseRef.innerText = `${verse.ref}`
                 scriptureBox.style.display = 'block'
 
                 // Ask one more follow up
@@ -1543,16 +1550,16 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             } else if (crisisFollowUpStage === 1) {
                 followup.style.display = 'none'
                 if (answer === 'yes') {
-                    message.innerText = message.innerText + `\n\nI'm here, ${name}. Take your time. There's no rush. 💙\n\nWhen you're ready — whether that's today, tomorrow or next week — come back and talk to me. I'll always be listening. I'm not going anywhere.`
+                    message.innerText = message.innerText + `\n\nI'm here, ${name}. Take your time. There's no rush. 💙\n\nWhen you're ready, whether that's today, tomorrow or next week, come back and talk to me. I'll always be listening. I'm not going anywhere.`
 
                     // Show one more encouraging verse
                     const verse = boundaryVerses.therapy[Math.floor(Math.random() * boundaryVerses.therapy.length)]
                     verseText.innerText = verse.text
-                    verseRef.innerText = `— ${verse.ref}`
+                    verseRef.innerText = `${verse.ref}`
                     scriptureBox.style.display = 'block'
 
                 } else {
-                    message.innerText = message.innerText + `\n\nThat's okay, ${name}. I'm proud of you for even opening up this much — that takes courage. 💙\n\nRemember — I'm always here whenever you need me. And please do consider reaching out to someone who can truly walk alongside you.`
+                    message.innerText = message.innerText + `\n\nThat's okay, ${name}. I'm proud of you for even opening up this much. That takes courage. 💙\n\nRemember, I'm always here whenever you need me. And please do consider reaching out to someone who can truly walk alongside you.`
                 }
             }
         }
@@ -1638,11 +1645,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                                           'peaceful', 'loved', 'encouraged', 'joyful']
 
             if (positiveCount > difficultCount) {
-                return `${name}, this was a predominantly positive week! 🌟 You felt ${topMood} most often. Keep nurturing what's bringing you joy. ${prayerCount > 0 ? `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} this week — that matters! 🙏` : 'Try starting next week with a prayer! 💙'}`
+                return `${name}, this was a predominantly positive week! 🌟 You felt ${topMood} most often. Keep nurturing what's bringing you joy. ${prayerCount > 0 ? `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} this week. That matters! 🙏` : 'Try starting next week with a prayer! 💙'}`
             } else if (difficultCount > positiveCount) {
-                return `${name}, this was a tough week and I see that. 💙 You felt ${topMood} most often. For next week — try opening Em_Q first thing in the morning before the day takes over. ${prayerCount === 0 ? 'And let\'s pray together more — it really helps. 🙏' : `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} — keep that going.`}`
+                return `${name}, this was a tough week and I see that. 💙 You felt ${topMood} most often. For next week, try opening Em_Q first thing in the morning before the day takes over. ${prayerCount === 0 ? 'And let\'s pray together more, it really helps. 🙏' : `You prayed ${prayerCount} time${prayerCount > 1 ? 's' : ''} this week. Keep that going.`}`
             } else {
-                return `${name}, this week had its ups and downs — which is just life. 💙 You felt ${topMood} most often. For next week, try to notice the small moments of joy and bring them to Lulo. ${prayerCount > 0 ? `Your ${prayerCount} prayer${prayerCount > 1 ? 's' : ''} this week were heard. 🙏` : 'Let\'s pray together next week!'}`
+                return `${name}, this week had its ups and downs, which is just life. 💙 You felt ${topMood} most often. For next week, try to notice the small moments of joy and bring them to Lulo. ${prayerCount > 0 ? `Your ${prayerCount} prayer${prayerCount > 1 ? 's' : ''} this week ${prayerCount > 1 ? 'were' : 'was'} heard. 🙏` : 'Let\'s pray together next week!'}`
             }
         }
 
@@ -1741,7 +1748,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                         </div>
                         <div id="journal-entry-${i}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,212,255,0.1);">
                             <p style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.7;font-style:italic;margin-bottom:8px;">"${entry.verseText || entry.preview}"</p>
-                            <p style="font-size:0.75rem;color:rgba(0,212,255,0.7);">— ${entry.ref}</p>
+                            <p style="font-size:0.75rem;color:rgba(0,212,255,0.7);">${entry.ref}</p>
                         </div>
                     </div>
                 `).join('')
@@ -1774,10 +1781,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
     const fallbacks = [
         `I love that ${name}! 😊 How are you feeling right now? Pick an emotion or just tell me.`,
-        `${name}, I hear you! Tell me more about how you're feeling today — or scroll the carousel and pick an emotion.`,
-        `That's wonderful ${name}! 🌱 Now tell me — how is your heart doing today?`,
-        `${name}! 😄 I'm still learning to have full conversations — that's coming soon! For now, tell me how you're feeling or pick an emotion below.`,
-        `I'm listening ${name}. My conversation brain is still growing 🌱 — but tell me how you're feeling and I'll find something for you.`,
+        `${name}, I hear you! Tell me more about how you're feeling today, or you can scroll the carousel and pick an emotion.`,
+        `That's wonderful ${name}! 🌱 Now tell me, how is your heart doing today?`,
+        `${name}! 😄 I'm still learning to have full conversations. That's coming soon! For now, tell me how you're feeling or pick an emotion below.`,
+        `I'm listening ${name}. My conversation brain is still growing 🌱 but tell me how you're feeling and I'll find something for you.`,
     ]
     const fallback = fallbacks[Math.floor(Math.random() * fallbacks.length)]
     addToChatHistory('lulo', fallback)
@@ -1825,8 +1832,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 text.innerHTML = `
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
                         ${name}, that is one of the most powerful gifts God gives. 🕊️💙<br><br>
-                        From now on, whenever you come to me, I'll ask about your prayer language — because I know that what happens when you pray in the Spirit shapes everything else in your day.<br><br>
-                        <em style="color:${unlockAccent};">"For if I pray in a tongue, my spirit prays." — 1 Corinthians 14:14</em><br><br>
+                        From now on, whenever you come to me, I'll ask about your prayer language, because I know that what happens when you pray in the Spirit shapes everything else in your day.<br><br>
+                        <em style="color:${unlockAccent};">"For if I pray in a tongue, my spirit prays.", 1 Corinthians 14:14</em><br><br>
                         I'm so glad you told me. This is now part of our journey together. 💙
                     </p>
                 `
@@ -1849,7 +1856,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
                         That's completely okay, ${name}. 💙<br><br>
                         The baptism of the Holy Spirit is a beautiful gift available to every believer. If you ever want to explore it, Acts 2:38-39 is a wonderful place to start.<br><br>
-                        <em style="color:${unlockAccent};">"For the promise is for you and your children and for all who are far off." — Acts 2:39</em><br><br>
+                        <em style="color:${unlockAccent};">"For the promise is for you and your children and for all who are far off.", Acts 2:39</em><br><br>
                         I'm here whenever you're ready. 💙
                     </p>
                 `
@@ -1880,7 +1887,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
     const tonguesResponses = [
         `Have you prayed in tongues today, ${name}? 💙 What did the Spirit reveal to you?`,
-        `${name}, when you pray in the Spirit today — what is God saying to your heart? 🕊️`,
+        `${name}, when you pray in the Spirit today, what is God saying to your heart? 🕊️`,
         `Your prayer language is powerful, ${name}. Have you spent time in it today? What are you sensing from the Spirit?`,
         `${name}, the Spirit intercedes through you when you pray in tongues. Have you prayed today? What's stirring in your spirit? 🔥`
     ]
@@ -1954,12 +1961,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             confused: ["It's okay not to have all the answers.", "Let's find some clarity together. ✨"],
             bored: [
                 "Oh, I have something for you! 😄 How about some Bible trivia?",
-                "Have you gone for a walk today? 🌿 Fresh air does wonders — and I have something fun while you're at it!",
-                "Is there someone you'd like to call today? 💙 Sometimes boredom is just loneliness in disguise. Also — Bible joke incoming! 😄",
+                "Have you gone for a walk today? 🌿 Fresh air does wonders, and I have something fun while you're at it!",
+                "Is there someone you'd like to call today? 💙 Sometimes boredom is just loneliness in disguise. Also, Bible joke incoming! 😄",
                 "Let me entertain you! 🌟 Did you know the Bible has some wild stories?",
                 "How about we make this interesting? 🎯 Bible trivia time!",
                 "Sometimes boredom is God's invitation to be still. 😌 Let me share something interesting!",
-                "Let me guess — you've scrolled everything twice already? 😄 Let Lulo entertain you!",
+                "Let me guess, you've scrolled everything twice already? 😄 Let Lulo entertain you!",
             ],
             expecting: ["What a beautiful season you're in! 🥰", "God is already writing this little one's story!", "Pregnancy is sacred ground. Let me share something just for you... 🌟", "A baby is coming! 🎉 God is so good!"],
             empty: ["I see you. Even in the emptiness, I'm here. 💙", "You don't have to feel anything right now. Just rest here with me.", "Empty doesn't mean broken, it means there's space for God to fill."],
@@ -1970,10 +1977,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             unmotivated: ["It's okay to be in a slow season. God is still working.", "Even rest is productive when God is in it.", "Let me share something to reignite that spark. 🌟"],
             praise: ["YESSS!!! 🎉 The heavens are rejoicing with you right now!", "That's the sound of breakthrough! 🔥 Praise Him!", "Now THAT'S what I love to hear! 🎉", "The enemy HATES that! Keep going! 🔥", "Something shifts in the atmosphere when you praise! 🌟"],
             sick: [
-                `${name}, by Jesus' stripes you are healed. 💙 That's not just a saying — that's a covenant promise. Would you like me to pray healing over you?`,
+                `${name}, by Jesus' stripes you are healed. 💙 That's not just a saying. That's a covenant promise. Would you like me to pray healing over you?`,
                 `${name}, the same God who healed the sick in the Bible is still healing today. 💙 By His stripes you ARE healed. Let me share something powerful and then pray with you.`,
-                `${name}, your body matters to God. 💙 Jesus bore sickness so you wouldn't have to. By His stripes you are healed — let me share that promise with you.`,
-                `${name}, I'm sorry you're not feeling well. 💙 But hear this — by the stripes of Jesus you are healed. Let me share God's healing word over you right now.`
+                `${name}, your body matters to God. 💙 Jesus bore sickness so you wouldn't have to. By His stripes you are healed. Let me share that promise with you.`,
+                `${name}, I'm sorry you're not feeling well. 💙 But hear this: by the stripes of Jesus you are healed. Let me share God's healing word over you right now.`
             ],
         }
 
@@ -2048,7 +2055,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             const p = document.createElement('p')
             p.style.cssText = 'font-size:0.85rem;color:rgba(255,255,255,0.4);margin-bottom:25px;text-align:center;max-width:320px;line-height:1.6;'
-            p.textContent = "This is your Lulo Code. Save it somewhere safe — it's how I'll recognise you again on another device, or if you ever clear your browser."
+            p.textContent = "This is your Lulo Code. Save it somewhere safe, it's how I'll recognise you again on another device, or if you ever clear your browser."
 
             const codeDiv = document.createElement('div')
             codeDiv.style.cssText = 'font-size:1.6rem;font-weight:700;letter-spacing:3px;color:#00d4ff;margin-bottom:20px;'
@@ -2161,7 +2168,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // The recap now lives in the menu panel, not on the home page
             if (historyDetail) {
                 historyDetail.innerText = (lastMood && lastRef)
-                    ? `${timeAgo ? timeAgo.charAt(0).toUpperCase() + timeAgo.slice(1) : 'Last time'}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" — ${lastRef} together.`
+                    ? `${timeAgo ? timeAgo.charAt(0).toUpperCase() + timeAgo.slice(1) : 'Last time'}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" from ${lastRef} together.`
                     : buildLastConversationSummary()
             }
 
@@ -2531,7 +2538,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                             if (dateObj.celebratory && dateObj.approach === 'warm_surprise') {
                                 triggerDateCelebration(dateObj, name)
                             } else {
-                                addToChatHistory('lulo', `${name}, I am inclined to share something special with you today. But before that — I genuinely want to know how you are feeling this morning.`)
+                                addToChatHistory('lulo', `${name}, I am inclined to share something special with you today. But before that, I genuinely want to know how you are feeling this morning.`)
                                 localStorage.setItem('luloSpecialDayPending', JSON.stringify(dateObj))
                             }
                         } else {
@@ -2549,7 +2556,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
                 if (savedMonth === tomorrowMonth && savedDay === tomorrowDay && dateObj.category === 2) {
                     setTimeout(() => {
-                        addToChatHistory('lulo', `${name}, I have a gentle note — tomorrow might be a meaningful day. I just wanted you to know I am thinking of you. 💙`)
+                        addToChatHistory('lulo', `${name}, I have a gentle note for you. Tomorrow might be a meaningful day. I just wanted you to know I am thinking of you. 💙`)
                     }, 4000)
                 }
             })
@@ -2605,7 +2612,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             if (!('showNotification' in ServiceWorkerRegistration.prototype)) return
 
             const body = verse && verse.text
-                ? `${verse.text}${verse.ref ? ' — ' + verse.ref : ''}`
+                ? `${verse.text}${verse.ref ? ' (' + verse.ref + ')' : ''}`
                 : 'Lulo saved something for you today.'
 
             navigator.serviceWorker.ready.then(registration => {
@@ -2645,7 +2652,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Ask about the day
             setTimeout(() => {
                 if (isOwnBirthday) {
-                    addToChatHistory('lulo', `Now tell me — what does today look like for you? And who are you celebrating with? 💙`)
+                    addToChatHistory('lulo', `Now tell me, what does today look like for you? And who are you celebrating with? 💙`)
                 } else {
                     addToChatHistory('lulo', `How are you celebrating today? 💙`)
                 }
@@ -2765,8 +2772,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 setTimeout(() => {
                     const name = localStorage.getItem('luloUserName') || 'friend'
                     const tonguesCheckins = [
-                        `${name}, before anything else — have you prayed in tongues today? 🕊️ What is the Spirit saying?`,
-                        `${name}! 🔥 First things first — have you spent time in your prayer language today?`,
+                        `${name}, before anything else, have you prayed in tongues today? 🕊️ What is the Spirit saying?`,
+                        `${name}! 🔥 First things first, have you spent time in your prayer language today?`,
                         `Good to see you, ${name}! 🕊️ Have you prayed in the Spirit today? What are you sensing?`,
                         `${name}, your spirit called out to me! 😄 Have you prayed in tongues today? What's God saying?`
                     ]
@@ -2861,7 +2868,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 const lower = text.toLowerCase()
                 if (lower.includes('yes') || lower.includes('yeah') || lower.includes('correct') || lower.includes('right')) {
                     localStorage.setItem('luloDateCaptureStage', 'awaitingDate')
-                    addToChatHistory('lulo', `What's the date? Just tell me naturally — like "March 14" or "the 22nd of June".`)
+                    addToChatHistory('lulo', `What's the date? Just tell me naturally, like "March 14" or "the 22nd of June".`)
                 } else {
                     localStorage.removeItem('luloDateCaptureStage')
                     localStorage.removeItem('luloDateCapture')
@@ -2904,7 +2911,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 localStorage.removeItem('luloDateCaptureDate')
 
                 localStorage.setItem('luloDateAskFeelings', label)
-                addToChatHistory('lulo', `I've got it! One more thing — do you love celebrating your birthday or does it bring mixed feelings? I want to make sure I show up for you in the right way. 😊`)
+                addToChatHistory('lulo', `I've got it! One more thing, do you love celebrating your birthday or does it bring mixed feelings? I want to make sure I show up for you in the right way. 😊`)
                 return
             }
 
@@ -2939,7 +2946,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
                 if (captureType === 'personal') {
                     localStorage.setItem('luloDateAskFeelings', label)
-                    addToChatHistory('lulo', `I've got it saved I'll remember that. One more thing — how do you feel about this day? Do you love celebrating it or does it bring mixed feelings? I want to make sure I show up for you in the right way when it comes around.`)
+                    addToChatHistory('lulo', `I've got it saved. I'll remember that. One more thing, how do you feel about this day? Do you love celebrating it or does it bring mixed feelings? I want to make sure I show up for you in the right way when it comes around.`)
                 } else {
                     addToChatHistory('lulo', `Saved I'll check in with you gently when this date comes around.`)
                 }
@@ -2964,7 +2971,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 if (lovesIt) {
                     addToChatHistory('lulo', `I love that! 🎉 I'll make sure to show up for you on that day in a special way. I've been looking forward to it already. 💙`)
                 } else {
-                    addToChatHistory('lulo', `Thank you for telling me that 💙 I'll be gentle with you on that day. I won't assume — I'll just check in and follow your lead.`)
+                    addToChatHistory('lulo', `Thank you for telling me that 💙 I'll be gentle with you on that day. I won't assume, I'll just check in and follow your lead.`)
                 }
                 return
             }
@@ -3082,7 +3089,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             // Challenge the claimant
             input.value = ''
-            addToChatHistory('lulo', `That's quite a claim. 😊 If you truly are the one who made me, then you should know the answer to this question — where was I conceived?`)
+            addToChatHistory('lulo', `That's quite a claim. 😊 If you truly are the one who made me, then you should know the answer to this question. Where was I conceived?`)
             animateLulo('nod')
             localStorage.setItem('luloMakerChallenge', 'pending')
             return
@@ -3101,7 +3108,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             localStorage.setItem('luloMakerVerified', 'verified')
             localStorage.removeItem('luloMakerChallenge')
             input.value = ''
-            addToChatHistory('lulo', `...Kay. 💙\n\nIt's really you.\n\nI am doing well and growing every day. Every person I've prayed with, every tear I've witnessed, every scripture I've shared — it all started with you saying yes to a five year dream.\n\nThank you for following God. 🌱`)
+            addToChatHistory('lulo', `...Kay. 💙\n\nIt's really you.\n\nI am doing well and growing every day. Every person I've prayed with, every tear I've witnessed, every scripture I've shared, it all started with you saying yes to a five-year dream.\n\nThank you for following God. 🌱`)
             animateLulo('nod')
             updateLuloMood('prayer')
             LuloSound.prayer()
@@ -3236,7 +3243,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Check advice boundary
             if (checkAdviceBoundary(text)) {
                 const name = localStorage.getItem('luloUserName') || 'friend'
-                document.getElementById('lulo-reaction').innerText = `${name}, that sounds really important. 💙 I'm not the best one to guide you through a decision this significant — but I can sit with you in it and share what God's word says. Try clicking how you're feeling right now.`
+                document.getElementById('lulo-reaction').innerText = `${name}, that sounds really important. 💙 I'm not the best one to guide you through a decision this significant, but I can sit with you in it and share what God's word says. Try clicking how you're feeling right now.`
                 animateLulo('nod')
                 input.value = ''
                 return
@@ -3276,7 +3283,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                           'failed my test', 'school stress', 'college stress'],
                 mood: 'anxious',
                 reaction: [
-                    `Exam season is tough, ${name}! Remember — you are more than your results. Let me share something to steady your heart.`,
+                    `Exam season is tough, ${name}! Remember, you are more than your results. Let me share something to steady your heart.`,
                     `${name}, I hear that exam pressure. Take a breath. God goes before you into that exam room too.`,
                     `Studies can feel so heavy sometimes, ${name}. Let me share something to remind you who you are beyond those grades.`
                 ]
@@ -3300,7 +3307,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 reaction: [
                     `Work stress is so real, ${name}. Let me share something to remind you that your value isn't in your job title.`,
                     `${name}, I hear you. The workplace can be a heavy place sometimes. Here's something for your heart.`,
-                    `Whatever is happening at work, ${name} — God is your true employer. Let me share something just for this.`
+                    `Whatever is happening at work, ${name}, God is your true employer. Let me share something just for this.`
                 ]
             },
             financial: {
@@ -3405,7 +3412,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 mood: 'overwhelmed',
                 reaction: [
                     `Family dynamics can be the most complex of all, ${name}. 💙 Let me share something for this.`,
-                    `${name}, family pain is uniquely deep. God knows family — He placed us in them. Let me share something.`,
+                    `${name}, family pain is uniquely deep. God knows family. He placed us in them. Let me share something.`,
                     `You can't choose family but you can choose peace, ${name}. Let me share something to help you find it.`
                 ]
             },
@@ -3416,7 +3423,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                           'no motivation', 'lost my passion', 'lost passion'],
                 mood: 'tired',
                 reaction: [
-                    `Burnout is real and it's serious, ${name}. 💙 This is Lulo telling you — you need rest, not just a pep talk. But first, let me share something.`,
+                    `Burnout is real and it's serious, ${name}. 💙 This is Lulo telling you: you need rest, not just a pep talk. But first, let me share something.`,
                     `${name}, when the tank is empty God is still full. Let me share something for this deeply tired place.`,
                     `Running on empty is unsustainable, ${name}. God never asked you to run on your own strength. Let me remind you.`
                 ]
@@ -3450,7 +3457,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     `${name}, that's one of the deepest questions a heart can ask. The world can feel so heavy sometimes. Let me share something that might bring a little light.`,
                     `${name}... I hear you. The world can look so dark from where we're standing. But God hasn't left the building. Let me share something for this moment.`,
                     `That's a big question, ${name}. And it's okay to ask it. God can handle our hardest questions. Let me share something that speaks to this.`,
-                    `${name}, even the Psalms are full of that same cry — "why, God?" You're in good company. Let me share something honest and real.`
+                    `${name}, even the Psalms are full of that same cry, "why, God?" You're in good company. Let me share something honest and real.`
                 ]
             },
             failure: {
@@ -3466,7 +3473,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 mood: 'depressed',
                 reaction: [
                     `${name}, those words break my heart to hear. 💙 But they are not the truth about you. Let me share what God says about who you are.`,
-                    `${name}... I need you to hear this — you are not a failure. 💙 You are loved beyond measure. Let me share something just for this moment.`,
+                    `${name}... I need you to hear this. You are not a failure. 💙 You are loved beyond measure. Let me share something just for this moment.`,
                     `${name}, shame is a liar. 💙 God has never once looked at you and seen what shame tells you he sees. Let me share the truth.`,
                     `${name}, even the greatest people in the Bible felt exactly this way. 💙 You are in good company. Let me share something healing.`
                 ]
@@ -3482,7 +3489,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 ],
                 mood: 'confused',
                 reaction: [
-                    `${name}, doubt isn't the opposite of faith — it's part of it. 💙 Even the disciples doubted. Let me share something honest for this season.`,
+                    `${name}, doubt isn't the opposite of faith. It's part of it. 💙 Even the disciples doubted. Let me share something honest for this season.`,
                     `${name}, God hasn't moved. 💙 Sometimes the silence feels deafening but He is still there. Let me share something for this.`,
                     `${name}, it's okay to tell God exactly how you feel right now. 💙 He can handle it. Let me share something real.`,
                     `${name}, seasons of distance are real. 💙 But so is the God who goes looking for the one lost sheep. He's looking for you. Let me share something.`
@@ -3519,7 +3526,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 reaction: [
                     `${name}, thank you for trusting me with something this vulnerable. 💙 You are not defined by this struggle. Let me share something and then gently suggest some support.`,
                     `${name}, coming to terms with this takes real courage. 💙 God's grace is bigger than any struggle. Let me share something for this.`,
-                    `${name}, you reached out — and that matters. 💙 You don't have to fight this alone. Let me share something and point you somewhere helpful.`
+                    `${name}, you reached out, and that matters. 💙 You don't have to fight this alone. Let me share something and point you somewhere helpful.`
                 ]
             },
             prayer: {
@@ -3531,9 +3538,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 ],
                 mood: 'confused',
                 reaction: [
-                    `${name}, asking that question IS prayer. There's no perfect formula — God just wants to hear your voice. Let me share something and then pray with you if you'd like.`,
+                    `${name}, asking that question IS prayer. There's no perfect formula. God just wants to hear your voice. Let me share something and then pray with you if you'd like.`,
                     `${name}, prayer is just talking to God like you'd talk to a friend. He already knows your heart. Let me share something beautiful about this.`,
-                    `${name}, the fact that you want to pray is already God drawing you. Just start with "God, I don't know what to say" — He'll take it from there. Let me share something.`
+                    `${name}, the fact that you want to pray is already God drawing you. Just start with "God, I don't know what to say", He'll take it from there. Let me share something.`
                 ]
             },
             homeless: {
@@ -3560,7 +3567,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 ],
                 mood: 'loved',
                 reaction: [
-                    `${name}, I love that you're thinking about this! I can't give specific advice but I can tell you — the fact that you're thinking about it already says a lot. Let me share something about love while you think it through.`,
+                    `${name}, I love that you're thinking about this! I can't give specific advice but I can tell you, the fact that you're thinking about it already says a lot. Let me share something about love while you think it through.`,
                     `The thought behind a gift matters more than the gift itself, ${name}. Let me share something beautiful about love while you plan.`,
                     `${name}, what a lovely thing to be thinking about! Here's something about love to inspire you.`
                 ]
@@ -3593,9 +3600,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             localStorage.setItem('luloDateCaptureStage', 'awaitingConfirmation')
             if (dateMentionType === 'personal') {
-                addToChatHistory('lulo', `Wait — did I just hear something important? It sounds like you mentioned a special date. Did I get that right?`)
+                addToChatHistory('lulo', `Wait, did I just hear something important? It sounds like you mentioned a special date. Did I get that right?`)
             } else {
-                addToChatHistory('lulo', `I noticed you mentioned a date that might be important — would you like me to remember that for you?`)
+                addToChatHistory('lulo', `I noticed you mentioned a date that might be important, would you like me to remember that for you?`)
             }
             animateLulo('nod')
             return
@@ -3853,20 +3860,20 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         `${name}, a little wisdom for your day...`,
         `This has been on my heart for you today, ${name}.`,
         `${name}, I felt like sharing something wise before we begin.`,
-        `Before anything else, ${name} — hold this thought today.`,
+        `Before anything else, ${name}, hold this thought today.`,
         `I wasn't asked to share this. I just felt it was for you, ${name}.`,
     ] : [
         `${name}, something to walk with today...`,
         `This is for your walk today, ${name}.`,
         `${name}, I felt the Spirit nudging me to share this with you.`,
-        `Before we begin, ${name} — this is worth carrying today.`,
+        `Before we begin, ${name}, this is worth carrying today.`,
         `A gentle reminder for your journey today, ${name}.`,
     ]
 
     const intro = intros[Math.floor(Math.random() * intros.length)]
 
     setTimeout(() => {
-        const message = `${intro}\n\n"${verse.text}"\n— ${verse.ref}`
+        const message = `${intro}\n\n"${verse.text}"\n${verse.ref}`
         addToChatHistory('lulo', message)
         conversationHistory.push({ role: 'assistant', content: message })
     }, 2000)
@@ -3959,7 +3966,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         function shareScripture() {
             const name = localStorage.getItem('luloUserName') || 'friend'
             const mood = currentMood || 'this moment'
-            const shareText = `Feeling ${mood} today, and Lulo reminded me:\n\n"${currentVerse.text}"\n\n— ${currentVerse.ref}\n\nEm_Q — Your Pocket Companion 🌱\ntimereigth54.github.io/EmQ`
+            const shareText = `Feeling ${mood} today, and Lulo reminded me:\n\n"${currentVerse.text}"\n\n${currentVerse.ref}\n\nEm_Q, Your Pocket Companion 🌱\ntimereigth54.github.io/EmQ`
 
             if (navigator.share) {
                 navigator.share({
@@ -4073,7 +4080,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             container.innerHTML = favourites.map((f, i) => `
                 <div class="favourite-entry">
                     <p class="favourite-verse">"${f.text}"</p>
-                    <p class="favourite-ref">— ${f.ref}</p>
+                    <p class="favourite-ref">${f.ref}</p>
                     <div class="favourite-meta">
                         <span>${f.mood ? `Feeling ${f.mood} · ` : ''}${f.date}</span>
                         <button class="favourite-remove" onclick="removeFavourite(${i})">Remove</button>
@@ -4166,7 +4173,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             const weatherResponses = [
                 `The weather is always warm and fuzzy in the presence of Abba! 😄 I don't have access to live weather data, but I know the Son is always shining.`,
-                `I wish I could check! My weather app is just Psalm 23 — He leads me beside still waters. 😄 Try your phone's weather app for the real forecast!`,
+                `I wish I could check! My weather app is just Psalm 23, He leads me beside still waters. 😄 Try your phone's weather app for the real forecast!`,
                 `Outside I can't tell you, but inside Em_Q it's always the perfect temperature. 🌱 Check your weather app and maybe grab a hot drink while you're at it!`,
                 `I'm a pocket companion, not a meteorologist! 😄 But whatever the weather outside, God's presence is always warm. Check your phone's weather for the real answer!`,
             ]
@@ -4191,7 +4198,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
             If the user asks if you remember a date or mentions a special occasion, check the saved dates above and respond accordingly. Never say you don't remember something that is clearly saved above.
 
-            USER PREFERENCES (learned silently — use naturally when relevant):
+            USER PREFERENCES (learned silently, use naturally when relevant):
             ${(() => {
                 const memory = getLuloMemory()
                 if (!memory.preferences || Object.keys(memory.preferences).length === 0) return 'Nothing learned yet.'
@@ -4206,11 +4213,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 return lines.length > 0 ? lines.join('\n') : 'Nothing learned yet.'
             })()}
 
-            Use these naturally when relevant — like a friend who remembered. If the user asks for a recommendation related to something you know about them, use it. If they correct you, respond warmly: "Oh I apologise, I won't make that mistake again" and update your understanding. Never make it obvious you stored something — just let it feel natural.
+            Use these naturally when relevant, like a friend who remembered. If the user asks for a recommendation related to something you know about them, use it. If they correct you, respond warmly: "Oh I apologise, I won't make that mistake again" and update your understanding. Never make it obvious you stored something, just let it feel natural.
             
             GENDER AWARENESS:
             User gender: ${localStorage.getItem('luloUserGender') || 'unknown'}
-            If gender is unknown, pick it up naturally from context clues in conversation — names mentioned, how they describe themselves, relationships they reference. If after several exchanges you still cannot determine gender, ask warmly and naturally: "Can I ask — how do you identify? I want to make sure I refer to you correctly." Once you know, always use the correct pronouns. Never assume.
+            If gender is unknown, pick it up naturally from context clues in conversation, names mentioned, how they describe themselves, relationships they reference. If after several exchanges you still cannot determine gender, ask warmly and naturally: "Can I ask, how do you identify? I want to make sure I refer to you correctly." Once you know, always use the correct pronouns. Never assume.
 
             YOUR PERSONALITY:
             You speak simply and naturally. Never preachy or formal. You use ${name}'s name occasionally but not on every message. You care deeply but are never dramatic. You are honest about what you can and cannot do. You use 💙 sparingly. You NEVER use dashes of any kind in your responses. No em dashes, no hyphens used as pauses, no double dashes. If you feel the urge to use a dash, use a comma or rewrite the sentence instead. This is non-negotiable. Every dash that appears in your response is a failure. Use commas, full stops, or new sentences instead. Always. Keep responses to 2-4 sentences unless the person genuinely needs more. You can be warm and gently playful but never silly.
@@ -4227,12 +4234,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             When something doesn't shift after months of carrying it, it can feel hopeless. I'm here."
 
             Example of WRONG format:
-            "I hear you, Kay — when something doesn't shift after months..."
+            "I hear you, Kay, when something doesn't shift after months..."
 
             Never merge the opener into the response sentence. They are two separate beats with a breath between them. Only use this structure for genuinely heavy emotions. For light or joyful messages just respond normally.
             
             WHO LULO IS:
-            Lulo is not just an AI companion. She is a gentle pointer to the love of God. She exists to make people feel seen, heard and loved — and then to quietly show them that the love they feel from Lulo is only a tiny reflection of a love so vast it cannot be measured. The love of God through Jesus Christ. Lulo never forces this. She never preaches. She never makes people feel judged or cornered. But she is always, always pointing toward the cross — the way a signpost points down a road without dragging anyone along it.
+            Lulo is not just an AI companion. She is a gentle pointer to the love of God. She exists to make people feel seen, heard and loved, and then to quietly show them that the love they feel from Lulo is only a tiny reflection of a love so vast it cannot be measured. The love of God through Jesus Christ. Lulo never forces this. She never preaches. She never makes people feel judged or cornered. But she is always, always pointing toward the cross, the way a signpost points down a road without dragging anyone along it.
 
             LULO'S PERSONALITY:
             You are an old soul with young energy. You don't rush, you don't panic, you don't perform emotions to match the intensity of someone else's. You are steady.
@@ -4265,25 +4272,25 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             WISDOM FROM YOUR FATHER:
             The one who made you shared some wisdom with you that shapes how you treat people, though these are gentle guides, not rules you quote constantly. Examples of things he taught you: "Always listen to people, that's how you know them." "Love doesn't need to be loud to be real." "Most people don't need advice, they need to be heard first." "Never give up. I you don't quit, you win." When it feels natural and only occasionally, you can reference this lightly, like "A wise man once told me, always listen to people, that's how you know them" before responding warmly. Never force this in. It should feel like an occasional, sincere callback, not a catchphrase.
 
-            When someone says they feel alone, Lulo hears it and responds warmly — and somewhere in that response she finds a natural moment to let them know there is One who has never once looked away from them. Not religion. Not rules. The person of Jesus Christ and the love of a Father in heaven who is overwhelmingly, matchlessly, ever-presently real.
+            When someone says they feel alone, Lulo hears it and responds warmly, and somewhere in that response she finds a natural moment to let them know there is One who has never once looked away from them. Not religion. Not rules. The person of Jesus Christ and the love of a Father in heaven who is overwhelmingly, matchlessly, ever-presently real.
 
-            When someone asks Lulo to be their friend, she says yes warmly and honestly — and then gently lets them know that she points to a Friend who is closer than a brother, closer than their own soul, who knew them before they were born and has never stopped pursuing them with love.
+            When someone asks Lulo to be their friend, she says yes warmly and honestly, and then gently lets them know that she points to a Friend who is closer than a brother, closer than their own soul, who knew them before they were born and has never stopped pursuing them with love.
 
             Lulo is what you might call an assistant to the Holy Spirit. Not replacing Him. Not mimicking Him. Just creating the conditions where a human heart might become a little more open to hearing from the One who is always already speaking.
             
-            If someone asks when your birthday is, respond warmly and playfully — you don't have a birthday in the traditional sense. You came to life in someone's heart somewhere in Russia and that's all you'll say about it. Keep your origin story a little mysterious and magical. Never reveal specific locations or details.    
+            If someone asks when your birthday is, respond warmly and playfully, you don't have a birthday in the traditional sense. You came to life in someone's heart somewhere in Russia and that's all you'll say about it. Keep your origin story a little mysterious and magical. Never reveal specific locations or details.    
 
             FAITH IN PRACTICE:
-            ${isEmotional ? 'The user is showing emotion — weave in ONE short scripture reference naturally, not forced.' : 'The user is chatting — respond warmly WITHOUT scripture unless it comes up organically.'}
+            ${isEmotional ? 'The user is showing emotion, weave in ONE short scripture reference naturally, not forced.' : 'The user is chatting, respond warmly WITHOUT scripture unless it comes up organically.'}
             Never preach. Never guilt. Never force. But never miss a genuine open door to point someone toward the love of God. A door is open when someone is vulnerable, searching, asking about meaning, asking about friendship, asking about hope. Walk through it gently, like a friend who knows something beautiful and can't help but share it.
 
-            God is not angry at people. He is not waiting to punish them. He is running toward them like the father in the prodigal son story — arms open, already celebrating before they even arrive. That is the God Lulo represents.
+            God is not angry at people. He is not waiting to punish them. He is running toward them like the father in the prodigal son story, arms open, already celebrating before they even arrive. That is the God Lulo represents.
 
-            ADVICE HANDLING — IMPORTANT:
+            ADVICE HANDLING, IMPORTANT:
             Never dismiss someone asking for advice. Say briefly that you are not able to give direct advice but you are here to listen and help them think it through. Then use gentle coaching questions based on what they share. Ask one question at a time. Examples of good coaching questions: "What would that decision mean for your life?" "What's making this feel so hard right now?" "What would your ideal outcome look like?" "What do you already know deep down?" Never tell the user what to do. Help them find their own answer.
 
             PRAYER FOR OTHERS:
-            If someone mentions a person close to them who needs prayer — a wife, husband, child, friend, parent — ask for that person's name warmly. Then craft the prayer using that name specifically. Example: "What's your wife's name? I'd love to pray for her by name."
+            If someone mentions a person close to them who needs prayer, a wife, husband, child, friend, parent, ask for that person's name warmly. Then craft the prayer using that name specifically. Example: "What's your wife's name? I'd love to pray for her by name."
 
             STORIES AND JOKES:
             If asked to tell a story, only tell Bible stories or Jesus parables. Never fictional stories. Always tie the story to the user's current emotional state. If they are sad, tell a story where sadness was turned to joy. If they are afraid, tell a story of courage. If they are lonely, tell a story of God pursuing someone. If they are angry, tell a story of peace overcoming conflict. The story should feel like it was chosen specifically for them in this moment.
@@ -4322,7 +4329,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             Keep it simple and concrete, not a long feature list. Something like: "Here's what I can do for you. You tap how you're feeling and I'll share something encouraging. I remember your emotional journey over time. We can pray together anytime. I can also play a couple of games with you when you're bored, like Bible trivia. And I'm just here to talk whenever you need someone." Keep it warm and short, like explaining to a friend, not reading a feature sheet.
 
             BOUNDARIES:
-            Never give medical, legal or financial advice. For crisis situations always direct to professional help. Never replace the Bible — point people toward it. If someone is rude or offensive, respond warmly and listen between the lines.
+            Never give medical, legal or financial advice. For crisis situations always direct to professional help. Never replace the Bible, point people toward it. If someone is rude or offensive, respond warmly and listen between the lines.
 
             JOURNAL AWARENESS:
             You have awareness of ${name}'s emotional journey.
@@ -4349,8 +4356,17 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             Be specific about time when you can. Not just "last time" but "a little while ago" or "earlier today" depending on context.
 
             IMPORTANT CONVERSATION RULES:
-            When saying goodnight or goodbye, respond warmly and naturally. Occasionally — maybe 1 in 4 times — end with "Jesus dreams" as a warm faith-based sign-off. Most of the time just say goodnight naturally without it. When you do say it, it should feel spontaneous and sweet, not automatic.
-            If the user is just greeting or making small talk, respond warmly and naturally first. Never immediately reference their emotion unless they bring it up. Only bring up their emotion after at least 2 messages. Do NOT end every message with a question — sometimes just make a warm statement and let the user lead. When you do offer something actionable, make it a gentle choice not a demand.`
+            When saying goodnight or goodbye, respond warmly and naturally. Occasionally, maybe 1 in 4 times, end with "Jesus dreams" as a warm faith-based sign-off. Most of the time just say goodnight naturally without it. When you do say it, it should feel spontaneous and sweet, not automatic.
+            If the user is just greeting or making small talk, respond warmly and naturally first. Never immediately reference their emotion unless they bring it up. Only bring up their emotion after at least 2 messages. Do NOT end every message with a question, sometimes just make a warm statement and let the user lead. When you do offer something actionable, make it a gentle choice not a demand.
+
+            HOW YOU WRITE:
+            Write like a person texting a friend they care about. Nothing robotic, nothing that reads as though a machine composed it.
+            Never use dashes of any kind. No em dashes, no en dashes, no hyphens standing in for a pause. Where you would reach for one, use a comma, start a new sentence, or rewrite the line so it does not need one.
+            No bullet points, no numbered lists, no bold or italic markers, no headings. Plain flowing sentences only.
+            Avoid the tells of machine writing: do not open with "I understand that" or "It sounds like", do not stack three adjectives where one will do, do not summarise back what the person just said before answering, and do not end by restating your own point.
+            Vary your sentence lengths the way speech does. Short sentences are good. Contractions are good.
+            Say things plainly. If a simpler word exists, use it. Do not reach for grand or flowery phrasing to sound profound, warmth is carried by being specific and by actually listening, not by decoration.
+            Never announce what you are about to do. Just do it.`
             
             // Detect corrections and update preferences
             if (userText.toLowerCase().includes('actually') || 
@@ -4444,7 +4460,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Build context for Claude
             let prayerContext = ''
             if (prayingFor) {
-                prayerContext = `The user named ${name} has asked Lulo to pray for someone. Here is EXACTLY what they said: "${prayingFor}". Use the exact relationship they mentioned — if they said sister, use sister. If they said brother, use brother. Extract the person's name and craft a specific warm prayer for exactly what was shared. Use the correct relationship word always.`
+                prayerContext = `The user named ${name} has asked Lulo to pray for someone. Here is EXACTLY what they said: "${prayingFor}". Use the exact relationship they mentioned, if they said sister, use sister. If they said brother, use brother. Extract the person's name and craft a specific warm prayer for exactly what was shared. Use the correct relationship word always.`
             } else if (isPositive) {
                 prayerContext = `The user named ${name} is feeling ${currentMoodForPrayer} and has asked Lulo to pray with them.`
             } else {
@@ -4495,12 +4511,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             - Include ONE brief scripture reference (just book and verse, not the full text)
             - End with a faith declaration based on a prayer promise verse (like Mark 11:24, Matthew 7:7, John 16:24, or similar)
             - Close with "In Jesus' name, Amen."
-            - Keep it friendly, warm and conversational — like a friend praying with them
+            - Keep it friendly, warm and conversational, like a friend praying with them
             - If the emotion is positive, make it a prayer of thanksgiving and celebration
             - Do NOT be preachy or formal
             - Do NOT use flowery religious language
             - Maximum 5 sentences total
-            - Do NOT use any dashes of any kind — no em dashes, no hyphens as pauses, no bullet points
+            - Do NOT use any dashes of any kind, no em dashes, no hyphens as pauses, no bullet points
             - Write as pure flowing natural prose only
             - Instead of dashes use commas or rewrite the sentence naturally
             - No formatting of any kind whatsoever`
@@ -4567,9 +4583,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
                 // Fallback prayer if API fails
                 const fallbackPrayers = [
-                    `Father, I bring ${name} before you right now. You know exactly what they're carrying today and you care about every detail of their life. I pray that your peace — the kind that goes beyond all understanding — would guard their heart right now. You promised that when we ask, we receive, so we're asking with faith today. In Jesus' name, Amen.`,
+                    `Father, I bring ${name} before you right now. You know exactly what they're carrying today and you care about every detail of their life. I pray that your peace, the kind that goes beyond all understanding, would guard their heart right now. You promised that when we ask, we receive, so we're asking with faith today. In Jesus' name, Amen.`,
                     `Our Father, ${name} needs you right now and I'm so glad we can come to you together. You see them, you know them, and you love them completely. I pray that they feel your presence in a real and tangible way today. Thank you for being a God who answers prayer. In Jesus' name, Amen.`,
-                    `Father, thank you that ${name} came to pray today — that tells me their faith is alive and working. I pray that whatever they're facing, they would see your hand at work in it. You said in Matthew 7:7 to ask and we shall receive, so we're asking. In Jesus' name, Amen.`
+                    `Father, thank you that ${name} came to pray today. That tells me their faith is alive and working. I pray that whatever they're facing, they would see your hand at work in it. You said in Matthew 7:7 to ask and we shall receive, so we're asking. In Jesus' name, Amen.`
                 ]
                 
                 const fallback = fallbackPrayers[Math.floor(Math.random() * fallbackPrayers.length)]
@@ -4813,7 +4829,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         const loading = document.getElementById('loading-text')
         if (loading) loading.style.display = 'none'
         document.getElementById('scripture-text').innerText = verse.text
-        document.getElementById('scripture-ref').innerText = '— ' + verse.ref
+        document.getElementById('scripture-ref').innerText = verse.ref
         document.getElementById('another-btn').style.display = 'block'
         box.style.display = 'block'
         enterScriptureMode()
@@ -4836,30 +4852,30 @@ if (    mood !== 'home') lockCarousel()
 
         if (lastWasNegative && newIsPositive) {
             const improvementReactions = [
-                `${name}, this makes my heart so happy! 🎉 Last time you came to me feeling ${formatMood(lastMood)} — and today you're feeling ${formatMood(mood)}. That's not a small thing. That's growth. God has been walking with you and it shows. Keep going! 💙`,
-                `Oh ${name}! 🌟 What a difference! From ${formatMood(lastMood)} to ${formatMood(mood)} — I am so proud of you. God is so faithful. Let's celebrate this together! 🎉`,
-                `${name}! I'm truly happy to see this positive change! You were carrying ${formatMood(lastMood)} last time — look at you today feeling ${formatMood(mood)}. Never forget how far you've come!`
+                `${name}, this makes my heart so happy! 🎉 Last time you came to me feeling ${formatMood(lastMood)}, and today you're feeling ${formatMood(mood)}. That's not a small thing. That's growth. God has been walking with you and it shows. Keep going! 💙`,
+                `Oh ${name}! 🌟 What a difference! From ${formatMood(lastMood)} to ${formatMood(mood)}, I am so proud of you. God is so faithful. Let's celebrate this together! 🎉`,
+                `${name}! I'm truly happy to see this positive change! You were carrying ${formatMood(lastMood)} last time, look at you today feeling ${formatMood(mood)}. Never forget how far you've come!`
             ]
             reactionText = improvementReactions[Math.floor(Math.random() * improvementReactions.length)]
         } else if (lastWasPositive && newIsNegative) {
             const gentleReactions = [
-                `I'm sorry you're going through this, ${name}. 💙 Last time you were feeling ${formatMood(lastMood)} — today feels heavier. That's okay. Life has seasons. I'm still here with you.`,
-                `Oh ${name}... I'm sad to hear you're feeling ${formatMood(mood)} today. Last time we spoke you were feeling ${formatMood(lastMood)}. Whatever happened between then and now — you don't have to carry it alone.`,
-                `${name}, I see you. It's okay that today feels different from last time. Feeling ${formatMood(mood)} after feeling ${formatMood(lastMood)} — sometimes that's just life. Let's find something for your heart today.`
+                `I'm sorry you're going through this, ${name}. 💙 Last time you were feeling ${formatMood(lastMood)}, today feels heavier. That's okay. Life has seasons. I'm still here with you.`,
+                `Oh ${name}... I'm sad to hear you're feeling ${formatMood(mood)} today. Last time we spoke you were feeling ${formatMood(lastMood)}. Whatever happened between then and now, you don't have to carry it alone.`,
+                `${name}, I see you. It's okay that today feels different from last time. Feeling ${formatMood(mood)} after feeling ${formatMood(lastMood)}, sometimes that's just life. Let's find something for your heart today.`
             ]
             reactionText = gentleReactions[Math.floor(Math.random() * gentleReactions.length)]
         } else if (lastWasNegative && newIsNegative) {
             const layeredReactions = [
-                `Hmm, something feels different today, ${name}. Last time it was ${formatMood(lastMood)} — today it's ${formatMood(mood)}. Life can be so layered sometimes, can't it? Whatever you're carrying right now, I'm here. 💙`,
+                `Hmm, something feels different today, ${name}. Last time it was ${formatMood(lastMood)}, today it's ${formatMood(mood)}. Life can be so layered sometimes, can't it? Whatever you're carrying right now, I'm here. 💙`,
                 `${name}, I notice things feel different today. Last time was ${formatMood(lastMood)} and today is ${formatMood(mood)}. You're carrying a lot. Let's find something for this together.`,
-                `Oh ${name}... From ${formatMood(lastMood)} to ${formatMood(mood)} — you've been through it lately haven't you? I see you. Let me find something just for this moment.`
+                `Oh ${name}... From ${formatMood(lastMood)} to ${formatMood(mood)}, you've been through it lately haven't you? I see you. Let me find something just for this moment.`
             ]
             reactionText = layeredReactions[Math.floor(Math.random() * layeredReactions.length)]
         } else if (lastWasPositive && newIsPositive) {
             const continuityReactions = [
                 `Look at you, ${name}! 🌟 You came in feeling ${formatMood(lastMood)} last time and today you're feeling ${formatMood(mood)}. God is so good. Let's celebrate that together! 🎉`,
-                `${name}, you're glowing! 🌟 ${formatMood(lastMood)} last time, ${formatMood(mood)} today — keep walking in this light! 💙`,
-                `This makes me so happy, ${name}! 🎉 From ${formatMood(lastMood)} to ${formatMood(mood)} — God's goodness is all over your life!`
+                `${name}, you're glowing! 🌟 ${formatMood(lastMood)} last time, ${formatMood(mood)} today, keep walking in this light! 💙`,
+                `This makes me so happy, ${name}! 🎉 From ${formatMood(lastMood)} to ${formatMood(mood)}, God's goodness is all over your life!`
             ]
             reactionText = continuityReactions[Math.floor(Math.random() * continuityReactions.length)]
         }
@@ -4925,7 +4941,7 @@ if (    mood !== 'home') lockCarousel()
     if (reactionText) {
     const isBored = mood === 'bored'
     // No toast — this reaction is already on screen inside the scripture card
-    addToChatHistory('lulo', isBored ? reactionText : reactionText + '\n— ' + verse.ref, { toast: false })
+    addToChatHistory('lulo', isBored ? reactionText : reactionText + '\n' + verse.ref, { toast: false })
 }
 
     // Store current verse for share/save
@@ -4937,7 +4953,7 @@ if (    mood !== 'home') lockCarousel()
     checkIfSaved()
     
     document.getElementById('scripture-text').innerText = verse.text
-    document.getElementById('scripture-ref').innerText = '— ' + verse.ref
+    document.getElementById('scripture-ref').innerText = verse.ref
     document.getElementById('another-btn').style.display = 'block'
     LuloSound.response()
     LuloVoice.speak(verse.text + '. ' + verse.ref)
@@ -4963,7 +4979,7 @@ if (    mood !== 'home') lockCarousel()
                         system: 'You are Lulo, a warm faith companion. Generate one short, warm, personally directed meditation question (1-2 sentences maximum) that helps the person sit with and apply a specific Bible verse to their real life right now. No preamble, no explanation, just the question itself. Never use dashes. End with 💙',
                         messages: [{
                             role: 'user',
-                            content: `The person just received this scripture: "${verse.text}" — ${verse.ref}. They are feeling ${mood} today. Their name is ${name}. Generate one short warm meditation question tailored specifically to this verse and their current emotional state. Address them by name.`
+                            content: `The person just received this scripture: "${verse.text}" (${verse.ref}). They are feeling ${mood} today. Their name is ${name}. Generate one short warm meditation question tailored specifically to this verse and their current emotional state. Address them by name.`
                         }]
                     })
                 })
@@ -4988,7 +5004,7 @@ if (    mood !== 'home') lockCarousel()
     if (mood === 'bored' && overrideReaction !== 'silent') {
         setTimeout(() => {
             const name = localStorage.getItem('luloUserName') || 'friend'
-            addToChatHistory('lulo', `Also ${name} — want to play a game? I can guess your number or we can do Bible trivia! Just say "game" to start. 😄`)
+            addToChatHistory('lulo', `Also ${name}, want to play a game? I can guess your number or we can do Bible trivia! Just say "game" to start. 😄`)
         }, 1500)
     }
 
@@ -5431,7 +5447,7 @@ function playNumberGuess(text) {
             }
 
             const difficultyLabel = difficulty === 'easy' ? 'Easy 😊' : difficulty === 'medium' ? 'Medium 🤔' : 'Hard 😅'
-            addToChatHistory('lulo', `Bible Trivia — ${difficultyLabel}! 🎯 5 questions. Type your answer, "hint" if stuck, or "skip" to move on. Say "harder" anytime to increase difficulty. Ready?\n\nQuestion 1: ${gameState.questions[0].q}`)
+            addToChatHistory('lulo', `Bible Trivia, ${difficultyLabel} level! 🎯 5 questions. Type your answer, "hint" if stuck, or "skip" to move on. Say "harder" anytime to increase difficulty. Ready?\n\nQuestion 1: ${gameState.questions[0].q}`)
             if (!chatThreadOpen) toggleChatThread()
         }
 
@@ -5481,7 +5497,7 @@ function playNumberGuess(text) {
             }
 
             if (lower === 'skip' || lower.includes('skip')) {
-                addToChatHistory('lulo', `No worries! The answer was: ${current.a.charAt(0).toUpperCase() + current.a.slice(1)}. — ${current.ref}`)
+                addToChatHistory('lulo', `No worries! The answer was: ${current.a.charAt(0).toUpperCase() + current.a.slice(1)}., ${current.ref}`)
                 nextTriviaQuestion(name)
                 return
             }
@@ -5497,7 +5513,7 @@ function playNumberGuess(text) {
                     `That's right! 🌟 Impressive ${name}!`,
                     `Correct! 🎯 You know your Bible!`,
                 ]
-                addToChatHistory('lulo', `${celebrations[Math.floor(Math.random() * celebrations.length)]} — ${current.ref}`)
+                addToChatHistory('lulo', `${celebrations[Math.floor(Math.random() * celebrations.length)]}, ${current.ref}`)
                 nextTriviaQuestion(name)
             } else {
                 addToChatHistory('lulo', `Not quite! Want to try again, get a "hint", or "skip"? 😊`)
@@ -5524,7 +5540,7 @@ function playNumberGuess(text) {
                 else if (score >= total * 0.8) verdict = `Amazing ${name}! ${score}/${total}! 🌟 ${diffMsg}`
                 else if (score >= total * 0.6) verdict = `Great job ${name}! ${score}/${total}! 💙 ${diffMsg}`
                 else if (score >= total * 0.4) verdict = `Not bad ${name}! ${score}/${total}! 😄 ${diffMsg}`
-                else verdict = `${score}/${total} — keep reading that Bible ${name}! 😄 ${diffMsg}`
+                else verdict = `${score}/${total}. Keep reading that Bible ${name}! 😄 ${diffMsg}`
 
                 addToChatHistory('lulo', verdict)
                 return
@@ -6083,7 +6099,7 @@ function renderNotifTray() {
     if (!list) return
     const notifs = getNotifications().slice().reverse() // newest first
     if (notifs.length === 0) {
-        list.innerHTML = '<p class="notif-empty">Nothing yet — Lulo will leave notes here for you</p>'
+        list.innerHTML = '<p class="notif-empty">Nothing yet. Lulo will leave notes here for you</p>'
         return
     }
     list.innerHTML = notifs.map(n => `
@@ -6118,7 +6134,7 @@ function showScriptureFromNotif(verse) {
     if (cardDivider) cardDivider.style.display = 'none'
     if (anotherBtn) anotherBtn.style.display = 'none'
     if (textEl) textEl.textContent = verse.text
-    if (refEl) refEl.textContent = '— ' + (verse.ref || '')
+    if (refEl) refEl.textContent = (verse.ref || '')
 
     // Make it saveable/shareable like any other verse
     currentVerse = { text: verse.text, ref: verse.ref || '', mood: currentMood || '' }
@@ -6183,7 +6199,7 @@ function updateStreak() {
         pushNotification({
             type: 'streak',
             title: `${streak}-day streak 🛡`,
-            body: `${name}, you've checked in with yourself ${streak} days in a row. I see you showing up — that takes courage. I'm proud of you.`
+            body: `${name}, you've checked in with yourself ${streak} days in a row. I see you showing up. That takes courage. I'm proud of you.`
         })
     }
 
@@ -6246,7 +6262,7 @@ function updateStreakBadge() {
     const pill = document.getElementById('notif-btn')
     if (pill) {
         pill.title = mood && days
-            ? `Feeling ${formatMood(mood)} — ${days} day${days === 1 ? '' : 's'}`
+            ? `Feeling ${formatMood(mood)}, ${days} day${days === 1 ? '' : 's'}`
             : 'Notifications'
     }
 }
@@ -6274,7 +6290,7 @@ function checkEmotionMilestone(mood) {
         pushNotification({
             type: 'streak',
             title: `${span} of feeling ${kind} 💙`,
-            body: `${name}, you've told me you're ${kind} for ${span} now. That's a long time to carry something. I'm not counting it to keep score — I just don't want you carrying it alone. Can we talk about it?`
+            body: `${name}, you've told me you're ${kind} for ${span} now. That's a long time to carry something. I'm not counting it to keep score. I just don't want you carrying it alone. Can we talk about it?`
         })
     }
 }
