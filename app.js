@@ -408,47 +408,20 @@ document.addEventListener('click', (e) => {
     }
 })
 
-// ─── THE PHOTOGRAPHED ROOMS ─────────────────────────────────────────────────
-// Themes 3 and 4 stand in a photograph. Flip this to false and they go back to
-// painted gradients: no image is requested, the classes that carry the photo
-// are never applied, and each theme falls back to the `bg` in its own palette.
-// Nothing else needs touching, and nothing breaks. That is the whole switch.
-const PHOTO_ROOMS = true
-
 // ─── WHICH LULO, AND HOW SHE COMPOSITES ─────────────────────────────────────
-// These used to be one flag (isT2), which forced two unrelated decisions to
-// agree. They are not the same question:
+// The t2 artwork set is drawn for light backgrounds. The default PNGs are
+// composited with mix-blend-mode: screen — additive light, which reads as a
+// glow on a dark sky and erases her against a pale one — so every theme that
+// is not the galaxy takes the t2 egg and composites it normally. Midnight is
+// dark, but the pale egg standing in deep space is what the theme is named for.
 //
-//   Which artwork — the original green Lulo, or the pale t2 egg. A matter of
-//   which one belongs in the room.
-//
-//   How she blends — `screen` is additive: it makes her glow into a dark sky,
-//   and erases her against a bright one. It was never needed to cut out a
-//   background; the PNGs are true cutouts (lulo.png is 76% fully transparent).
-//   Only the galaxy wants it.
-//
-// Splitting them is what lets the throne room have the green Lulo standing on
-// white marble — original artwork, composited normally.
-const T2_ART_THEMES = ['light', 'midnight']
-const PALE_THEMES   = ['light', 'soft']
+// One list, three answers, because for this app they are the same question.
+const T2_THEMES = ['light', 'soft', 'midnight']
 
 function luloArt(theme) {
     const name = theme || localStorage.getItem('luloTheme') || 'dark'
-    return {
-        t2: T2_ART_THEMES.includes(name),
-        blend: name === 'dark' ? 'screen' : 'normal',
-        pale: PALE_THEMES.includes(name),
-    }
-}
-
-// "#8A6416" → "138,100,22". Canvas takes colours as raw channels so it can
-// compose its own alphas; returns null for anything that isn't a plain hex,
-// leaving the caller to fall back.
-function hexToChannels(hex) {
-    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim())
-    if (!m) return null
-    const n = parseInt(m[1], 16)
-    return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`
+    const t2 = T2_THEMES.includes(name)
+    return { t2, blend: t2 ? 'normal' : 'screen', pale: t2 }
 }
 
 function setTheme(theme) {
@@ -543,101 +516,90 @@ function setTheme(theme) {
             backBtn: 'rgba(30,122,90,0.38)',
             backBtnText: '#1E7A5A',
         },
-        // ─── THE THRONE ROOM (theme 3) ───────────────────────────────────
-        // Painted over a photograph now rather than a flat wash — see
-        // body.theme-throne in styles.css. Every colour here is drawn out of
-        // that image: marble white, gold vein, and the deep bronze that is the
-        // only ink dark enough to hold its own against a blaze of white-gold.
         soft: {
-            // Only ever seen while the photo is still loading, or if it 404s
-            bg: 'linear-gradient(180deg,#FBF6EA 0%,#F2E9D6 100%)',
-            bgBefore: 'rgba(255,225,150,0.10)',
-            bgAfter: 'rgba(255,240,205,0.08)',
-            cardBg: 'rgba(255,253,247,0.92)',
-            cardBorder: 'rgba(150,120,60,0.22)',
-            text: '#3A2C12',
-            textMuted: '#7B6941',
-            accent: '#8A6416',
-            gold: '#C9A03C',
-            inputBg: 'rgba(255,253,247,0.95)',
-            inputBorder: 'rgba(150,120,60,0.22)',
-            inputText: '#3A2C12',
-            inputPlaceholder: '#8E7C55',
-            sendBtn: 'linear-gradient(135deg,#C9A03C,#9A7420)',
-            luloGlow: 'rgba(235,195,115,0.30)',
-            luloFilter: 'drop-shadow(0 6px 22px rgba(90,70,25,0.30))',
-            carouselBg: 'linear-gradient(180deg,rgba(255,253,247,0.90) 0%,rgba(252,246,232,0.80) 50%,rgba(255,253,247,0.90) 100%)',
-            carouselBorder: 'rgba(150,120,60,0.20)',
-            activeSlotBorder: 'rgba(180,140,55,0.45)',
-            activeSlotGlow: 'rgba(201,160,60,0.14)',
-            activeSlotLine: 'rgba(154,116,32,0.65)',
-            emotionLabel: '#7B6941',
-            emotionLabelActive: '#8A6416',
-            bottomBar: 'linear-gradient(to top,#F6EFDE 55%,transparent)',
-            scrollbar: 'rgba(150,120,60,0.35)',
-            appName: '#3A2C12',
-            chatBubbleUserBg: 'linear-gradient(135deg, rgba(201,160,60,0.24), rgba(180,140,55,0.12))',
-            chatBubbleUserBorder: 'rgba(160,125,45,0.40)',
-            chatBubbleUserText: '#3A2C12',
-            chatBubbleLuloBg: 'rgba(255,253,247,0.95)',
-            chatBubbleLuloBorder: 'rgba(150,120,60,0.22)',
-            chatBubbleLuloText: '#3A2C12',
+            bg: '#fff8f8',
+            bgBefore: 'rgba(255,180,180,0.08)',
+            bgAfter: 'rgba(255,200,200,0.06)',
+            cardBg: 'rgba(255,255,255,0.8)',
+            cardBorder: 'rgba(255,180,180,0.2)',
+            text: '#4a3535',
+            textMuted: '#b09090',
+            accent: '#e8a0a0',
+            gold: '#e8a0a0',
+            inputBg: 'rgba(255,255,255,0.8)',
+            inputBorder: 'rgba(255,180,180,0.2)',
+            inputText: '#4a3535',
+            inputPlaceholder: '#b09090',
+            sendBtn: 'linear-gradient(135deg,#e8a0a0,#d08080)',
+            luloGlow: 'rgba(255,180,180,0.2)',
+            luloFilter: 'drop-shadow(0 0 25px rgba(255,180,180,0.5))',
+            carouselBg: 'linear-gradient(180deg,rgba(255,240,240,0.9) 0%,rgba(255,248,248,0.8) 50%,rgba(255,240,240,0.9) 100%)',
+            carouselBorder: 'rgba(255,180,180,0.2)',
+            activeSlotBorder: 'rgba(232,160,160,0.4)',
+            activeSlotGlow: 'rgba(232,160,160,0.1)',
+            activeSlotLine: 'rgba(232,160,160,0.6)',
+            emotionLabel: '#b09090',
+            emotionLabelActive: '#e8a0a0',
+            bottomBar: 'linear-gradient(to top,#fff8f8 60%,transparent)',
+            scrollbar: '#e8a0a0',
+            appName: '#b09090',
+            chatBubbleUserBg: 'rgba(232,160,160,0.15)',
+            chatBubbleUserBorder: 'rgba(232,160,160,0.35)',
+            chatBubbleUserText: '#4a3535',
+            chatBubbleLuloBg: 'rgba(255,255,255,0.8)',
+            chatBubbleLuloBorder: 'rgba(255,180,180,0.2)',
+            chatBubbleLuloText: '#5a4040',
             scriptureFont: "'Spectral', Georgia, serif",
-            glassScreenBg: 'rgba(252,247,236,0.98)',
-            glassCardBg: 'rgba(255,253,247,0.92)',
-            glassCardBorder: 'rgba(150,120,60,0.20)',
-            glassCardText: '#3A2C12',
-            glassCardTitle: '#8A6416',
-            backBtn: 'rgba(154,116,32,0.38)',
-            backBtnText: '#8A6416',
+            glassScreenBg: 'rgba(255,248,248,0.98)',
+            glassCardBg: 'rgba(255,255,255,0.8)',
+            glassCardBorder: 'rgba(255,180,180,0.2)',
+            glassCardText: '#4a3535',
+            glassCardTitle: '#e8a0a0',
+            backBtn: 'rgba(232,160,160,0.3)',
+            backBtnText: '#e8a0a0',
         },
-        // ─── MIDNIGHT EGG (theme 4) ──────────────────────────────────────
-        // The pale t2 Lulo standing in deep space — that pairing is what the
-        // theme is named for. Painted over a photograph of the universe (see
-        // body.theme-universe), so the palette is pulled from the nebula in it:
-        // violet and magenta clouds, cyan stars, near-black between them.
         midnight: {
-            // Only ever seen while the photo is still loading, or if it 404s
-            bg: 'radial-gradient(ellipse 90% 60% at 50% 40%, #16123A 0%, #07071A 70%)',
-            bgBefore: 'rgba(150,110,255,0.10)',
-            bgAfter: 'rgba(90,180,255,0.08)',
-            cardBg: 'rgba(255,255,255,0.05)',
-            cardBorder: 'rgba(190,175,255,0.14)',
-            text: 'rgba(255,255,255,0.92)',
-            textMuted: 'rgba(220,215,255,0.42)',
-            accent: '#8FD8FF',
-            gold: '#C6A8FF',
-            inputBg: 'rgba(255,255,255,0.06)',
-            inputBorder: 'rgba(190,175,255,0.16)',
+            // Same as dark theme
+            bg: '#080818',
+            bgBefore: 'rgba(0,255,100,0.08)',
+            bgAfter: 'rgba(120,60,255,0.08)',
+            cardBg: 'rgba(255,255,255,0.04)',
+            cardBorder: 'rgba(255,255,255,0.08)',
+            text: 'rgba(255,255,255,0.9)',
+            textMuted: 'rgba(255,255,255,0.35)',
+            accent: '#00d4ff',
+            gold: '#00d4ff',
+            inputBg: 'rgba(255,255,255,0.05)',
+            inputBorder: 'rgba(255,255,255,0.1)',
             inputText: 'white',
-            inputPlaceholder: 'rgba(226,222,255,0.28)',
-            sendBtn: 'linear-gradient(135deg,#8FD8FF,#7B6BE0)',
-            luloGlow: 'rgba(160,130,255,0.24)',
-            luloFilter: 'drop-shadow(0 0 28px rgba(170,150,255,0.55))',
-            carouselBg: 'linear-gradient(180deg,rgba(255,255,255,0.07) 0%,rgba(190,175,255,0.04) 50%,rgba(255,255,255,0.07) 100%)',
-            carouselBorder: 'rgba(190,175,255,0.14)',
-            activeSlotBorder: 'rgba(160,200,255,0.28)',
-            activeSlotGlow: 'rgba(150,120,255,0.16)',
-            activeSlotLine: 'rgba(180,210,255,0.55)',
-            emotionLabel: 'rgba(226,222,255,0.62)',
-            emotionLabelActive: '#A9C8FF',
-            bottomBar: 'linear-gradient(to top, rgba(4,4,14,0.97) 55%, transparent)',
-            scrollbar: 'rgba(150,190,255,0.25)',
-            appName: 'rgba(232,228,255,0.35)',
-            chatBubbleUserBg: 'linear-gradient(135deg, rgba(120,110,255,0.24), rgba(0,190,255,0.10))',
-            chatBubbleUserBorder: 'rgba(150,150,255,0.36)',
-            chatBubbleUserText: 'rgba(232,238,255,0.96)',
-            chatBubbleLuloBg: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(190,160,255,0.05))',
-            chatBubbleLuloBorder: 'rgba(200,185,255,0.18)',
-            chatBubbleLuloText: 'rgba(238,238,252,0.95)',
+            inputPlaceholder: 'rgba(255,255,255,0.25)',
+            sendBtn: 'linear-gradient(135deg,#00d4ff,#0099cc)',
+            luloGlow: 'rgba(0,255,100,0.2)',
+            luloFilter: 'drop-shadow(0 0 25px rgba(0,255,100,0.5))',
+            carouselBg: 'linear-gradient(180deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.03) 50%,rgba(255,255,255,0.06) 100%)',
+            carouselBorder: 'rgba(255,255,255,0.08)',
+            activeSlotBorder: 'rgba(0,255,100,0.2)',
+            activeSlotGlow: 'rgba(0,255,100,0.12)',
+            activeSlotLine: 'rgba(0,255,100,0.5)',
+            emotionLabel: 'rgba(255,255,255,0.6)',
+            emotionLabelActive: 'rgba(0,255,100,0.9)',
+            bottomBar: 'linear-gradient(to top, rgba(5,5,16,0.97) 55%, transparent)',
+            scrollbar: 'rgba(0,212,255,0.2)',
+            appName: 'rgba(255,255,255,0.3)',
+            chatBubbleUserBg: 'linear-gradient(135deg, rgba(70,120,255,0.20), rgba(0,190,255,0.10))',
+            chatBubbleUserBorder: 'rgba(90,150,255,0.34)',
+            chatBubbleUserText: 'rgba(226,238,255,0.96)',
+            chatBubbleLuloBg: 'linear-gradient(135deg, rgba(255,255,255,0.075), rgba(120,255,190,0.035))',
+            chatBubbleLuloBorder: 'rgba(160,255,215,0.16)',
+            chatBubbleLuloText: 'rgba(228,246,237,0.95)',
             scriptureFont: "'Inter', sans-serif",
-            glassScreenBg: 'rgba(7,7,22,0.97)',
-            glassCardBg: 'rgba(255,255,255,0.05)',
-            glassCardBorder: 'rgba(190,175,255,0.14)',
-            glassCardText: 'rgba(236,234,255,0.78)',
-            glassCardTitle: '#8FD8FF',
-            backBtn: 'rgba(143,216,255,0.32)',
-            backBtnText: 'rgba(160,220,255,0.85)',
+            glassScreenBg: 'rgba(8,8,24,0.97)',
+            glassCardBg: 'rgba(255,255,255,0.04)',
+            glassCardBorder: 'rgba(255,255,255,0.08)',
+            glassCardText: 'rgba(255,255,255,0.75)',
+            glassCardTitle: 'rgba(0,212,255,0.9)',
+            backBtn: 'rgba(0,212,255,0.3)',
+            backBtnText: 'rgba(0,212,255,0.8)',
         },
     }
 
@@ -655,18 +617,11 @@ function setTheme(theme) {
     // `background` shorthand here would wipe its background-image, so for dark
     // we clear the inline style instead and let the stylesheet win.
     const isGalaxy = theme === 'dark'
-    // Themes 3 and 4 stand in a photograph. Like the galaxy, their sky is owned
-    // by the stylesheet — it needs a media query for the orientation crop, and
-    // an inline `background` here would flatten the veil and the photo into one
-    // shorthand and wipe both.
-    const isPhotoRoom = PHOTO_ROOMS && (theme === 'soft' || theme === 'midnight')
-    document.body.classList.toggle('theme-throne', isPhotoRoom && theme === 'soft')
-    document.body.classList.toggle('theme-universe', isPhotoRoom && theme === 'midnight')
-    document.body.style.background = (isGalaxy || isPhotoRoom) ? '' : t.bg
+    document.body.style.background = isGalaxy ? '' : t.bg
     // The `background` shorthand resets background-attachment to `scroll`, which
     // leaves the lit themes' gradient scrolling away with the content while the
     // galaxy stays put. Re-pin it after the shorthand.
-    document.body.style.backgroundAttachment = (isGalaxy || isPhotoRoom) ? '' : 'fixed'
+    document.body.style.backgroundAttachment = isGalaxy ? '' : 'fixed'
     document.body.style.color = t.text
     // Stars belong to the galaxy theme only
     document.body.classList.toggle('theme-lit', !isGalaxy)
@@ -702,10 +657,7 @@ function setTheme(theme) {
     // script-scoped and never becomes a property of window, so the window check
     // is always false and silently skips the whole block.
     if (typeof LuloWave !== 'undefined') {
-        // The mic ring is drawn to canvas and can't inherit a colour, so it is
-        // handed the theme's accent as raw channels: emerald in the throne
-        // room, starlight blue in the universe, green in the galaxy.
-        LuloWave.setColour(hexToChannels(t.accent) || (isLight ? '30,122,90' : '0,255,120'))
+        LuloWave.setColour(isLight ? '30,122,90' : '0,255,120')
         // Her bars keep their spectrum in every theme; on a pale ground they
         // drop the glow and deepen, or they read as highlighter.
         LuloWave.light = isLight
@@ -842,10 +794,8 @@ function setTheme(theme) {
     const edgeTint = {
         dark:     'rgba(5,5,16,0.92)',
         light:    'rgba(227,238,242,0.94)',
-        // The photo rooms fade out to their own ground colour, or the walls
-        // read as a grey band laid over the picture.
-        soft:     'rgba(250,243,226,0.92)',
-        midnight: 'rgba(4,4,16,0.92)',
+        soft:     'rgba(255,240,240,0.94)',
+        midnight: 'rgba(10,5,10,0.94)',
     }[theme] || 'rgba(5,5,16,0.92)'
     style.innerHTML = `
         :root { --edge-tint: ${edgeTint}; }
@@ -862,14 +812,10 @@ function setTheme(theme) {
            written for one, and a pale overlay leaves the header invisible.
            So the watermark is read against dark whatever the theme is. */
         #text-mode-lulo { opacity: 0.13 !important; }
-        /* The pool of light the deck stands in. Derived from the theme's own
-           slot colours rather than a hardcoded green — the throne room's floor
-           is gold and the universe's is violet, and a green glow in either one
-           reads as a leak from the galaxy theme. */
         #carousel-wrapper::after {
             background: radial-gradient(ellipse,
-                ${t.activeSlotGlow} 0%,
-                ${t.activeSlotGlow} 38%,
+                ${isLight ? 'rgba(30,122,90,0.14)' : 'rgba(0,255,120,0.16)'} 0%,
+                ${isLight ? 'rgba(30,122,90,0.05)' : 'rgba(0,220,140,0.06)'} 45%,
                 transparent 72%) !important;
         }
         ::-webkit-scrollbar-thumb { background: ${t.scrollbar}; border-radius: 2px; }
@@ -998,24 +944,21 @@ function setTheme(theme) {
                 ? '0 6px 22px rgba(23,50,60,0.18), inset 0 1px 0 rgba(255,255,255,0.9)'
                 : '0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)'} !important;
         }
-        /* The fixed frame the deck runs through. Same reasoning as the floor:
-           it takes the theme's slot colours, so it is emerald in the throne
-           room and starlight blue in the universe. */
         #deck-frame {
-            border-color: ${t.activeSlotLine} !important;
-            background: ${t.activeSlotGlow} !important;
-            box-shadow: 0 0 26px ${t.activeSlotGlow},
-                        0 0 60px ${t.activeSlotGlow},
-                        inset 0 0 24px ${t.activeSlotGlow} !important;
+            border-color: ${isLight ? 'rgba(30,122,90,0.65)' : 'rgba(0,255,120,0.7)'} !important;
+            background: ${isLight ? 'rgba(30,122,90,0.07)' : 'rgba(0,220,120,0.10)'} !important;
+            box-shadow: ${isLight
+                ? '0 0 22px rgba(30,122,90,0.18), inset 0 0 20px rgba(30,122,90,0.06)'
+                : '0 0 26px rgba(0,255,100,0.30), 0 0 60px rgba(0,220,90,0.15), inset 0 0 24px rgba(0,255,120,0.10)'
+            } !important;
         }
-        ${(isGalaxy || isPhotoRoom) ? '' : `body {
+        ${isGalaxy ? '' : `body {
             background: ${t.bg} !important;
             /* Must follow the shorthand, which resets attachment to scroll */
             background-attachment: fixed !important;
             color: ${t.text} !important;
         }`}
-        ${(isGalaxy || isPhotoRoom) ? `body { color: ${t.text} !important; }` : ''}
-        ${isPhotoRoom ? `body { background-color: ${theme === 'soft' ? '#F3EEE2' : '#05050F'} !important; }` : ''}
+        ${isGalaxy ? `body { color: ${t.text} !important; }` : ''}
 
         /* SHARE BUTTON */
         .scripture-action-btn {
@@ -1357,6 +1300,111 @@ window.addEventListener('resize', () => {
     clearTimeout(_deckResizeTimer)
     _deckResizeTimer = setTimeout(() => { measureDeck(); onDeckScroll() }, 120)
 })
+
+// ─── NO PINCH ZOOM ──────────────────────────────────────────────────────────
+// touch-action in styles.css is what actually turns page zoom off, and it is
+// the only part of this that Chrome needs. Safari on iOS has its own pinch,
+// which predates touch-action and answers to these three events instead — and
+// which is why the page could be zoomed and then dragged sideways on the
+// iPhone even with user-scalable=no in the meta tag.
+;['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+    document.addEventListener(type, e => e.preventDefault(), { passive: false })
+})
+
+// ─── THE ROOM HAS TO FIT THE SCREEN IT IS IN ────────────────────────────────
+// The home screen is one column — top bar, greeting, Lulo, deck — standing
+// above a mic bar that is `position: fixed` and so takes up no room in that
+// column at all. The column was drawn at a height that happened to fit an
+// iPhone with Safari's bars out of the way, and nothing checked. Anywhere
+// shorter — an Android phone with the URL bar showing is 60-100px shorter —
+// the deck simply carried on past the bottom of the screen and the mic came
+// down on top of the mood cards.
+//
+// Rather than pick a smaller number and hope, measure. Everything in the
+// column except Lulo has a job that a few pixels would break: the wordmark and
+// its buttons, the greeting's own words, the cards you have to be able to read
+// and tap. Lulo is light and a face — she reads at any size. So she is given
+// whatever is left over, down to a floor, and never more than her drawn size.
+//
+// The correction is exact rather than iterative: her box height goes into the
+// column height 1:1, so the overlap you measure is the number to take off her.
+//
+// Everything here is measured off the layout — offsetTop and offsetHeight, and
+// the variable's own value — never off a bounding rect. She arrives scaled up
+// out of depth and floats on a loop, the deck slides in behind her, and she
+// steps back whenever a card opens: a rect would be reading those animations
+// mid-flight and correcting for a size she isn't. Transforms don't touch
+// layout, so layout is the honest number at every frame.
+const LULO_MAX = 304
+const LULO_MIN = 150
+// A hair of daylight between the last card and the mic bar, so the deck reads
+// as standing clear of it rather than resting on it.
+const ROOM_GAP = 8
+
+function layoutTop(el) {
+    let y = 0
+    for (let n = el; n; n = n.offsetParent) y += n.offsetTop
+    return y
+}
+
+function fitRoom() {
+    const main = document.getElementById('main-app')
+    if (!main || main.style.display === 'none') return
+    const deck = document.getElementById('carousel-container')
+    if (!deck) return
+
+    // A phone on its side has its own grid and its own sizes for Lulo — see
+    // the landscape block in styles.css. Hand her back and stay out of it.
+    if (window.matchMedia('(orientation: landscape) and (max-height: 560px)').matches) {
+        document.documentElement.style.removeProperty('--lulo-size')
+        return
+    }
+
+    // The floor is the top of the mic bar, or the bottom of the screen while
+    // the bar is still hidden. visualViewport is the slice of the page actually
+    // on screen — on Android it is the only one of the two that knows the URL
+    // bar is there.
+    const bar = document.getElementById('bottom-bar')
+    const screenBottom = (window.visualViewport && window.visualViewport.height) || window.innerHeight
+    const floor = window.scrollY + ((bar && bar.offsetHeight)
+        ? bar.getBoundingClientRect().top
+        : screenBottom)
+
+    const set = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lulo-size'))
+    const current = Number.isFinite(set) ? set : LULO_MAX
+    const overlap = (layoutTop(deck) + deck.offsetHeight + ROOM_GAP) - floor
+    // Nothing to correct, and she is already as big as she is drawn
+    if (overlap <= 0 && current >= LULO_MAX) return
+
+    const next = Math.max(LULO_MIN, Math.min(LULO_MAX, Math.round(current - overlap)))
+    if (Math.round(current) === next) return
+    document.documentElement.style.setProperty('--lulo-size', next + 'px')
+}
+
+// The greeting and the mic bar are the two things above her that change height
+// on their own — a longer name wraps to another line, the bar loses its swipe
+// hint in text mode. Watching them rather than the whole column is what keeps
+// this from feeding itself: neither one moves when Lulo resizes.
+let _roomFitStarted = false
+function startRoomFit() {
+    if (_roomFitStarted) return
+    _roomFitStarted = true
+
+    const run = () => requestAnimationFrame(fitRoom)
+    run()
+
+    if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(run)
+        for (const id of ['home-greeting', 'bottom-bar', 'top-bar']) {
+            const el = document.getElementById(id)
+            if (el) ro.observe(el)
+        }
+    }
+    window.addEventListener('resize', run)
+    window.addEventListener('orientationchange', () => setTimeout(run, 300))
+    // Android moves the URL bar without ever firing a window resize
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', run)
+}
 
 // ─── THE HINT ───────────────────────────────────────────────────────────────
 // "How are you feeling?" is a nudge for someone who has gone quiet, not a
@@ -2744,6 +2792,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 document.getElementById('home-greeting')?.classList.add('greeting-arrive')
                 document.getElementById('carousel-container')?.classList.add('deck-arrive')
             })
+
+            // Size her to the screen now that the column is measurable
+            startRoomFit()
 
             // Restore the badges now that the top bar is on screen
             updateNotifBadge()
@@ -4698,9 +4749,6 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         // On a dark ground the mood colour is light coming off her. On a pale
         // one the same value is a coloured outline traced around her edge, so
         // there she gets a real cast shadow and only a breath of the colour.
-        // Keyed on how pale the room is, not on which artwork is in it — the
-        // throne room runs the original green Lulo on white marble, and the
-        // dark-ground glow would have blown out across it.
         if (img) img.style.filter = art.pale
             ? `drop-shadow(0 8px 20px rgba(23,50,60,0.20)) drop-shadow(0 0 26px ${glow.replace('0.5', '0.20')})`
             : `drop-shadow(0 0 32px ${glow})`
@@ -4728,11 +4776,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 el.dataset.face = nextFace
                 el.src = nextFace
             }
-            // Text mode keeps a dark ground in every theme, so the watermark
-            // there always blends as it would on the galaxy.
-            el.style.mixBlendMode = el.id === 'text-mode-lulo'
-                ? (art.t2 ? 'normal' : 'screen')
-                : art.blend
+            el.style.mixBlendMode = art.blend
         }
         const presenceGlow = document.getElementById('lulo-presence-glow')
         if (presenceGlow) presenceGlow.style.background =

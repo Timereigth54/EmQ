@@ -11,6 +11,40 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* ─── IT HAS TO BEHAVE LIKE AN APP, NOT A PAGE ────────────────────
+           A page you can pinch, zoom and then drag sideways is a page. An app
+           holds still. Three things were letting this one slide:
+
+           The glows. Lulo's outer bloom is 420px wide inside a 304px box and
+           the mic's ring overhangs its button, both on purpose — soft light
+           spilling past the thing giving it off. But spilled light is still
+           layout, and on a 393px phone it pushed the document 36px wider than
+           the screen, which is a horizontal scrollbar you can drag. `clip`
+           rather than `hidden`: hidden makes the root a scroll container and
+           forces the other axis to `auto`, which is how you lose smooth
+           scrolling and sticky positioning on iOS. clip just clips.
+
+           Zoom. `user-scalable=no` in the meta tag is advisory — iOS Safari
+           has ignored it since iOS 10 and Chrome ignores it whenever the
+           user has force-enable-zoom switched on. touch-action is not
+           advisory. `pan-x pan-y` keeps every scroll the app needs, including
+           the mood deck's sideways one, and drops the two gestures that were
+           never wanted here: pinch-zoom and double-tap-zoom.
+
+           Font boosting. Chrome on Android inflates text inside wide blocks
+           on its own, which is how the same layout came out a size larger
+           there than on the iPhone. */
+        html {
+            overflow-x: hidden;   /* fallback for browsers without clip */
+            overflow-x: clip;
+            -webkit-text-size-adjust: 100%;
+                    text-size-adjust: 100%;
+        }
+        html, body {
+            touch-action: pan-x pan-y;
+            overscroll-behavior: none;
+        }
+
         /* ─── THE ROOM ────────────────────────────────────────────────────
            Everything on the home screen is staged as one 3D space: Lulo
            stands in it, the deck runs through it on a horizon, and the
@@ -34,75 +68,20 @@
                 radial-gradient(circle 300px at 50% 35%, rgba(0, 220, 120, 0.12) 0%, transparent 70%),
                 radial-gradient(ellipse 100% 80% at 50% 0%, rgba(10, 5, 40, 0.9) 0%, transparent 100%);
             background-attachment: fixed;
+            /* svh is the viewport with the browser's own bars showing — the
+               height you actually have. vh is the height you get once they
+               have scrolled away, so on Android it reserved 60-100px that was
+               never on screen and the page scrolled for no reason. */
             min-height: 100vh;
+            min-height: 100svh;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             font-family: 'Inter', sans-serif;
             color: white;
-            overflow-x: hidden;
+            overflow-x: clip;
         }
-
-        /* ─── THE PHOTOGRAPHED ROOMS (themes 3 and 4) ─────────────────────
-           Themes 1 and 2 paint their sky with gradients. These two stand in a
-           photograph instead.
-
-           Two layers, in this order: a veil, then the photo. The veil is what
-           makes a photograph usable as an interface background — it is opaque
-           at the top and bottom, where the top bar and the mic sit and need a
-           quiet ground, and nearly clear across the middle third, where Lulo
-           stands and the picture should be allowed to be a picture.
-
-           Both layers are `fixed`, so the room stays put while content scrolls
-           through it, and the orientation swap is a media query rather than a
-           JS resize handler — a phone turned sideways gets the landscape crop
-           of the same scene, not a letterboxed portrait one.
-
-           background-color underneath is what shows while the photo loads, and
-           what remains if it 404s: the theme stays usable either way. */
-        body.theme-throne,
-        body.theme-universe {
-            background-image: var(--room-veil), var(--room-photo);
-            background-size: cover, cover;
-            background-position: center center, center center;
-            background-repeat: no-repeat, no-repeat;
-            background-attachment: fixed, fixed;
-        }
-
-        body.theme-throne {
-            --room-photo: url('images/bg-throne-portrait.jpg');
-            --room-veil: linear-gradient(180deg,
-                rgba(255,252,244,0.88) 0%,
-                rgba(255,252,244,0.42) 15%,
-                rgba(255,251,240,0.24) 42%,
-                rgba(255,250,236,0.40) 68%,
-                rgba(250,243,226,0.92) 100%);
-            background-color: #F3EEE2;
-        }
-
-        body.theme-universe {
-            --room-photo: url('images/bg-universe-portrait.jpg');
-            --room-veil: linear-gradient(180deg,
-                rgba(4,4,16,0.86) 0%,
-                rgba(4,4,16,0.40) 15%,
-                rgba(5,4,20,0.22) 42%,
-                rgba(4,4,16,0.42) 68%,
-                rgba(3,3,12,0.94) 100%);
-            background-color: #05050F;
-        }
-
-        @media (orientation: landscape) {
-            body.theme-throne   { --room-photo: url('images/bg-throne-land.jpg'); }
-            body.theme-universe { --room-photo: url('images/bg-universe-land.jpg'); }
-        }
-
-        /* The ambient blooms are lighting for an empty sky. Over a photograph
-           that already has its own light, they read as haze on the lens. */
-        body.theme-throne::before,
-        body.theme-throne::after,
-        body.theme-universe::before,
-        body.theme-universe::after { opacity: 0.12; }
 
         /* AMBIENT BACKGROUND GLOW */
         body::before {
@@ -173,6 +152,7 @@
             width: 100%;
             max-width: 420px;
             min-height: 100vh;
+            min-height: 100svh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -477,8 +457,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 300px;
-            height: 300px;
+            width: var(--lulo-size, 300px);
+            height: var(--lulo-size, 300px);
             background: radial-gradient(circle,
                 rgba(0,255,100,0.42) 0%,
                 rgba(0,220,140,0.20) 38%,
@@ -496,8 +476,8 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 420px;
-            height: 420px;
+            width: calc(var(--lulo-size, 304px) * 1.38);
+            height: calc(var(--lulo-size, 304px) * 1.38);
             transform: translate(-50%, -50%);
             border-radius: 50%;
             /* Colour comes from whatever Lulo is feeling — updateLuloMood()
@@ -520,6 +500,14 @@
             50%      { transform: translate(-50%, -50%) scale(1.12); opacity: 0.9; }
         }
 
+        /* ─── HOW BIG LULO IS ─────────────────────────────────────────────
+           304px is her drawn size and her ceiling. Below that she is the one
+           thing in the room that can give up space without losing meaning —
+           the top bar, the greeting, the deck and the mic each have a job that
+           a few pixels would break — so she absorbs whatever a short screen
+           takes away. fitRoom() in app.js measures the gap and writes
+           --lulo-size; the fallbacks here are what she is when it hasn't run
+           or has nothing to correct. */
         #lulo-face {
             font-size: 110px;
             animation: float 3.4s ease-in-out infinite;
@@ -529,9 +517,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 304px;
-            height: 304px;
+            width: var(--lulo-size, 304px);
+            height: var(--lulo-size, 304px);
             margin-bottom: 0;
+        }
+        /* The 300px on the img is an inline attribute in index.html, so this
+           is the one place that needs !important to reach it. */
+        #lulo-face > #lulo-img {
+            width: 100% !important;
+            height: 100% !important;
         }
 
         /* HER VOICE, DRAWN
@@ -2037,6 +2031,27 @@
         @media (max-width: 380px) {
             #lulo-face { font-size: 70px; }
             #lulo-name { font-size: 1.2rem; }
+        }
+
+        /* ─── A SHORT PHONE, STILL UPRIGHT ────────────────────────────
+           fitRoom() pays for a short screen out of Lulo first, because she is
+           the one thing that reads at any size. Below about 700px of usable
+           height she runs out — she has a floor, under which she stops being a
+           face — and the room has to give up something of its own.
+
+           So this is the second purse, and it is all air: the padding above the
+           wordmark, the gap over Lulo's head, the margin around the cards, the
+           skirt under the mic. Nothing here changes what anything is or how it
+           is read; it only stops the room being spaced for a screen that isn't
+           there. Roughly 80px, which is what buys her back off her floor. */
+        @media (orientation: portrait) and (max-height: 700px) {
+            #top-bar         { padding: 12px 0 6px 0; }
+            #home-greeting   { padding-top: 0; }
+            #lulo-container  { margin-top: 20px; }
+            #mood-buttons    { padding-top: 12px; padding-bottom: 12px; }
+            #carousel-container { margin-bottom: 14px; }
+            #bottom-bar      { padding: 10px 20px 22px; }
+            #voice-input-area { gap: 10px; }
         }
 
         /* ─── LANDSCAPE ON A PHONE ────────────────────────────────────
