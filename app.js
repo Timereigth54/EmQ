@@ -409,19 +409,33 @@ document.addEventListener('click', (e) => {
 })
 
 // ─── WHICH LULO, AND HOW SHE COMPOSITES ─────────────────────────────────────
-// The t2 artwork set is drawn for light backgrounds. The default PNGs are
-// composited with mix-blend-mode: screen — additive light, which reads as a
-// glow on a dark sky and erases her against a pale one — so every theme that
-// is not the galaxy takes the t2 egg and composites it normally. Midnight is
-// dark, but the pale egg standing in deep space is what the theme is named for.
+// This was one flag, and one flag forced two unrelated decisions to agree:
 //
-// One list, three answers, because for this app they are the same question.
-const T2_THEMES = ['light', 'soft', 'midnight']
+//   Which artwork — the original green Lulo, or the pale t2 egg. Purely a
+//   question of which one belongs in the room. Soft takes the original: she is
+//   her own face on pale pink. Midnight keeps the egg — the pale egg standing
+//   in deep space is what the theme is named for.
+//
+//   How she is treated — `screen` is additive: it makes her glow into a dark
+//   sky and erases her against a bright one, and it is also what decides
+//   whether the mood colour reads as light coming off her or as a coloured
+//   outline traced round her edge. Only the galaxy wants any of it. Everywhere
+//   else she composites normally over a real cast shadow.
+//
+// Splitting them is the whole point: it is what lets Soft have the green Lulo
+// without also giving her the galaxy's additive glow. `screen` was never what
+// cut her background out — the PNGs are true cutouts (lulo.png is 76% fully
+// transparent) — so nothing is lost by dropping it here.
+const T2_ART_THEMES = ['light', 'midnight']
 
 function luloArt(theme) {
     const name = theme || localStorage.getItem('luloTheme') || 'dark'
-    const t2 = T2_THEMES.includes(name)
-    return { t2, blend: t2 ? 'normal' : 'screen', pale: t2 }
+    const galaxy = name === 'dark'
+    return {
+        t2: T2_ART_THEMES.includes(name),
+        blend: galaxy ? 'screen' : 'normal',
+        pale: !galaxy,
+    }
 }
 
 function setTheme(theme) {
@@ -4776,7 +4790,13 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 el.dataset.face = nextFace
                 el.src = nextFace
             }
-            el.style.mixBlendMode = art.blend
+            // Text mode keeps a dark ground whatever the theme is, so the
+            // watermark there blends as it would on the galaxy — which now
+            // differs from the rest of the room in Soft, where she is the
+            // original artwork standing on pink.
+            el.style.mixBlendMode = el.id === 'text-mode-lulo'
+                ? (art.t2 ? 'normal' : 'screen')
+                : art.blend
         }
         const presenceGlow = document.getElementById('lulo-presence-glow')
         if (presenceGlow) presenceGlow.style.background =
