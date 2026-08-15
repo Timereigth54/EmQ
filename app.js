@@ -15,6 +15,18 @@ let isVoiceInputActive = false  // true while the mic is listening
 let _lastUserMessage = ''       // last thing the user sent — used by the retry button
 let _micTimeout = null          // auto-shutoff timer when mic hears nothing
 
+// ─── WHAT SHE THINKS WITH ───────────────────────────────────────────────────
+// The Messages API requires model and max_tokens on every request and rejects
+// the whole call without them. Three call sites here were sending neither or
+// only one, so chat, prayers and meditation questions all failed with a 400 —
+// which the app reported as "I can't reach my brain right now", the same thing
+// it says for a bad key or a dead network. One message for three unrelated
+// faults is what made this take as long as it did to find.
+//
+// The model lives in one place because it was written out three times and
+// those three copies are exactly the kind of thing that drifts apart.
+const LULO_MODEL = 'claude-sonnet-4-6'
+
 // ─── LISTENING TO A WHOLE SENTENCE ──────────────────────────────────────────
 // The recogniser finalises a result at every natural pause, and the browser
 // ends the session outright partway through long speech. Neither means the
@@ -4507,6 +4519,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        model: LULO_MODEL,
+                        // Room for a real reply. She is told to write short,
+                        // so this is a ceiling she rarely reaches rather than
+                        // a budget that truncates her mid-sentence.
+                        max_tokens: 1024,
                         system: systemPrompt,
                         messages: conversationHistory
                     })
@@ -4648,7 +4665,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: 'claude-sonnet-4-6',
+                    model: LULO_MODEL,
+                    max_tokens: 600,   // a prayer is a paragraph, not an essay
                     system: `You are Lulo, a warm and caring AI companion in the Em_Q app.`,
                     messages: [
                         {
@@ -5098,7 +5116,8 @@ if (    mood !== 'home') lockCarousel()
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        model: 'claude-sonnet-4-6',
+                        model: LULO_MODEL,
+                        max_tokens: 200,   // one or two sentences, as asked for
                         system: 'You are Lulo, a warm faith companion. Generate one short, warm, personally directed meditation question (1-2 sentences maximum) that helps the person sit with and apply a specific Bible verse to their real life right now. No preamble, no explanation, just the question itself. Never use dashes. End with 💙',
                         messages: [{
                             role: 'user',
