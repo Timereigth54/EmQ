@@ -1,4 +1,20 @@
-runpod
-torch>=2.5.0
-voxcpm
-soundfile>=0.12.1
+# Pinned deliberately. The previous unpinned list made every rebuild a
+# different environment, which is why "did that fix it?" was never answerable.
+#
+# torch/torchaudio are pinned to what the base image already ships
+# (runpod/pytorch:2.8.0-py3.11-cuda12.8.1) so pip cannot quietly swap the
+# CUDA 12.8 build for a PyPI default one while resolving voxcpm's
+# torchaudio>=2.5.0. Install these from the cu128 index — see Dockerfile.
+torch==2.8.0
+torchaudio==2.8.0
+
+# 2.0.3 (11 May 2026) is the current release and a true VoxCPM2-family build.
+voxcpm==2.0.3
+
+# The exact version the VoxCPM FAQ lists as verified. This is the package whose
+# rearrange() broke torch.compile tracing, so it is the last one that should be
+# floating.
+einops==0.8.1
+
+runpod==1.7.7
+soundfile==0.12.1
