@@ -29,6 +29,41 @@ export default {
             })
         }
 
+        // ── TEMPORARY DIAGNOSTIC — delete once the key is working ───────────
+        // Answers two questions at once that cannot be answered from outside:
+        // whether a deploy actually took effect (if this route 404s, the code
+        // never shipped and nothing else you changed did either), and what the
+        // running Worker actually sees in its environment.
+        //
+        // Deliberately reveals nothing usable: whether the variable exists,
+        // its length, and whether it has the right shape. Never the key. A
+        // length of 0 or `present: false` means the secret is not reaching
+        // this code — a different name, a different environment, or a version
+        // that was saved but never deployed.
+        if (url.pathname === '/debug-key') {
+            const k = env.ANTHROPIC_API_KEY
+            const r = env.RUNPOD_API_KEY
+            return new Response(JSON.stringify({
+                anthropic: {
+                    present: typeof k === 'string' && k.length > 0,
+                    length: typeof k === 'string' ? k.length : 0,
+                    startsWithSkAnt: typeof k === 'string' && k.startsWith('sk-ant-'),
+                    // Whitespace from a careless paste is a top cause of a 401
+                    // on a key that is otherwise perfectly valid.
+                    hasWhitespace: typeof k === 'string' && /\s/.test(k),
+                },
+                runpod: {
+                    present: typeof r === 'string' && r.length > 0,
+                    length: typeof r === 'string' ? r.length : 0,
+                },
+                // Bump this string whenever you deploy, to prove which build
+                // is actually serving traffic.
+                build: 'tone-passthrough-1',
+            }, null, 2), {
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+            })
+        }
+
         if (url.pathname === '/tts') {
             try {
                 // `tone` decides how Lulo says the line, `voice` and `seed`
