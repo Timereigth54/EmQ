@@ -8,6 +8,7 @@ Job output: { "audio": "<base64 WAV>", "sample_rate": 48000 }
 
 import io
 import base64
+import inspect
 import runpod
 import torch
 
@@ -51,7 +52,45 @@ print("Loading VoxCPM2…")
 model = VoxCPM.from_pretrained(
     "openbmb/VoxCPM2", load_denoiser=False, optimize=False
 )
-print(f"VoxCPM2 ready — sample rate: {model.tts_model.sample_rate} Hz")
+SAMPLE_RATE = model.tts_model.sample_rate
+print(f"VoxCPM2 ready — sample rate: {SAMPLE_RATE} Hz")
+
+# We used to hardcode 48000 here, because the model reported 16000 while the
+# audio was plainly 48kHz. That reading was another symptom of the compiled
+# path: with optimize=False it reports 48000 correctly, so we can go back to
+# asking it rather than overriding it.
+if SAMPLE_RATE != 48000:
+    print(f"WARNING: expected 48000 Hz from VoxCPM2, got {SAMPLE_RATE}")
+
+# ─── WHO LULO SOUNDS LIKE ────────────────────────────────────────────────────
+# With no reference audio and no seed, VoxCPM2 invents a speaker from scratch
+# on every call — a different stranger each time. Two things pin her down:
+#
+#   The parenthetical prefix is VoxCPM2's Voice Design feature: a natural
+#   language description of the voice, consumed as an instruction rather than
+#   spoken. It is what gets us a specific voice without needing a reference
+#   recording of one.
+#
+#   The seed fixes the sampling, so the same description lands on the same
+#   voice every time instead of drifting between utterances.
+#
+# Both are overridable per request, so her voice can be auditioned by changing
+# the request body — no rebuild, no redeploy, no GPU time spent on a rebuild
+# just to hear a different adjective.
+LULO_VOICE = (
+    "(A warm, gentle young woman's voice, calm and unhurried, "
+    "soft and kind, with a soothing and caring tone)"
+)
+LULO_SEED = 20260815
+
+# generate() forwards **kwargs to _generate(), so seed isn't visible on the
+# public signature. Check the private one rather than assume the installed
+# version takes it — a TypeError here would take out every request.
+try:
+    SUPPORTS_SEED = "seed" in inspect.signature(model._generate).parameters
+except (AttributeError, ValueError):
+    SUPPORTS_SEED = False
+print(f"Voice Design on, seed supported: {SUPPORTS_SEED}")
 
 
 def handler(job):
@@ -65,8 +104,20 @@ def handler(job):
     if not text:
         return {"error": "No text provided"}
 
-    # Model reports 16000 Hz but wav shape confirms true output is 48000 Hz
-    output_sr = 48000
+    # Empty string is a meaningful override: it means "no voice description",
+    # so `or` would be wrong here.
+    voice = job_input.get("voice")
+    if voice is None:
+        voice = LULO_VOICE
+    voice = voice.strip()
+
+    seed = job_input.get("seed", LULO_SEED)
+
+    # What the model is asked to say; the description rides along as an
+    # instruction and is not spoken.
+    prompt = f"{voice} {text}".strip() if voice else text
+
+    output_sr = SAMPLE_RATE
 
     # VoxCPM2 has its own internal "badcase" retry (up to 3x) when generated
     # audio runs way longer than the text warrants — a known hallucination/
@@ -82,12 +133,27 @@ def handler(job):
     MAX_OUTER_ATTEMPTS = 3
     # Rough ceiling: ~15 characters/sec of natural speech, generous 2.5x
     # margin for slower pacing, with a 3s floor for very short lines.
+    #
+    # Measured against `text`, not `prompt`: the voice description is an
+    # instruction and never becomes audio, so counting it would inflate the
+    # ceiling by its own length and quietly blind the check on short lines —
+    # which are exactly the ones that run away.
     max_expected_seconds = max(3.0, (len(text) / 15.0) * 2.5)
 
     last_wav = None
     for attempt in range(1, MAX_OUTER_ATTEMPTS + 1):
+        gen_kwargs = {"cfg_value": 2.0, "inference_timesteps": 10}
+        if SUPPORTS_SEED and seed is not None:
+            # A fixed seed makes generation deterministic, which would make the
+            # retry below pointless — the same seed on the same text returns
+            # the same bad audio three times over. So the canonical seed is
+            # used for the first attempt, and only a retry moves off it. By
+            # then the canonical voice has already produced garbage, and a
+            # slightly different Lulo beats no Lulo.
+            gen_kwargs["seed"] = seed + (attempt - 1)
+
         try:
-            wav = model.generate(text=text, cfg_value=2.0, inference_timesteps=10)
+            wav = model.generate(text=prompt, **gen_kwargs)
         except Exception as e:
             return {"error": str(e)}
 
