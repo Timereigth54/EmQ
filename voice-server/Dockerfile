@@ -1,3 +1,6 @@
+# syntax=docker/dockerfile:1.7
+# The syntax directive is required for `RUN --mount=type=secret` below, which
+# is how the HF token reaches the build without being baked into a layer.
 FROM runpod/pytorch:2.8.0-py3.11-cuda12.8.1-cudnn-devel-ubuntu22.04
 
 WORKDIR /app
@@ -38,20 +41,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
 # HF_HOME is set explicitly rather than left to default, so the path the build
 # writes to and the path the runtime reads from cannot drift apart.
 ENV HF_HOME=/opt/hf
-RUN python -c "\
-from huggingface_hub import snapshot_download; \
-p = snapshot_download('openbmb/VoxCPM2'); \
-print('baked VoxCPM2 into', p)"
 
-# Prove the weights are really in the image. Without this the download could
-# silently fail back to a runtime fetch and we would be measuring cold starts
-# wondering why nothing improved.
-RUN python -c "\
-import os; \
-n = sum(len(f) for _, _, f in os.walk('/opt/hf')); \
-mb = sum(os.path.getsize(os.path.join(r,f)) for r,_,fs in os.walk('/opt/hf') for f in fs) / 1e6; \
-print(f'HF cache: {n} files, {mb:.0f} MB'); \
-assert mb > 100, 'VoxCPM2 weights missing from image — snapshot_download did not land'"
+# Turn a stalled socket into a raised error instead of an infinite wait. The
+# default is 10s, but the failure we actually hit was a connection going
+# half-open mid-stream: BuildKit kept ticking its step timer and the build sat
+# there for ten minutes having downloaded nothing. These make it fail so
+# bake_model.py can retry and resume.
+ENV HF_HUB_DOWNLOAD_TIMEOUT=30
+ENV HF_HUB_ETAG_TIMEOUT=30
+
+# Transfers now go through the Xet backend, which opens 16 concurrent range
+# requests per file by default. That is built for a fat, stable pipe; across a
+# VPN it multiplies the chance that one connection wedges and takes the whole
+# download with it. Four is slower on a good line and far more likely to
+# finish on a bad one.
+ENV HF_XET_NUM_CONCURRENT_RANGE_GETS=4
+
+# HF_TOKEN arrives as a BuildKit secret rather than a build arg, so it is
+# readable during this step and never written into an image layer or into
+# `docker history`. The build works without it — the repo is public — it is
+# only the anonymous rate limit that makes it slow.
+COPY bake_model.py .
+RUN --mount=type=secret,id=hf_token \
+    HF_TOKEN="$(cat /run/secrets/hf_token 2>/dev/null || true)" \
+    python -u bake_model.py
 
 COPY main.py .
 CMD ["python", "-u", "main.py"]
