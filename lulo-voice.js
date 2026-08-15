@@ -41,6 +41,42 @@ const LuloVoice = {
         return this.enabled
     },
 
+    // ─── HOW A MOOD IS SPOKEN ────────────────────────────────────────────
+    // 27 moods, four tones. Not every feeling needs its own voice, and giving
+    // each one its own would work against her: the character brief says she
+    // "doesn't perform emotions to match the intensity of someone else's" and
+    // is "tender without being fragile". So these group by what she should
+    // sound like, not by what the user picked.
+    //
+    //   happy   — she is glad with you
+    //   sad     — she sits with it, quiet, without rushing to fix it
+    //   comfort — steady and close, for the moods that are frightened or
+    //             overloaded rather than sorrowful. Anger is here too: meeting
+    //             it with brightness would be tone-deaf and meeting it with
+    //             sorrow would be pity.
+    //   neutral — her resting voice, the one that sounded like her
+    //
+    // A mood that isn't listed falls to neutral, which is the safe direction
+    // to be wrong in.
+    _moodTones: {
+        happy: 'happy', joyful: 'happy', excited: 'happy', loved: 'happy',
+        encouraged: 'happy', grateful: 'happy', hopeful: 'happy',
+        expecting: 'happy',
+
+        sad: 'sad', heartbroken: 'sad', depressed: 'sad', lonely: 'sad',
+        rejected: 'sad', unappreciated: 'sad', invisible: 'sad', empty: 'sad',
+
+        afraid: 'comfort', anxious: 'comfort', overwhelmed: 'comfort',
+        unsettled: 'comfort', confused: 'comfort', sick: 'comfort',
+        tired: 'comfort', angry: 'comfort',
+
+        peaceful: 'neutral', bored: 'neutral', unmotivated: 'neutral',
+    },
+
+    toneForMood(mood) {
+        return this._moodTones[mood] || 'neutral'
+    },
+
     _clean(text) {
         return text
             .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
@@ -52,14 +88,18 @@ const LuloVoice = {
             .trim()
     },
 
-    speak(text) {
+    // `tone` names one of the voice server's tones (neutral, happy, sad,
+    // prayer, joke, sarcastic, comfort). It rides with the line rather than
+    // being set on the engine, because the queue can hold a reaction and the
+    // verse behind it, and those are not always said the same way.
+    speak(text, tone) {
         if (!this.enabled) return
         if (!text) return
         const clean = this._clean(text)
         if (!clean) return
         // Cap the queue so a burst of messages can't leave her talking for minutes
         if (this._queue.length >= 4) this._queue.shift()
-        this._queue.push(clean)
+        this._queue.push({ text: clean, tone: tone || 'neutral' })
         this._drain()
     },
 
@@ -128,14 +168,14 @@ const LuloVoice = {
     },
 
     // Resolves when this line has finished playing
-    _utter(clean) {
+    _utter({ text: clean, tone }) {
         return new Promise(async resolve => {
             if (this.endpoint) {
                 try {
                     const res = await fetch(this.endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: clean, language: 'en' })
+                        body: JSON.stringify({ text: clean, language: 'en', tone })
                     })
                     if (!res.ok) throw new Error('TTS error')
                     const blob = await res.blob()
@@ -158,15 +198,30 @@ const LuloVoice = {
                     // fall through to Web Speech API
                 }
             }
-            this._fallback(clean, resolve)
+            this._fallback(clean, resolve, tone)
         })
     },
 
-    _fallback(text, onDone) {
+    // The Web Speech voice can't be described in words, so the tone survives
+    // here only as a nudge to rate and pitch. It is a much cruder instrument
+    // than the real voice — the point is just that the fallback doesn't read a
+    // grief at the same clip as a joke.
+    _toneProsody: {
+        neutral:   { rate: 0.88, pitch: 1.08 },
+        happy:     { rate: 0.96, pitch: 1.16 },
+        sad:       { rate: 0.80, pitch: 1.00 },
+        prayer:    { rate: 0.78, pitch: 1.02 },
+        joke:      { rate: 0.94, pitch: 1.14 },
+        sarcastic: { rate: 0.90, pitch: 1.12 },
+        comfort:   { rate: 0.82, pitch: 1.04 },
+    },
+
+    _fallback(text, onDone, tone) {
         const done = onDone || (() => {})
         if (!('speechSynthesis' in window)) { done(); return }
         const u = new SpeechSynthesisUtterance(text)
-        u.rate = 0.88; u.pitch = 1.08; u.volume = 1
+        const p = this._toneProsody[tone] || this._toneProsody.neutral
+        u.rate = p.rate; u.pitch = p.pitch; u.volume = 1
         let sounding = false
         const finish = () => {
             if (sounding) { sounding = false; this._fire('end') }

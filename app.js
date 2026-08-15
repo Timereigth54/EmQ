@@ -1569,7 +1569,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             }
             LuloSound.crisis()
             LuloVoice.stop()
-            LuloVoice.speak(message.innerText)
+            // Always comfort here, never the mood's tone. Someone in crisis may
+            // well have picked "happy" earlier in the session, and this is the
+            // one line that must not be read brightly.
+            LuloVoice.speak(message.innerText, 'comfort')
             screen.style.display = 'flex'
         }
 
@@ -4612,7 +4615,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     if (text_el) text_el.innerText = prayer
                     box.style.display = 'block'
                     addToChatHistory('lulo', '🙏 Praying with you...')
-                    LuloVoice.speak(prayer)
+                    LuloVoice.speak(prayer, 'prayer')
                     if (anotherBtn) anotherBtn.style.display = 'none'
 
                     // Show Lulo prayer header
@@ -4655,7 +4658,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 
                 const fallback = fallbackPrayers[Math.floor(Math.random() * fallbackPrayers.length)]
                 text_el.innerText = fallback
-                LuloVoice.speak(fallback)
+                LuloVoice.speak(fallback, 'prayer')
 
                 box.style.animation = 'none'
                 void box.offsetHeight
@@ -4898,7 +4901,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         box.style.display = 'block'
         enterScriptureMode()
         playCardIntro(box)
-        LuloVoice.speak(reactionText)
+        // Her reaction is spoken in the mood's tone; the verse that follows is
+        // read in her resting voice. The reaction is her meeting you where you
+        // are, the verse is scripture — colouring the second one to match the
+        // first would have her performing the text.
+        LuloVoice.speak(reactionText, LuloVoice.toneForMood(mood))
         LuloVoice.speak(verse.text + '. ' + verse.ref)
 
         // Lock carousel after emotion is selected
@@ -5167,8 +5174,12 @@ if (    mood !== 'home') lockCarousel()
             // Keep text-mode-chat in sync while the overlay is open
             if (isTextModeOpen()) syncTextModeChat()
 
-            // Lulo speaks her own lines (pass opts.silent = true to suppress voice)
-            if (role === 'lulo' && !opts.silent) LuloVoice.speak(text)
+            // Lulo speaks her own lines (pass opts.silent = true to suppress voice).
+            // Conversation is where she is most herself, so it follows the mood
+            // the session is in.
+            if (role === 'lulo' && !opts.silent) {
+                LuloVoice.speak(text, LuloVoice.toneForMood(currentMood))
+            }
 
             // ...and surfaces them, so nothing she says on the home screen is lost
             if (role === 'lulo' && opts.toast !== false && shouldToast()) {
