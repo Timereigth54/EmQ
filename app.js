@@ -15,6 +15,45 @@ let isVoiceInputActive = false  // true while the mic is listening
 let _lastUserMessage = ''       // last thing the user sent — used by the retry button
 let _micTimeout = null          // auto-shutoff timer when mic hears nothing
 
+// ─── LISTENING TO A WHOLE SENTENCE ──────────────────────────────────────────
+// The recogniser finalises a result at every natural pause, and the browser
+// ends the session outright partway through long speech. Neither means the
+// person has finished talking. These carry one listening turn across both, so
+// what she receives is the whole thought rather than the first few seconds.
+let _micHeard = ''              // text banked from previous sessions this turn
+let _micSessionText = ''        // finals from the session running right now
+let _micSilenceTimer = null     // fires when the pause is long enough to be an end
+let _micFinalising = false      // true once we have decided the turn is over
+let _micUserStopped = false     // true when they tapped the mic to stop
+let _micTurnStarted = 0
+const MIC_SILENCE_MS = 2500     // a pause this long reads as "finished"
+const MIC_MAX_TURN_MS = 90000   // hard ceiling on one listening turn
+
+// Restart the "have they stopped?" countdown. Called on every result and every
+// pause, so it only expires after real silence.
+function _micArmSilence() {
+    clearTimeout(_micSilenceTimer)
+    _micSilenceTimer = setTimeout(_micFinalise, MIC_SILENCE_MS)
+}
+
+// The turn is over: stop listening and send everything heard.
+function _micFinalise() {
+    if (_micFinalising) return
+    _micFinalising = true
+    clearTimeout(_micSilenceTimer)
+    _micSilenceTimer = null
+
+    const transcript = (_micHeard + ' ' + _micSessionText).trim()
+    _micHeard = ''
+    _micSessionText = ''
+    stopVoiceInput()
+
+    if (!transcript) return
+    const inp = document.getElementById('lulo-input')
+    if (inp) inp.value = transcript
+    luloListen()
+}
+
 // Escape user-controlled strings before inserting into innerHTML.
 // Keeps name/input from being treated as markup if it contains < > & etc.
 function escapeHtml(str) {
@@ -850,6 +889,19 @@ function setTheme(theme) {
             line-height: 1.65 !important;
             letter-spacing: 0.1px !important;
         }
+        ${isLight ? `
+        /* Text mode keeps a dark ground whatever the theme is — the same
+           reason its watermark blends as it would on the galaxy. The pale
+           themes hand the user bubble dark ink on a barely-there tint, which
+           is legible on their own pale page and invisible in here: dark text,
+           dark bubble, dark room. So in text mode it takes the galaxy's
+           bubble instead. Lulo's side already reads, because hers is a
+           near-opaque light card rather than a wash, so it is left alone. */
+        #text-mode-chat .chat-bubble-user {
+            background: ${themes.dark.chatBubbleUserBg} !important;
+            border-color: ${themes.dark.chatBubbleUserBorder} !important;
+            color: ${themes.dark.chatBubbleUserText} !important;
+        }` : ''}
         /* MOOD CARD DECK — themed */
         #carousel-wrapper::before {
             background: ${t.carouselBg} !important;
@@ -5996,7 +6048,13 @@ async function primeMicPermission() {
 }
 
 async function toggleVoiceInput() {
-    if (isVoiceInputActive) { stopVoiceInput(); return }
+    if (isVoiceInputActive) {
+        // Tapping the mic to stop means "I'm done", not "throw that away" —
+        // send what she has already heard rather than discarding it.
+        _micUserStopped = true
+        _micFinalise()
+        return
+    }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) { switchToTextMode(); return }
 
@@ -6015,14 +6073,27 @@ async function toggleVoiceInput() {
     // so a long sentence isn't cut off mid-way by the browser's ~20s hard limit.
     r.continuous = true
 
+    _micHeard = ''
+    _micSessionText = ''
+    _micFinalising = false
+    _micUserStopped = false
+    _micTurnStarted = Date.now()
+
     r.onstart = () => {
         isVoiceInputActive = true
         document.getElementById('mic-btn')?.classList.add('listening')
         LuloWave.micStart()
         LuloVoice.stop()
-        // "No-speech" guard: if the mic opens but nothing is said, close after 10s.
-        // Cleared as soon as speech is detected — doesn't affect active speakers.
-        _micTimeout = setTimeout(() => stopVoiceInput(), 10000)
+        // "No-speech" guard: if the mic opens and nothing is ever said, close
+        // after 10s. Only on a genuinely silent turn — once she has heard
+        // anything, silence is handled by the grace period instead, or a pause
+        // in a long sentence would trip this and close the mic.
+        if (!_micHeard) {
+            clearTimeout(_micTimeout)
+            _micTimeout = setTimeout(() => {
+                if (!_micHeard && !_micSessionText) stopVoiceInput()
+            }, 10000)
+        }
     }
 
     r.onspeechstart = () => {
@@ -6036,40 +6107,65 @@ async function toggleVoiceInput() {
     }
 
     r.onspeechend = () => {
-        // User stopped talking — give a 2.5s grace period in case they pause
-        // mid-thought, then close the mic and send what we have.
+        // A pause is not the end of a sentence. Start the silence countdown,
+        // but nothing is sent until it actually expires.
         LuloWave.micSpeaking(false)
-        clearTimeout(_micTimeout)
-        _micTimeout = setTimeout(() => {
-            if (currentRecognition) {
-                try { currentRecognition.stop() } catch {}
-            }
-        }, 2500)
+        _micArmSilence()
     }
 
     r.onresult = e => {
-        clearTimeout(_micTimeout)
-        _micTimeout = null
-        // With continuous = true, results accumulate — collect all final results.
-        let transcript = ''
+        // This used to send the moment the first final result arrived, which
+        // is what cut people off: the recogniser finalises at every natural
+        // pause, so drawing breath a few seconds in ended the sentence and
+        // fired it off half-finished.
+        //
+        // Now a result only updates what we've heard so far and restarts the
+        // silence countdown. She keeps listening until you have genuinely
+        // stopped, which is what a companion who listens has to do.
+        let sessionText = ''
         for (let i = 0; i < e.results.length; i++) {
-            if (e.results[i].isFinal) transcript += e.results[i][0].transcript + ' '
+            if (e.results[i].isFinal) sessionText += e.results[i][0].transcript + ' '
         }
-        transcript = transcript.trim()
-        if (!transcript) return
-        stopVoiceInput()
-        const inp = document.getElementById('lulo-input')
-        if (inp) inp.value = transcript
-        luloListen()
+        // `e.results` only covers the current recogniser session. Safari ends
+        // sessions on its own during a long utterance, so the text carried
+        // across restarts lives in _micHeard and this is only the tail.
+        _micSessionText = sessionText.trim()
+        if (_micSessionText) _micArmSilence()
     }
+
     r.onerror = e => {
-        stopVoiceInput()
         if (e.error === 'not-allowed') {
             localStorage.removeItem('luloMicPermGranted')
+            stopVoiceInput()
             switchToTextMode()
+            return
+        }
+        // 'no-speech' and 'aborted' are routine on a long utterance — the
+        // session simply ended between words. Send what we have if there is
+        // anything; otherwise let onend decide whether to keep listening.
+        if (e.error === 'no-speech' || e.error === 'aborted') return
+        _micFinalise()
+    }
+
+    r.onend = () => {
+        // Bank whatever this session heard before its results are discarded.
+        if (_micSessionText) {
+            _micHeard = (_micHeard + ' ' + _micSessionText).trim()
+            _micSessionText = ''
+        }
+        // A session ending is not the user finishing. Safari caps sessions
+        // during long speech, and the old handler treated that cap as the end
+        // of the sentence. Unless we are deliberately finishing, or the whole
+        // listening turn has run its maximum, open a fresh session and carry
+        // on — the accumulated text survives in _micHeard.
+        if (_micFinalising || _micUserStopped) { stopVoiceInput(); return }
+        if (Date.now() - _micTurnStarted > MIC_MAX_TURN_MS) { _micFinalise(); return }
+        try {
+            r.start()
+        } catch {
+            _micFinalise()
         }
     }
-    r.onend = () => stopVoiceInput()
 
     try {
         r.start()
@@ -6083,12 +6179,18 @@ async function toggleVoiceInput() {
 function stopVoiceInput() {
     clearTimeout(_micTimeout)
     _micTimeout = null
+    clearTimeout(_micSilenceTimer)
+    _micSilenceTimer = null
     isVoiceInputActive = false
     document.getElementById('mic-btn')?.classList.remove('listening')
     LuloWave.micStop()
     if (currentRecognition) {
-        try { currentRecognition.stop() } catch {}
+        // Null it out first: stop() fires onend, and onend restarts the
+        // recogniser unless it can see we are on the way out.
+        const r = currentRecognition
         currentRecognition = null
+        _micFinalising = true
+        try { r.stop() } catch {}
     }
 }
 
