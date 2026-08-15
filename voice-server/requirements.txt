@@ -1,12 +1,12 @@
 # Pinned deliberately. The previous unpinned list made every rebuild a
 # different environment, which is why "did that fix it?" was never answerable.
 #
-# torch/torchaudio are pinned to what the base image already ships
-# (runpod/pytorch:2.8.0-py3.11-cuda12.8.1) so pip cannot quietly swap the
-# CUDA 12.8 build for a PyPI default one while resolving voxcpm's
-# torchaudio>=2.5.0. Install these from the cu128 index — see Dockerfile.
-torch==2.8.0
-torchaudio==2.8.0
+# torch and torchaudio are deliberately ABSENT. The base image
+# (runpod/pytorch:2.8.0-py3.11-cuda12.8.1) already ships both, built against
+# the CUDA it carries. Pinning torch here doesn't protect that — it forces pip
+# to reinstall torch and every nvidia-*-cu12 wheel behind it, ~3GB of download
+# to arrive back where we started. The Dockerfile asserts afterwards that
+# resolving voxcpm left the image's torch intact, which is the actual risk.
 
 # 2.0.3 (11 May 2026) is the current release and a true VoxCPM2-family build.
 voxcpm==2.0.3
