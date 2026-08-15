@@ -77,10 +77,27 @@ if SAMPLE_RATE != 48000:
 # Both are overridable per request, so her voice can be auditioned by changing
 # the request body — no rebuild, no redeploy, no GPU time spent on a rebuild
 # just to hear a different adjective.
-LULO_VOICE = (
-    "(A warm, gentle young woman's voice, calm and unhurried, "
-    "soft and kind, with a soothing and caring tone)"
-)
+#
+# The description is split in two because the two halves do different jobs.
+# LULO_IDENTITY is who she is — age, gender, timbre. It never changes, or she
+# stops being the same person. The tone is how she is saying this particular
+# line, and it has to move: she is cheerful when you are, quiet when you are,
+# hushed when she prays and wry when she is teasing, and one fixed "calm and
+# soothing" flattens all of that into the same reading of a joke and a grief.
+LULO_IDENTITY = "A warm, gentle young woman's voice"
+
+# "neutral" concatenates to exactly the description that produced test_v10 —
+# the one that sounded like her. Keep it byte-identical: generation is seeded
+# and deterministic, so reordering even a comma here returns a different voice.
+LULO_TONES = {
+    "neutral":   "calm and unhurried, soft and kind, with a soothing and caring tone",
+    "happy":     "bright and smiling, light and lifted, glad for you",
+    "sad":       "quiet and tender, slower, full of gentle sympathy",
+    "prayer":    "hushed and reverent, slow and steady, speaking softly",
+    "joke":      "warm and amused, playful, with a smile in the voice",
+    "sarcastic": "wry and teasing, with a playful lilt, fond and never unkind",
+    "comfort":   "low and close, steady and reassuring, unhurried",
+}
 LULO_SEED = 20260815
 
 # generate() forwards **kwargs to _generate(), so seed isn't visible on the
@@ -104,11 +121,26 @@ def handler(job):
     if not text:
         return {"error": "No text provided"}
 
-    # Empty string is a meaningful override: it means "no voice description",
-    # so `or` would be wrong here.
+    # `tone` names one of LULO_TONES, or is free text for auditioning a wording
+    # that isn't in the table yet. An unknown name is a caller mistake worth
+    # hearing about, but not worth failing a request over — she falls back to
+    # neutral and says so in the log.
+    tone = (job_input.get("tone") or "neutral").strip()
+    if tone in LULO_TONES:
+        tone_text = LULO_TONES[tone]
+    elif " " in tone:
+        tone_text = tone
+    else:
+        print(f"Unknown tone {tone!r}, falling back to neutral")
+        tone_text = LULO_TONES["neutral"]
+
+    # `voice` overrides the whole description, identity included — the escape
+    # hatch for auditioning a different Lulo entirely. Empty string is a
+    # meaningful value here (it means "no description at all"), so `or` would
+    # be wrong.
     voice = job_input.get("voice")
     if voice is None:
-        voice = LULO_VOICE
+        voice = f"({LULO_IDENTITY}, {tone_text})"
     voice = voice.strip()
 
     seed = job_input.get("seed", LULO_SEED)
