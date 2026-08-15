@@ -174,6 +174,19 @@ def handler(job):
 
     last_wav = None
     for attempt in range(1, MAX_OUTER_ATTEMPTS + 1):
+        # This build of voxcpm has no seed parameter (the startup line reports
+        # "seed supported: False"), which meant every call sampled a brand new
+        # speaker and Lulo was a different person in every sentence. Seeding
+        # torch's global generator does the same job from outside the library:
+        # the sampling inside generate() draws from it either way.
+        #
+        # Kept inside the loop so a retry reseeds, exactly as the seed kwarg
+        # would — otherwise a deterministic bad generation repeats forever.
+        if not SUPPORTS_SEED and seed is not None:
+            torch.manual_seed(seed + (attempt - 1))
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(seed + (attempt - 1))
+
         gen_kwargs = {"cfg_value": 2.0, "inference_timesteps": 10}
         if SUPPORTS_SEED and seed is not None:
             # A fixed seed makes generation deterministic, which would make the

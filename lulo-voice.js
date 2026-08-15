@@ -24,9 +24,49 @@ const LuloVoice = {
     _queue: [],
     _speaking: false,
 
+    // ─── PERMISSION TO MAKE A SOUND ──────────────────────────────────────
+    // iOS grants playback to an element the user has already started, not to
+    // the page, and the grant does not survive a long wait. Lulo's audio
+    // arrives after a network round trip that can be a cold start long, so by
+    // the time there is anything to play, the tap that authorised it has
+    // expired and play() is refused.
+    //
+    // The answer is one element, started once during a real gesture with a
+    // silent clip, and reused for every line after. It stays authorised.
+    _audioEl: null,
+    _unlocked: false,
+
+    _el() {
+        if (!this._audioEl) {
+            this._audioEl = new Audio()
+            this._audioEl.preload = 'auto'
+        }
+        return this._audioEl
+    },
+
+    // 44 bytes of WAV header and no samples — silent, instant, and enough to
+    // count as playback.
+    _SILENCE: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgLsAAAB3AQACABAAZGF0YQAAAAA=',
+
+    unlock() {
+        if (this._unlocked) return
+        this._unlocked = true
+        const el = this._el()
+        el.src = this._SILENCE
+        el.play().catch(() => {
+            // Refused even here: this gesture wasn't one the browser accepts.
+            // Let the next one try again.
+            this._unlocked = false
+        })
+    },
+
     load() {
         this.enabled = localStorage.getItem('luloVoiceEnabled') === 'true'
         updateVoiceToggleUI()
+        // Any first touch will do — the point is only that it is a gesture.
+        const arm = () => this.unlock()
+        document.addEventListener('touchstart', arm, { capture: true, passive: true })
+        document.addEventListener('click', arm, { capture: true })
     },
 
     toggle() {
@@ -180,10 +220,17 @@ const LuloVoice = {
                     if (!res.ok) throw new Error('TTS error')
                     const blob = await res.blob()
                     const url = URL.createObjectURL(blob)
-                    const audio = new Audio(url)
+                    // The one element, not a new one per line. iOS grants
+                    // permission to an *element* that was played during a
+                    // gesture, not to the page, so a fresh Audio() every time
+                    // is a fresh element that was never granted anything.
+                    const audio = this._el()
                     this.currentAudio = audio
                     let sounding = false
+                    let settled = false
                     const done = () => {
+                        if (settled) return
+                        settled = true
                         URL.revokeObjectURL(url)
                         if (this.currentAudio === audio) this.currentAudio = null
                         if (sounding) { sounding = false; this._fire('end') }
@@ -192,7 +239,26 @@ const LuloVoice = {
                     audio.onplaying = () => { sounding = true; this._fire('start') }
                     audio.onended = done
                     audio.onerror = done
-                    audio.play().catch(done)
+                    audio.src = url
+                    // A rejected play() used to call done() — resolving the
+                    // line as though she had said it. That is why she could go
+                    // completely silent with healthy logs: the audio arrived,
+                    // playback was refused, and nothing anywhere said so. It
+                    // is the single most likely refusal too, because the fetch
+                    // can take a cold start's worth of seconds and by then the
+                    // tap that authorised it is long expired.
+                    //
+                    // Refusal now falls through to the Web Speech voice. A
+                    // different voice saying the line beats silence.
+                    audio.play().then(() => { /* playing; onended resolves */ })
+                        .catch(err => {
+                            if (settled) return
+                            settled = true
+                            URL.revokeObjectURL(url)
+                            if (this.currentAudio === audio) this.currentAudio = null
+                            console.warn('[LuloVoice] playback refused, using fallback:', err?.name || err)
+                            this._fallback(clean, resolve, tone)
+                        })
                     return
                 } catch {
                     // fall through to Web Speech API
