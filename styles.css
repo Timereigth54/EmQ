@@ -651,6 +651,14 @@
             50% { transform: translateY(-12px); }
         }
 
+        /* The same drift, for something that is centred by transform. Carries
+           the -50%/-50% through every frame, because an animated transform
+           replaces the element's rather than composing with it. */
+        @keyframes floatCentred {
+            0%, 100% { transform: translate(-50%, -50%); }
+            50%      { transform: translate(-50%, calc(-50% - 12px)); }
+        }
+
         @keyframes nod {
             0% { transform: translateY(0); }
             25% { transform: translateY(-18px); }
@@ -1460,7 +1468,15 @@
             filter: blur(1px) drop-shadow(0 0 40px rgba(0,255,100,0.35));
             pointer-events: none;
             z-index: 0;
-            animation: float 7s ease-in-out infinite;
+            /* Not the shared `float`. An animation's transform replaces the
+               element's own outright rather than adding to it, and this is the
+               one floating thing on the page that uses transform to centre
+               itself — so `float` was silently throwing away the
+               translate(-50%, -50%) above and dropping her 150px right and
+               150px down, into the corner. Every other centred animation here
+               re-states its offsets in its own keyframes; this one has to as
+               well. */
+            animation: floatCentred 7s ease-in-out infinite;
         }
         #text-mode-header,
         #text-mode-chat,

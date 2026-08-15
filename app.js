@@ -902,17 +902,46 @@ function setTheme(theme) {
             letter-spacing: 0.1px !important;
         }
         ${isLight ? `
-        /* Text mode keeps a dark ground whatever the theme is — the same
-           reason its watermark blends as it would on the galaxy. The pale
-           themes hand the user bubble dark ink on a barely-there tint, which
-           is legible on their own pale page and invisible in here: dark text,
-           dark bubble, dark room. So in text mode it takes the galaxy's
-           bubble instead. Lulo's side already reads, because hers is a
-           near-opaque light card rather than a wash, so it is left alone. */
+        /* ─── THE PALE THEMES INSIDE A DARK ROOM ──────────────────────────
+           Text mode keeps a dark ground whatever the theme is — the same
+           reason its watermark blends as it would on the galaxy. Every colour
+           the pale themes choose is picked for their own pale page, so each
+           one arrives in here as dark ink on a dark ground and disappears.
+           Anything in this overlay that carries text has to be lit for the
+           room it is actually standing in, not the one its theme describes.
+
+           Measured rather than eyeballed: the input was at 1.33:1 against
+           this ground and the timestamps at 1.22:1, where 4.5:1 is the
+           readable threshold for body text.
+
+           Lulo's own bubble is the one thing left alone — hers is a
+           near-opaque light card rather than a wash, so it brings its own
+           background and reads fine. */
         #text-mode-chat .chat-bubble-user {
             background: ${themes.dark.chatBubbleUserBg} !important;
             border-color: ${themes.dark.chatBubbleUserBorder} !important;
             color: ${themes.dark.chatBubbleUserText} !important;
+        }
+        /* What you are typing. Was the theme's near-black ink on the dark
+           input well — you could not see your own words as you wrote them. */
+        #text-mode-overlay #lulo-input {
+            color: ${themes.dark.inputText} !important;
+            --placeholder-color: ${themes.dark.inputPlaceholder};
+        }
+        #text-mode-overlay #text-input-row {
+            background: ${themes.dark.inputBg} !important;
+            border-color: ${themes.dark.inputBorder} !important;
+        }
+        /* The timestamp sits inside the bubble, not under it, so which ground
+           it has to survive depends on whose line it is — and after the rule
+           above those two grounds are opposites. Lulo's is her near-opaque
+           light card, where the theme's own dark ink is already right and
+           lighting it would erase it. Only the user's moved, because only the
+           user's bubble moved: it was dark ink on a pale wash before, and is
+           dark ink on a dark bubble now. Wrong both times, for two different
+           reasons. */
+        #text-mode-chat .chat-bubble-user .chat-meta {
+            color: rgba(255,255,255,0.45) !important;
         }` : ''}
         /* MOOD CARD DECK — themed */
         #carousel-wrapper::before {
