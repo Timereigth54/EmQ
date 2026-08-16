@@ -5949,6 +5949,17 @@ function setLuloPresence(on) {
 
 function enterScriptureMode() {
     _scriptureShownAt = Date.now()
+    // A card outranks whatever you were doing. If it arrives while text mode
+    // is open it would otherwise be built underneath a full-screen overlay,
+    // and the only sign of it would be finding it there later — which you
+    // won't, because leaving text mode used to dismiss it on the way out.
+    //
+    // Every card path comes through here — prayer, verse, joke, history — so
+    // this is the one place that has to know it. Asking Lulo for a prayer from
+    // the keyboard should put the prayer in front of you.
+    const overlay = document.getElementById('text-mode-overlay')
+    if (overlay && overlay.style.display !== 'none') switchToVoiceMode()
+
     const scrim = document.getElementById('scripture-scrim')
     if (scrim) { scrim.hidden = false; void scrim.offsetWidth; scrim.classList.add('scrim-on') }
     document.getElementById('lulo-container')?.classList.add('lulo-recede')
@@ -6648,6 +6659,12 @@ function initApp() {
             if (e.target.closest('.mood-card')) return
             // So is anything that opens a panel or the input
             if (e.target.closest('#top-bar, #bottom-bar, #more-menu, #notif-tray, #lulo-toast, #theme-panel, #sync-panel')) return
+            // And so is text mode. Its Back button lives inside the overlay,
+            // so tapping it hid the overlay and, on the very same click,
+            // bubbled to here — where a card sitting behind it looked exactly
+            // like a card you had tapped away from. You came back from typing
+            // to find the prayer you had just asked for already gone.
+            if (e.target.closest('#text-mode-overlay')) return
             dismissScriptureCard()
         }
     })
