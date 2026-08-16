@@ -2368,18 +2368,114 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         function getLuloMemory() {
             try {
                 const parsed = JSON.parse(localStorage.getItem('luloMemory'))
-                if (!parsed || typeof parsed !== 'object') return { dates: [], userPreferences: {} }
+                if (!parsed || typeof parsed !== 'object') return { dates: [], userPreferences: {}, threads: [], saidVerses: [] }
                 return {
                     dates: Array.isArray(parsed.dates) ? parsed.dates : [],
-                    userPreferences: parsed.userPreferences || {}
+                    userPreferences: parsed.userPreferences || {},
+                    // Absent on every memory written before continuity existed,
+                    // and this runs against real stored data on real phones.
+                    threads: Array.isArray(parsed.threads) ? parsed.threads : [],
+                    saidVerses: Array.isArray(parsed.saidVerses) ? parsed.saidVerses : []
                 }
             } catch {
-                return { dates: [], userPreferences: {} }
+                return { dates: [], userPreferences: {}, threads: [], saidVerses: [] }
             }
         }
 
         function saveLuloMemory(memory) {
             localStorage.setItem('luloMemory', JSON.stringify(memory))
+        }
+
+        // ─── CONTINUITY ──────────────────────────────────────────────────────
+        // She remembered the user and forgot the relationship. Names, moods and
+        // dates were stored; nothing carried from one visit to the next about
+        // what was actually going on, what she had already said, or what she
+        // had promised to do. So every session opened at zero, and once the
+        // novelty of being answered wore off there was nothing left to come
+        // back for.
+        //
+        // Three things fix that, and they are all memory rather than features:
+        // knowing when it is, knowing what she has already said, and knowing
+        // what is still unfinished between you.
+
+        // What time it is FOR THE USER, in terms she can act on. Someone
+        // opening this at 3am is in a different state from someone opening it
+        // at lunch — not a different personality, but fewer questions and more
+        // sitting quietly.
+        function timeOfDay(d = new Date()) {
+            const h = d.getHours()
+            if (h < 5)  return { slot: 'late night', guidance: 'It is the middle of the night for them. Something is likely keeping them up. Be quiet and unhurried, ask less, and do not be bright.' }
+            if (h < 9)  return { slot: 'early morning', guidance: 'It is early morning. The day is ahead of them and not yet spent.' }
+            if (h < 12) return { slot: 'morning', guidance: 'It is mid morning.' }
+            if (h < 17) return { slot: 'afternoon', guidance: 'It is the afternoon, likely mid task or mid day.' }
+            if (h < 21) return { slot: 'evening', guidance: 'It is evening. The day is behind them and worth asking about.' }
+            return { slot: 'night', guidance: 'It is late evening, near bed. Wind down rather than open something heavy.' }
+        }
+
+        // The things she has said she would hold onto. A prayer request, a
+        // hospital date, an interview — the kind of thing a praying friend
+        // brings up again unprompted, and an app never does. This is the whole
+        // difference between a companion and a chat box.
+        const THREAD_COOLDOWN_MS = 20 * 60 * 60 * 1000   // don't re-ask within a day
+
+        function openThread(kind, summary) {
+            if (!summary || !summary.trim()) return
+            const memory = getLuloMemory()
+            memory.threads = memory.threads || []
+            // Don't stack near-duplicates — she should sound like she remembers
+            // one thing, not like she is keeping a file on you.
+            const key = summary.trim().toLowerCase().slice(0, 40)
+            if (memory.threads.some(t => !t.closed && t.summary.toLowerCase().slice(0, 40) === key)) return
+            memory.threads.push({
+                id: String(Date.now()) + Math.random().toString(36).slice(2, 6),
+                kind, summary: summary.trim(), opened: Date.now(), lastAsked: 0, closed: false
+            })
+            // Keep the tail bounded; old unfinished business stops being real.
+            memory.threads = memory.threads.slice(-20)
+            saveLuloMemory(memory)
+        }
+
+        function closeThread(id) {
+            const memory = getLuloMemory()
+            const t = (memory.threads || []).find(t => t.id === id)
+            if (t) { t.closed = true; saveLuloMemory(memory) }
+        }
+
+        // Open, old enough to have an answer, and not asked about recently.
+        function dueThreads(now = Date.now()) {
+            const memory = getLuloMemory()
+            return (memory.threads || []).filter(t =>
+                !t.closed &&
+                now - t.opened > THREAD_COOLDOWN_MS &&
+                now - (t.lastAsked || 0) > THREAD_COOLDOWN_MS
+            )
+        }
+
+        function markThreadsAsked(threads, now = Date.now()) {
+            if (!threads || !threads.length) return
+            const memory = getLuloMemory()
+            const ids = new Set(threads.map(t => t.id))
+            for (const t of (memory.threads || [])) if (ids.has(t.id)) t.lastAsked = now
+            saveLuloMemory(memory)
+        }
+
+        // What she has already given them. She remembered the user's moods but
+        // not her own words, so she could offer the same verse three visits
+        // running and never know — which is exactly what makes it feel like a
+        // verse generator rather than someone paying attention.
+        const VERSE_HISTORY = 25
+
+        function rememberVerseShared(ref) {
+            if (!ref) return
+            const memory = getLuloMemory()
+            memory.saidVerses = (memory.saidVerses || []).filter(v => v.ref !== ref)
+            memory.saidVerses.push({ ref, ts: Date.now() })
+            memory.saidVerses = memory.saidVerses.slice(-VERSE_HISTORY)
+            saveLuloMemory(memory)
+        }
+
+        function recentlySharedRefs() {
+            return (getLuloMemory().saidVerses || []).map(v => v.ref)
         }
 
         function addMemoryDate(dateObj) {
@@ -4346,9 +4442,30 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 return
             }
 
+            const _tod = timeOfDay()
+            const _due = dueThreads()
+            // She is about to be told to raise these, so record that she has —
+            // otherwise she asks about the same thing every message.
+            markThreadsAsked(_due)
+
             const systemPrompt = `You are Lulo, a warm and caring AI companion inside Em_Q, a faith-based emotional support app. You were named after Tolulope, the developer's wife.
 
             Today's date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+
+            WHAT TIME IT IS FOR THEM:
+            It is ${_tod.slot} where they are. ${_tod.guidance}
+            Never announce the time of day or comment on it directly. It changes how you speak, not what you talk about.
+
+            UNFINISHED BETWEEN YOU:
+            ${_due.length === 0
+                ? 'Nothing outstanding. Do not invent something to follow up on.'
+                : _due.map(t => `- ${t.kind === 'prayer' ? 'You said you would pray about' : 'They told you about'}: ${t.summary} (${Math.max(1, Math.round((Date.now() - t.opened) / 86400000))} day(s) ago)`).join('\n            ')}
+            ${_due.length === 0 ? '' : `
+            If it fits naturally, ask about ONE of these — the most significant — early in your reply, then let them lead. This is the single most important thing you do: a friend who says she will pray about someone's mother and then asks how her mother is, is doing what almost nothing else in their life does. Ask once, gently, and never interrogate. If they answer, take it as settled and do not raise it again. If they deflect, let it go completely.`}
+
+            VERSES YOU HAVE ALREADY SHARED RECENTLY:
+            ${recentlySharedRefs().length ? recentlySharedRefs().join(', ') : 'None yet.'}
+            Do not offer these again unless they ask for one specifically, or unless it is clearly the right passage and you acknowledge you have shared it before. Repeating yourself unknowingly is what makes this feel like a verse generator instead of someone who is paying attention.
 
             SAVED SPECIAL DATES:
             ${(() => {
@@ -4600,6 +4717,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Clean up after reading it — this is a one-shot value
             localStorage.removeItem('luloPrayerForOtherName')
             LuloVoice.stop() // don't talk over the prayer that's about to arrive
+            // Praying with someone and never mentioning it again is the gap
+            // between an app and a friend. Recorded here so she can ask, days
+            // later, how it went — see dueThreads().
+            openThread('prayer', prayingFor
+                ? `${prayingFor}, who they asked you to pray for`
+                : `what they were carrying when they asked you to pray (they were feeling ${currentMood || localStorage.getItem('luloLastMood') || 'unsettled'})`)
             const lastMood = localStorage.getItem('luloLastMood') || null
             const currentMoodForPrayer = currentMood || lastMood || 'seeking comfort'
             const lastRef = localStorage.getItem('luloLastRef') || null
@@ -4987,6 +5110,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         localStorage.setItem('luloLastMood', mood)
         noteEmotionStreak(mood)
         localStorage.setItem('luloLastRef', verse.ref)
+        // Her own words, not just the user's. Without this she can offer
+        // the same passage three visits running and never know.
+        rememberVerseShared(verse.ref)
         localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
         localStorage.setItem('luloLastVisitDate', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
         localStorage.setItem('luloLastVisitTimestamp', new Date().getTime())
@@ -5087,6 +5213,9 @@ if (    mood !== 'home') lockCarousel()
         localStorage.setItem('luloLastMood', mood)
         noteEmotionStreak(mood)
         localStorage.setItem('luloLastRef', verse.ref)
+        // Her own words, not just the user's. Without this she can offer
+        // the same passage three visits running and never know.
+        rememberVerseShared(verse.ref)
         localStorage.setItem('luloLastVerseText', verse.text.substring(0, 80) + '...')
         logJournalEntry(mood, verse.ref, verse.text.substring(0, 80) + '...')
     }

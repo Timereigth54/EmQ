@@ -12,6 +12,13 @@
          worker, healthy server logs, and silence. Nothing but a
          securitypolicyviolation event says so.
 
+         connect-src covers two things that look like noise and are not quite:
+         analytics resolves to a regional collector (region1.google-analytics
+         .com and friends), so the bare www host silently dropped every event
+         after the first; and gstatic serves the Firebase source maps, which
+         only matter when you are trying to read a Firebase stack trace, which
+         is exactly when you cannot afford the console to be full of red.
+
          frame-ancestors below is inert in a meta tag (it only works as a real
          HTTP header) and the console says so on every load. Left in place
          because removing it changes nothing either way. -->
@@ -22,7 +29,7 @@
         font-src https://fonts.gstatic.com;
         img-src 'self' data:;
         media-src 'self' blob:;
-        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://www.google-analytics.com https://*.proxy.runpod.net;
+        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://*.google-analytics.com https://www.gstatic.com https://*.proxy.runpod.net;
         frame-ancestors 'none';
     ">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
