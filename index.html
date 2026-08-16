@@ -3,13 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Security headers -->
+    <!-- Security headers.
+
+         media-src is load-bearing: Lulo's voice arrives as a blob: URL, and
+         without that line media-src falls back to default-src 'self', which
+         does not cover blob:. Every clip she generated was refused by the page
+         before it could reach the speaker — valid audio, a 200 from the
+         worker, healthy server logs, and silence. Nothing but a
+         securitypolicyviolation event says so.
+
+         frame-ancestors below is inert in a meta tag (it only works as a real
+         HTTP header) and the console says so on every load. Left in place
+         because removing it changes nothing either way. -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self' data:;
+        media-src 'self' blob:;
         connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://www.google-analytics.com https://*.proxy.runpod.net;
         frame-ancestors 'none';
     ">

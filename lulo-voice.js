@@ -236,9 +236,23 @@ const LuloVoice = {
                         if (sounding) { sounding = false; this._fire('end') }
                         resolve()
                     }
+                    // Refuse and error are the same story told two ways, and
+                    // both have to be audible. A CSP that does not allow blob:
+                    // in media-src surfaces here as MEDIA_ERR_SRC_NOT_SUPPORTED
+                    // on perfectly good audio; wiring it to done() reported the
+                    // line as spoken and left the room silent.
+                    const giveUp = why => {
+                        if (settled) return
+                        settled = true
+                        URL.revokeObjectURL(url)
+                        if (this.currentAudio === audio) this.currentAudio = null
+                        if (sounding) { sounding = false; this._fire('end') }
+                        console.warn('[LuloVoice] falling back to Web Speech:', why)
+                        this._fallback(clean, resolve, tone)
+                    }
                     audio.onplaying = () => { sounding = true; this._fire('start') }
                     audio.onended = done
-                    audio.onerror = done
+                    audio.onerror = () => giveUp('media error code ' + (audio.error?.code ?? '?'))
                     audio.src = url
                     // A rejected play() used to call done() — resolving the
                     // line as though she had said it. That is why she could go
@@ -251,14 +265,7 @@ const LuloVoice = {
                     // Refusal now falls through to the Web Speech voice. A
                     // different voice saying the line beats silence.
                     audio.play().then(() => { /* playing; onended resolves */ })
-                        .catch(err => {
-                            if (settled) return
-                            settled = true
-                            URL.revokeObjectURL(url)
-                            if (this.currentAudio === audio) this.currentAudio = null
-                            console.warn('[LuloVoice] playback refused, using fallback:', err?.name || err)
-                            this._fallback(clean, resolve, tone)
-                        })
+                        .catch(err => giveUp('playback refused: ' + (err?.name || err)))
                     return
                 } catch {
                     // fall through to Web Speech API
