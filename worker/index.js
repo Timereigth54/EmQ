@@ -55,8 +55,16 @@ export default {
                 if (voice !== undefined) input.voice = voice
                 if (seed !== undefined) input.seed = seed
 
-                // Submit job
-                const submitRes = await fetch('https://api.runpod.ai/v2/bibe8ou3zkmbrz/run', {
+                // /runsync holds the connection open and returns the result
+                // inline. /run + polling meant every line waited for the next
+                // poll tick before anyone noticed it was ready — dead time
+                // added to a job that had already finished, on top of a
+                // generation that only takes about a second.
+                //
+                // It falls back to a job id when the work outlasts its window,
+                // which is what a cold start does, so the polling loop below
+                // is still needed — just no longer on the common path.
+                const submitRes = await fetch('https://api.runpod.ai/v2/bibe8ou3zkmbrz/runsync', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -64,31 +72,43 @@ export default {
                     },
                     body: JSON.stringify({ input })
                 })
-                const { id } = await submitRes.json()
-                if (!id) return new Response(JSON.stringify({ error: 'No job ID' }), { status: 502 })
+                const sync = await submitRes.json()
 
-                // Poll until done (max ~90s).
-                //
-                // The first check happens before the first sleep. A warm worker
-                // answers in well under a second, and the old loop slept 5s
-                // before looking even once — so every single line she spoke
-                // carried a five second floor that had nothing to do with how
-                // long it took to say.
-                for (let i = 0; i < 19; i++) {
-                    if (i > 0) await new Promise(r => setTimeout(r, 5000))
+                const asAudio = out => {
+                    if (!out?.audio) return null
+                    const bytes = Uint8Array.from(atob(out.audio), c => c.charCodeAt(0))
+                    return new Response(bytes, {
+                        headers: { 'Content-Type': 'audio/wav', 'Access-Control-Allow-Origin': '*' }
+                    })
+                }
+
+                if (sync.status === 'COMPLETED') {
+                    const r = asAudio(sync.output)
+                    if (r) return r
+                    return new Response(JSON.stringify({ error: 'No audio', detail: sync.output }), { status: 502 })
+                }
+                if (sync.status === 'FAILED') {
+                    return new Response(JSON.stringify({ error: 'Job failed', detail: sync }), { status: 502 })
+                }
+
+                const id = sync.id
+                if (!id) return new Response(JSON.stringify({ error: 'No job ID', detail: sync }), { status: 502 })
+
+                // Only reached when the work outlasted /runsync's window, which
+                // in practice means a cold start. Short ticks near the front:
+                // a worker that has just finished booting is about to answer,
+                // and a flat 5s tick spent most of its time waiting on a job
+                // that was already done.
+                for (let i = 0; i < 40; i++) {
+                    await new Promise(r => setTimeout(r, i < 10 ? 1000 : 3000))
                     const pollRes = await fetch(`https://api.runpod.ai/v2/bibe8ou3zkmbrz/status/${id}`, {
                         headers: { 'Authorization': `Bearer ${env.RUNPOD_API_KEY}` }
                     })
                     const data = await pollRes.json()
                     if (data.status === 'COMPLETED') {
-                        if (!data.output?.audio) return new Response(JSON.stringify({ error: 'No audio' }), { status: 502 })
-                        const audioBytes = Uint8Array.from(atob(data.output.audio), c => c.charCodeAt(0))
-                        return new Response(audioBytes, {
-                            headers: {
-                                'Content-Type': 'audio/wav',
-                                'Access-Control-Allow-Origin': '*'
-                            }
-                        })
+                        const r = asAudio(data.output)
+                        if (r) return r
+                        return new Response(JSON.stringify({ error: 'No audio' }), { status: 502 })
                     }
                     if (data.status === 'FAILED') return new Response(JSON.stringify({ error: 'Job failed', detail: data }), { status: 502 })
                 }

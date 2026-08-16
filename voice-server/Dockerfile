@@ -66,5 +66,16 @@ RUN --mount=type=secret,id=hf_token \
     HF_TOKEN="$(cat /run/secrets/hf_token 2>/dev/null || true)" \
     python -u bake_model.py
 
+# Her voice. Copied before main.py so a code change does not re-layer it, and
+# so a missing file fails the build rather than turning into a silent fallback
+# to description-only generation at runtime.
+COPY lulo_reference.wav .
+RUN python -c "\
+import wave; w = wave.open('lulo_reference.wav'); \
+d = w.getnframes()/w.getframerate(); \
+print(f'reference voice: {d:.2f}s, {w.getframerate()}Hz, {w.getnchannels()}ch'); \
+assert 1.0 < d < 30.0, f'reference clip is {d:.2f}s — cloning wants a few seconds'; \
+assert w.getnchannels() == 1, 'reference clip must be mono'"
+
 COPY main.py .
 CMD ["python", "-u", "main.py"]

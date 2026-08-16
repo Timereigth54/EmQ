@@ -7,6 +7,7 @@ Job output: { "audio": "<base64 WAV>", "sample_rate": 48000 }
 """
 
 import io
+import os
 import base64
 import inspect
 import runpod
@@ -100,6 +101,26 @@ LULO_TONES = {
 }
 LULO_SEED = 20260815
 
+# ─── HER ACTUAL VOICE ────────────────────────────────────────────────────────
+# A description plus a seed was never going to hold her. The seed fixes the
+# sampling, but the speaker is drawn conditioned on the text too, so a
+# different sentence is a different draw — which is why she changed person
+# between one sentence of an answer and the next once replies were split into
+# chunks. Describing a voice and hoping for the same one twice is not the same
+# as having a voice.
+#
+# A reference recording is. Cloning takes her identity from the audio rather
+# than resampling it per request, so every chunk, every answer and every tone
+# is the same person. This clip is the take that was chosen as sounding like
+# her — 3.4s of clean 48kHz mono, which is what the model wants.
+LULO_REFERENCE_WAV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lulo_reference.wav")
+# What is actually said in that clip. Cloning needs the transcript to line the
+# audio up against; a wrong one degrades the copy.
+LULO_REFERENCE_TEXT = "Hello, I am Lulo. God is with you."
+
+HAS_REFERENCE = os.path.isfile(LULO_REFERENCE_WAV)
+print(f"Reference voice: {'loaded' if HAS_REFERENCE else 'MISSING — falling back to description only'}")
+
 # generate() forwards **kwargs to _generate(), so seed isn't visible on the
 # public signature. Check the private one rather than assume the installed
 # version takes it — a TypeError here would take out every request.
@@ -140,7 +161,12 @@ def handler(job):
     # be wrong.
     voice = job_input.get("voice")
     if voice is None:
-        voice = f"({LULO_IDENTITY}, {tone_text})"
+        # With a reference clip the identity clause is not just redundant, it
+        # competes: the clip says who she is and the description asks for
+        # someone matching a sentence. Describing the delivery alone leaves the
+        # timbre to the audio and keeps the tone range, which is what we
+        # actually want from each.
+        voice = f"({tone_text})" if HAS_REFERENCE else f"({LULO_IDENTITY}, {tone_text})"
     voice = voice.strip()
 
     seed = job_input.get("seed", LULO_SEED)
@@ -188,6 +214,11 @@ def handler(job):
                 torch.cuda.manual_seed_all(seed + (attempt - 1))
 
         gen_kwargs = {"cfg_value": 2.0, "inference_timesteps": 10}
+        # Her identity comes from the recording, not from a fresh draw per
+        # sentence. This is what stops her changing person mid-answer.
+        if HAS_REFERENCE:
+            gen_kwargs["prompt_wav_path"] = LULO_REFERENCE_WAV
+            gen_kwargs["prompt_text"] = LULO_REFERENCE_TEXT
         if SUPPORTS_SEED and seed is not None:
             # A fixed seed makes generation deterministic, which would make the
             # retry below pointless — the same seed on the same text returns

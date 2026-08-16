@@ -83,7 +83,16 @@ const LuloVoice = {
         updateVoiceToggleUI()
         if (this.enabled) {
             const name = localStorage.getItem('luloUserName') || 'friend'
-            this._fallback(`Voice is on, ${name}. I'll speak to you from now on.`)
+            // Her own voice, not the robot. This was hardwired to _fallback,
+            // so the very first thing anyone ever heard from Lulo was a
+            // different, synthetic person announcing her — and a new one each
+            // time, since the system voice varies by device.
+            //
+            // The toggle is also the ideal moment to take the audio permission
+            // iOS grants on a gesture: it is a real tap, and she is about to
+            // need it.
+            this.unlock()
+            this.speak(`Voice is on, ${name}. I'll speak to you from now on.`, 'happy')
         }
         return this.enabled
     },
