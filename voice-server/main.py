@@ -10,6 +10,7 @@ import io
 import os
 import base64
 import inspect
+import numpy as np
 import runpod
 import torch
 
@@ -121,6 +122,49 @@ LULO_REFERENCE_TEXT = "Hello, I am Lulo. God is with you."
 HAS_REFERENCE = os.path.isfile(LULO_REFERENCE_WAV)
 print(f"Reference voice: {'loaded' if HAS_REFERENCE else 'MISSING — falling back to description only'}")
 
+
+def trim_silence(wav, sr, floor_db=-45.0, keep_ms=60):
+    """Cut leading and trailing near-silence.
+
+    A short line comes back with seconds of padding around it — 37 characters
+    of speech arriving as 7.4s of audio. That padding is not harmless. Replies
+    are spoken a sentence at a time, so every chunk's tail of silence lands
+    between two of her sentences and reads as her hesitating, and the same
+    padding is what pushed ordinary short lines past the duration check and
+    turned them into the robot voice.
+
+    Cutting it also makes the check mean what it says: how long she spoke,
+    rather than how long the file is.
+
+    `keep_ms` leaves a breath at each end so consecutive chunks do not collide.
+    """
+    if wav is None or len(wav) == 0:
+        return wav
+
+    win = max(1, int(sr * 0.02))                      # 20ms frames
+    frames = len(wav) // win
+    if frames < 2:
+        return wav
+
+    usable = wav[: frames * win].reshape(frames, win)
+    rms = np.sqrt(np.mean(usable.astype(np.float64) ** 2, axis=1))
+    peak = float(rms.max())
+    if peak <= 0:
+        return wav
+
+    # Threshold relative to this clip's own peak — absolute levels vary between
+    # generations, so a fixed cutoff would clip quiet speech on some and miss
+    # the padding on others.
+    thresh = peak * (10.0 ** (floor_db / 20.0))
+    loud = np.where(rms > thresh)[0]
+    if len(loud) == 0:
+        return wav
+
+    keep = int(sr * keep_ms / 1000.0)
+    start = max(0, loud[0] * win - keep)
+    end = min(len(wav), (loud[-1] + 1) * win + keep)
+    return wav[start:end]
+
 # generate() forwards **kwargs to _generate(), so seed isn't visible on the
 # public signature. Check the private one rather than assume the installed
 # version takes it — a TypeError here would take out every request.
@@ -189,14 +233,20 @@ def handler(job):
     # after that, we return an error instead of shipping garbled audio —
     # the app already falls back to the Web Speech API voice on error.
     MAX_OUTER_ATTEMPTS = 3
-    # Rough ceiling: ~15 characters/sec of natural speech, generous 2.5x
-    # margin for slower pacing, with a 3s floor for very short lines.
+    # Measured pace with the reference voice is about 12 characters a second.
+    # The ceiling is that, halved for headroom, plus a flat allowance — because
+    # the overshoot on a bad generation is a roughly constant tail of noise or
+    # silence rather than something proportional to the text. The old purely
+    # multiplicative rule gave a 37 character line 6.2s and no slack at all,
+    # so ordinary short sentences failed three times and returned an error,
+    # which the app played as the robot voice.
     #
     # Measured against `text`, not `prompt`: the voice description is an
     # instruction and never becomes audio, so counting it would inflate the
-    # ceiling by its own length and quietly blind the check on short lines —
-    # which are exactly the ones that run away.
-    max_expected_seconds = max(3.0, (len(text) / 15.0) * 2.5)
+    # ceiling by its own length.
+    #
+    # Checked after trimming, so a long silent tail is cut rather than counted.
+    max_expected_seconds = 2.5 + (len(text) / 6.0)
 
     last_wav = None
     for attempt in range(1, MAX_OUTER_ATTEMPTS + 1):
@@ -233,15 +283,20 @@ def handler(job):
         except Exception as e:
             return {"error": str(e)}
 
+        raw_seconds = len(wav) / output_sr
+        wav = trim_silence(wav, output_sr)
         duration = len(wav) / output_sr
         last_wav = wav
 
         if duration <= max_expected_seconds:
+            if raw_seconds - duration > 0.25:
+                print(f"Trimmed {raw_seconds - duration:.2f}s of padding ({raw_seconds:.1f}s -> {duration:.1f}s)")
             break
 
         print(
             f"Outer sanity check failed on attempt {attempt}/{MAX_OUTER_ATTEMPTS}: "
-            f"got {duration:.1f}s for {len(text)} chars (expected <= {max_expected_seconds:.1f}s)"
+            f"got {duration:.1f}s of speech for {len(text)} chars "
+            f"(raw {raw_seconds:.1f}s, expected <= {max_expected_seconds:.1f}s)"
         )
     else:
         return {
