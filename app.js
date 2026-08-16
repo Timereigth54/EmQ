@@ -5277,7 +5277,16 @@ if (    mood !== 'home') lockCarousel()
             // Lulo speaks her own lines (pass opts.silent = true to suppress voice).
             // Conversation is where she is most herself, so it follows the mood
             // the session is in.
-            if (role === 'lulo' && !opts.silent) {
+            //
+            // Silent while text mode is open. Someone who has opened the
+            // keyboard has chosen to read rather than listen, and reading a
+            // reply while the same words are spoken over you is worse than
+            // either on its own. This is the chat thread only — a prayer or a
+            // verse still speaks, because those arrive on a card that closes
+            // text mode and takes you to it, so by then you are back in the
+            // room where her voice belongs. The sound toggle stays the master
+            // switch either way.
+            if (role === 'lulo' && !opts.silent && !isTextModeOpen()) {
                 LuloVoice.speak(text, LuloVoice.toneForMood(currentMood))
             }
 
