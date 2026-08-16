@@ -90,13 +90,35 @@ function escapeHtml(str) {
         const db = firebase.firestore()
         let luloSyncListener = null
 
+        // The Lulo Code is the only credential this app has. There is no auth:
+        // whoever types a code gets that person's name, moods, journal and
+        // prayers. Four characters from a 32 character alphabet is about a
+        // million codes, which is a short afternoon to walk through, and the
+        // data behind them includes crisis conversations.
+        //
+        // Eight takes it to roughly a thousand billion. Existing codes are
+        // left exactly as they are — someone who has written theirs down does
+        // not lose their history for our benefit — so this only protects new
+        // people, which is the most that can be done without breaking anyone.
+        //
+        // Math.random() is not a cryptographic source; crypto.getRandomValues
+        // is, and is available everywhere this app runs. The fallback exists
+        // so a missing crypto object degrades to the old behaviour rather than
+        // throwing on the line that creates someone's account.
+        const LULO_CODE_LENGTH = 8
+
         function getLuloCode() {
             let code = localStorage.getItem('luloSyncCode')
             if (!code) {
+                // No I, O, 0 or 1 — the code gets read aloud and written down.
                 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
                 let random = ''
-                for (let i = 0; i < 4; i++) {
-                    random += chars[Math.floor(Math.random() * chars.length)]
+                const buf = (window.crypto && window.crypto.getRandomValues)
+                    ? window.crypto.getRandomValues(new Uint32Array(LULO_CODE_LENGTH))
+                    : null
+                for (let i = 0; i < LULO_CODE_LENGTH; i++) {
+                    const n = buf ? buf[i] : Math.floor(Math.random() * 0xFFFFFFFF)
+                    random += chars[n % chars.length]
                 }
                 code = `LULO-${random}`
                 localStorage.setItem('luloSyncCode', code)

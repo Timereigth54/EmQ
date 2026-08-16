@@ -1,0 +1,116 @@
+rules_version = '2';
+
+// Em_Q — Firestore security rules
+//
+// A MIRROR, NOT THE DEPLOYED RULES. Firebase is the source of truth. This file
+// exists because the rules are the reason cross-device sync has been failing
+// with "Missing or insufficient permissions", and a rule nobody can read is a
+// rule nobody can fix. Paste into Firebase console → Firestore → Rules, or
+// deploy with `firebase deploy --only firestore:rules`.
+//
+// ── WHAT THIS APP DOES ──────────────────────────────────────────────────────
+// There is no Firebase Auth. Not anonymous auth, none at all. A device makes
+// up a Lulo Code (LULO-XXXX), writes everything to users/<that code>, and
+// syncing to a second device means typing the same code there. The code IS the
+// credential — it is the only thing standing between one person's journal and
+// everyone else's.
+//
+// So these rules cannot check who is asking, because nobody ever says. They
+// can only constrain what a document is allowed to look like. That is a real
+// ceiling, and it is worth being plain about rather than dressing up:
+//
+//   A four character code from a 32 character alphabet is 32^4, about a
+//   million combinations. Guessing them is not hard, and behind each one is
+//   somebody's name, their moods, their journal and their prayers — including,
+//   in this app, crisis conversations. Rules cannot fix that. Only a longer
+//   code, or real auth, can. See the note at the bottom.
+//
+// What the rules below DO buy:
+//   - Nothing outside users/ is reachable at all.
+//   - A document must look like an Em_Q document, so the database cannot be
+//     used as free storage by anyone who finds the project id.
+//   - Fields are capped, so one write cannot run up a bill or park a payload.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{code} {
+
+      // The document id has to be a plausible Lulo Code. Cheap, and it stops
+      // the collection being written to under arbitrary names.
+      function validCode() {
+        return code.matches('LULO-[A-Z0-9]{4,12}');
+      }
+
+      // Only the keys saveToCloud() actually sends. An unknown key means
+      // either the app changed and this file did not, or it is not the app
+      // writing — both worth refusing.
+      function validShape() {
+        return request.resource.data.keys().hasOnly([
+          'luloMemory',
+          'luloUserName',
+          'luloUserGender',
+          'luloJournal',
+          'luloFavourites',
+          'luloLastMood',
+          'luloLastRef',
+          'luloLastVerseText',
+          'luloLastVisitTimestamp',
+          'luloSpeaksInTongues',
+          'luloSessionCount',
+          'luloAskedAboutDates',
+          'savedBy',
+          'updatedAt'
+        ]);
+      }
+
+      // Everything is written as a string — these are localStorage values,
+      // several of them JSON blobs the app parses itself. The journal is the
+      // large one and is already trimmed to 90 entries client-side; 200KB is
+      // generous headroom for that and still far too small to be useful to
+      // anyone treating this as a free bucket.
+      function validSize() {
+        return request.resource.data.luloJournal is string
+            && request.resource.data.luloJournal.size() < 200000
+            && request.resource.data.luloMemory is string
+            && request.resource.data.luloMemory.size() < 100000
+            && request.resource.data.luloFavourites is string
+            && request.resource.data.luloFavourites.size() < 100000
+            && request.resource.data.luloUserName is string
+            && request.resource.data.luloUserName.size() < 100;
+      }
+
+      allow read: if validCode();
+      allow create, update: if validCode() && validShape() && validSize();
+
+      // Nothing in the app deletes a user document, so nothing may.
+      allow delete: if false;
+    }
+
+    // Everything else is closed. Without this a future collection would
+    // inherit no rule and be unreachable anyway, but stating it means a
+    // mistake fails shut rather than depending on that.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ── THE PART THE RULES CANNOT FIX ───────────────────────────────────────────
+//
+// In rough order of value:
+//
+// 1. Lengthen the code. Eight characters instead of four takes the space from
+//    a million to about a thousand billion, which makes guessing pointless.
+//    getLuloCode() in app.js generates it; existing codes keep working because
+//    the pattern above accepts 4 to 12. This is a few lines and costs nothing.
+//
+// 2. Anonymous auth, so a document has an owner and rules can check it. The
+//    catch is that sync-by-code is the whole point, so a second device has to
+//    be able to claim an existing document — which means a claim flow, not
+//    just switching auth on. Worth doing, but it is a design change rather
+//    than a settings change.
+//
+// 3. Do not sync the journal at all, or encrypt it with a key derived from the
+//    code so the server holds nothing readable. The strongest option and the
+//    most work.
