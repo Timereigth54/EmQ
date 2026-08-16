@@ -10,6 +10,10 @@ const SHELL_ASSETS = [
     '/EmQ/lulo-wave.js',
     '/EmQ/app.js',
     '/EmQ/site.webmanifest',
+    // Her greeting. Precached so that turning her voice on works with no
+    // signal and without waiting on a GPU. install() skips assets that fail,
+    // so listing it before the file exists costs nothing.
+    '/EmQ/audio/lulo-greeting.wav',
 ]
 
 // Images — cached on install, served cache-first indefinitely

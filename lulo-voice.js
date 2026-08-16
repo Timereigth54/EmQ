@@ -82,19 +82,66 @@ const LuloVoice = {
         if (!this.enabled) this.stop()
         updateVoiceToggleUI()
         if (this.enabled) {
-            const name = localStorage.getItem('luloUserName') || 'friend'
-            // Her own voice, not the robot. This was hardwired to _fallback,
-            // so the very first thing anyone ever heard from Lulo was a
-            // different, synthetic person announcing her — and a new one each
-            // time, since the system voice varies by device.
-            //
-            // The toggle is also the ideal moment to take the audio permission
-            // iOS grants on a gesture: it is a real tap, and she is about to
-            // need it.
+            // A real tap, and she is about to need the permission iOS only
+            // grants during one.
             this.unlock()
-            this.speak(`Voice is on, ${name}. I'll speak to you from now on.`, 'happy')
+            // Wake the GPU now rather than when you first speak to her. The
+            // greeting itself must not do this job: routed through the queue
+            // it would arrive a cold start late *and* hold up whatever you
+            // said in the meantime, so you would wait out a stale hello
+            // before hearing the answer you actually wanted.
+            this.warmUp()
+            this._greet()
         }
         return this.enabled
+    },
+
+    // ─── WAKING THE GPU EARLY ────────────────────────────────────────────
+    // Turning her voice on is a promise that she is about to speak, so it is
+    // the right moment to start a worker booting. A cold start is around 45
+    // seconds and the wait is unavoidable — but it can be spent while you are
+    // still choosing what to say instead of after you have said it.
+    //
+    // Deliberately not queued and the audio is thrown away. The point is the
+    // boot, not the sound; queueing it would put a stale greeting in front of
+    // your first real sentence.
+    _warmedAt: 0,
+
+    warmUp() {
+        if (!this.endpoint) return
+        // Workers idle out after a few minutes, so re-warming is worth it, but
+        // not on every toggle in a row.
+        if (Date.now() - this._warmedAt < 120000) return
+        this._warmedAt = Date.now()
+        fetch(this.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: 'Hello.', language: 'en', tone: 'neutral' })
+        }).catch(() => { this._warmedAt = 0 })   // let the next toggle retry
+    },
+
+    // Her greeting comes from a file shipped with the app: instant, the same
+    // every time, works with no signal, and costs no GPU. Generating it on
+    // demand would make the first thing she ever says the slowest thing she
+    // ever says.
+    //
+    // Falls back to the system voice only if the file is missing, which is
+    // still better than a minute of silence.
+    _GREETING: 'audio/lulo-greeting.wav',
+
+    _greet() {
+        const name = localStorage.getItem('luloUserName') || 'friend'
+        const el = this._el()
+        let settled = false
+        const toRobot = () => {
+            if (settled) return
+            settled = true
+            this._fallback(`Voice is on, ${name}. I'll speak to you from now on.`)
+        }
+        el.onerror = toRobot
+        el.onended = null
+        el.src = this._GREETING
+        el.play().then(() => { settled = true }).catch(toRobot)
     },
 
     // ─── HOW A MOOD IS SPOKEN ────────────────────────────────────────────
