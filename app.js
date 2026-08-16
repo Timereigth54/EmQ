@@ -125,6 +125,11 @@ function escapeHtml(str) {
 
             try {
                 await db.collection('users').doc(code).set(data)
+                // Nothing reads this. Kept deliberately, and only because sync
+                // is currently failing with a Firestore permissions error:
+                // when someone reports that their code did not carry their
+                // data across, "when did this device last write successfully"
+                // is the first question, and it cannot be answered afterwards.
                 localStorage.setItem('luloLastCloudSave', Date.now().toString())
             } catch (err) {
                 console.error('Cloud save failed:', err)
@@ -395,11 +400,6 @@ function buildLastConversationSummary() {
     return `${opener}, you were feeling ${lastMood}.\n\nWe read "${lastVerseText}" from ${lastRef} together.`
 }
 
-// Kept so the old touchend binding stays harmless
-function toggleHistoryCard() {
-    toggleHistoryPanel()
-}
-
     function toggleThemePanel() {
         const panel = document.getElementById('theme-panel')
         const sync = document.getElementById('sync-panel')
@@ -409,25 +409,12 @@ function toggleHistoryCard() {
         panel.style.display = opening ? 'block' : 'none'
     }
 
-    function toggleThemePicker() {
-    const picker = document.getElementById('theme-picker')
-    if (!picker) return
-    if (picker.classList.contains('show')) {
-        picker.classList.remove('show')
-    } else {
-        picker.classList.add('show')
-    }
-}
-
-// Close theme picker when clicking outside
-document.addEventListener('click', (e) => {
-    const picker = document.getElementById('theme-picker')
-    const btn = document.getElementById('theme-btn')
-    if (!picker) return
-    if (!btn.contains(e.target)) {
-        picker.classList.remove('show')
-    }
-})
+// The theme picker was replaced by #theme-panel and toggleThemePanel(). Its
+// toggle and its outside-tap handler are gone with it: neither #theme-picker
+// nor #theme-btn exists, so the handler ran on every click on the page to look
+// up two nulls and return. It was also one element away from throwing — the
+// guard checked `picker` and then called btn.contains(), so had the picker
+// ever come back without the button, every click on the app would have died.
 
 // Close floating panels when tapping outside them
 document.addEventListener('click', (e) => {
@@ -450,10 +437,11 @@ document.addEventListener('click', (e) => {
         }
     }
 
-    // Theme panel
+    // Theme panel. It is opened from inside #more-menu, which the check below
+    // already excludes — the old #theme-btn lookup alongside it was a vestige
+    // of a button that no longer exists and contributed nothing to the test.
     if (themePanel && themePanel.style.display === 'block') {
-        const themeBtn = document.getElementById('theme-btn')
-        if (!themePanel.contains(e.target) && !(themeBtn && themeBtn.contains(e.target)) && !e.target.closest('#more-menu')) {
+        if (!themePanel.contains(e.target) && !e.target.closest('#more-menu')) {
             themePanel.style.display = 'none'
         }
     }
@@ -753,21 +741,10 @@ function setTheme(theme) {
         toastAvatar.src = art.t2 ? 'images/lulo_t2.png' : 'images/lulo.png'
     }
 
-    // CAROUSEL
-    const ringOuter = document.getElementById('ring-outer')
-    if (ringOuter) {
-        ringOuter.style.background = t.carouselBg
-        ringOuter.style.borderColor = t.carouselBorder
-        ringOuter.style.boxShadow = isLight
-            ? '0 0 30px rgba(30,122,90,0.1), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(30,122,90,0.1)'
-            : '0 0 30px rgba(0,255,100,0.06), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(0,0,0,0.2)'
-    }
-    
-    const activeSlot = document.getElementById('ring-active-slot')
-    if (activeSlot) {
-        activeSlot.style.borderColor = t.activeSlotBorder
-        activeSlot.style.boxShadow = `0 0 20px ${t.activeSlotGlow}, inset 0 0 20px ${t.activeSlotGlow}`
-    }
+    // The ring carousel's theming lived here — #ring-outer and
+    // #ring-active-slot. The ring became the card deck, and the deck is themed
+    // through #carousel-wrapper::before and #deck-frame in the generated
+    // stylesheet further down. Neither element has existed for some time.
 
     // EMOTION LABELS
     document.querySelectorAll('.emotion-btn .label').forEach(label => {
@@ -2189,16 +2166,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         // Check if user already has a saved name
         const savedName = localStorage.getItem('luloUserName')
 
-        // The splash screen was removed in Phase 3 — initApp() does this routing
-        // on load now. Kept as a named entry point in case anything still calls it.
-        function enterNameScreen() {
-            if (savedName) {
-                showReturningWelcome(savedName)
-            } else {
-                const nameScreen = document.getElementById('name-screen')
-                if (nameScreen) nameScreen.style.display = 'flex'
-            }
-        }
+        // enterNameScreen() lived here, kept "in case anything still calls it"
+        // after Phase 3 moved this routing into initApp(). Nothing ever did.
 
         function saveName() {
             const nameInput = document.getElementById('name-input')
@@ -3137,12 +3106,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 setTimeout(() => showPhase3Welcome(), 800)
             }
 
-            // Update Lulo's greeting with user's name
-            const name = localStorage.getItem('luloUserName')
-            if (name) {
-                const luloName = document.getElementById('lulo-name')
-                if (luloName) luloName.innerText = `Hi ${name}, I'm Lulo!`
-            }
+            // A greeting was written into #lulo-name here. That element went
+            // when Phase 3 moved the welcome onto the home screen itself —
+            // #home-greeting carries it now, written by showReturningWelcome().
 
             // Tongues check
             const speaksInTongues = localStorage.getItem('luloSpeaksInTongues')
@@ -3166,12 +3132,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 }, 1500)
             }
 
-            // Show scroll hint briefly
-            setTimeout(() => {
-                const hint = document.getElementById('scroll-hint')
-                if (hint) hint.style.display = 'none'
-            }, 4000)
-                
+            // A 4s timer hid #scroll-hint, which no longer exists. The deck's
+            // nudge is #carousel-label now, and it runs on inactivity through
+            // scheduleCarouselHint() rather than on a fixed timer.
+
                 // Make sure this device's data exists in the cloud immediately
                 saveToCloud()
 
@@ -4991,8 +4955,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     void box.offsetHeight
                     box.style.animation = 'fadeIn 0.8s ease'
 
-                    // Save that we prayed together
-                    localStorage.setItem('luloLastPrayer', new Date().toLocaleDateString())
+                    // luloLastPrayer was written here and never read anywhere.
+                    // Threads record prayers properly now — with what it was
+                    // about, and whether it was answered — so a bare date has
+                    // nothing left to offer. See openThread() above.
 
                     // Log prayer to journal
                     logJournalEntry('prayer', 'Prayer', 'Prayed together with Lulo 🙏')
@@ -6671,18 +6637,29 @@ function timeAgo(iso) {
 // luloSessionCount stays exactly as it was — this is additive.
 
 function updateStreak() {
-    const lastVisit = localStorage.getItem('luloLastVisitTimestamp')
     const today = new Date().toDateString()
     const streakKey = 'luloConsecutiveDays'
     let streak = parseInt(localStorage.getItem(streakKey) || '0', 10)
 
-    if (!lastVisit) {
+    // The streak keeps its own date. It used to read luloLastVisitTimestamp,
+    // which is written when a verse is shown rather than when the app is
+    // opened — so opening Em_Q, talking to her, and closing it again without
+    // picking a mood did not count as a day, and the streak broke. Someone who
+    // showed up every day could still watch it reset.
+    //
+    // luloLastStreakDate was already being written for exactly this and never
+    // read: the refactor was started and not finished. Finishing it makes a
+    // day mean a day.
+    const lastStreak = localStorage.getItem('luloLastStreakDate')
+        || localStorage.getItem('luloLastVisitTimestamp')   // migrate existing streaks
+
+    if (!lastStreak) {
         streak = 1
     } else {
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
         const lastDate = new Date(
-            isNaN(Number(lastVisit)) ? lastVisit : Number(lastVisit)
+            isNaN(Number(lastStreak)) ? lastStreak : Number(lastStreak)
         ).toDateString()
 
         if (lastDate === today) {
@@ -6715,9 +6692,6 @@ function updateStreak() {
     return streak
 }
 
-function getStreak() {
-    return parseInt(localStorage.getItem('luloConsecutiveDays') || '1', 10)
-}
 
 // ─── THE EMOTION STREAK ─────────────────────────────────────────────────────
 // The badge used to count consecutive days opened, which measured loyalty to
