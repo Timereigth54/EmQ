@@ -701,7 +701,11 @@ function setTheme(theme) {
     if (bottomBar) bottomBar.style.background = t.bottomBar
 
     // INPUT ROW
-    const inputRow = document.getElementById('input-row')
+    // The element is #text-input-row. This asked for #input-row, got null, and
+    // the guard below swallowed it — so the input well has never once taken a
+    // theme colour. That is why it looked wrong on the pale themes: not a
+    // colour chosen badly, a colour never applied.
+    const inputRow = document.getElementById('text-input-row')
     if (inputRow) {
         inputRow.style.background = t.inputBg
         inputRow.style.borderColor = t.inputBorder
