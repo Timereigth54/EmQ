@@ -50,6 +50,13 @@ const LuloVoice = {
 
     unlock() {
         if (this._unlocked) return
+        // Never mid-sentence. This assigns src on the very element that is
+        // playing, so unlocking while she talks cuts her off — and the error
+        // that follows hands the rest of the line to the robot voice. A
+        // refused unlock un-sets the flag so the next tap retries, which is
+        // what let a later tap land in the middle of her speaking.
+        if (this._speaking || (this.currentAudio && !this.currentAudio.paused)) return
+
         this._unlocked = true
         const el = this._el()
         el.src = this._SILENCE
@@ -132,15 +139,67 @@ const LuloVoice = {
     // prayer, joke, sarcastic, comfort). It rides with the line rather than
     // being set on the engine, because the queue can hold a reaction and the
     // verse behind it, and those are not always said the same way.
+    // ─── SAYING IT IN PIECES ─────────────────────────────────────────────
+    // A whole answer used to go to the server as one job, so nothing was heard
+    // until the last word of it had been generated. On a long one that meant a
+    // wait measured in tens of seconds, and often a timeout that dropped the
+    // whole thing to the robot voice.
+    //
+    // Split on sentence ends and she can start on the first while the rest are
+    // still being made. Time-to-first-word stops depending on how much she has
+    // to say, which is the difference between a pause and a conversation.
+    //
+    // Sentences are kept whole. The model reads punctuation for phrasing and
+    // breath, so a chunk cut mid-clause comes back sounding cut mid-clause.
+    _chunk(text, max = 180) {
+        const parts = text.match(/[^.!?…]+(?:[.!?…]+["')\]]*|$)\s*/g) || [text]
+        const out = []
+        for (const raw of parts) {
+            const s = raw.trim()
+            if (!s) continue
+            const last = out[out.length - 1]
+            // Join short neighbours: one-clause chunks make her sound clipped,
+            // and each one is a separate round trip.
+            if (last && last.length + 1 + s.length <= max) out[out.length - 1] = last + ' ' + s
+            else out.push(s)
+        }
+        return out.length ? out : [text]
+    },
+
     speak(text, tone) {
         if (!this.enabled) return
         if (!text) return
         const clean = this._clean(text)
         if (!clean) return
-        // Cap the queue so a burst of messages can't leave her talking for minutes
-        if (this._queue.length >= 4) this._queue.shift()
-        this._queue.push({ text: clean, tone: tone || 'neutral' })
+        // Cap the queue so a burst of messages can't leave her talking for
+        // minutes. Counted in chunks now, so the ceiling is higher — a single
+        // long answer is legitimately several of them.
+        for (const piece of this._chunk(clean)) {
+            if (this._queue.length >= 12) this._queue.shift()
+            this._queue.push({ text: piece, tone: tone || 'neutral' })
+        }
+        // Start the first fetch now rather than when the queue is next drained.
+        this._prefetch()
         this._drain()
+    },
+
+    // Begin the network request for a line without waiting for its turn.
+    // Defaults to the next one up: one line ahead only, because two would have
+    // her generating a paragraph she may never reach if the user interrupts,
+    // on a GPU billed by the second.
+    _prefetch(item = this._queue[0]) {
+        if (!item || item.audio) return
+        item.audio = fetch(this.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: item.text, language: 'en', tone: item.tone })
+        }).then(res => {
+            if (!res.ok) throw new Error('TTS ' + res.status)
+            return res.blob()
+        }).then(blob => URL.createObjectURL(blob))
+        // A rejection here is handled where it is awaited; this keeps it from
+        // surfacing as an unhandled rejection in the meantime.
+        item.audio.catch(() => {})
     },
 
     // Set this from app.js to be notified when the queue drains after speaking.
@@ -198,6 +257,10 @@ const LuloVoice = {
         this._speaking = true
         // Keep screen on for the duration of speech
         if (!this._wakeLock) await this._acquireWakeLock()
+        // The next line starts generating while this one plays, so the gap
+        // between her sentences is whatever is left of a round trip after her
+        // own speech has covered it — usually nothing.
+        this._prefetch()
         try {
             await this._utter(next)
         } catch {
@@ -208,18 +271,17 @@ const LuloVoice = {
     },
 
     // Resolves when this line has finished playing
-    _utter({ text: clean, tone }) {
+    _utter(item) {
+        const { text: clean, tone } = item
         return new Promise(async resolve => {
             if (this.endpoint) {
                 try {
-                    const res = await fetch(this.endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: clean, language: 'en', tone })
-                    })
-                    if (!res.ok) throw new Error('TTS error')
-                    const blob = await res.blob()
-                    const url = URL.createObjectURL(blob)
+                    // Usually already in flight, started while the previous
+                    // line was still playing. Awaiting it here costs whatever
+                    // is left of the round trip, which on a middle sentence is
+                    // normally nothing at all.
+                    this._prefetch(item)
+                    const url = await item.audio
                     // The one element, not a new one per line. iOS grants
                     // permission to an *element* that was played during a
                     // gesture, not to the page, so a fresh Audio() every time
@@ -316,6 +378,13 @@ const LuloVoice = {
     },
 
     stop() {
+        // Lines queued behind this one may already have audio fetched or in
+        // flight. Dropping the queue without releasing them leaks a blob per
+        // interrupted sentence, and interruption is normal — she is cut off
+        // every time you pick a new mood or start talking over her.
+        for (const item of this._queue) {
+            if (item && item.audio) item.audio.then(URL.revokeObjectURL).catch(() => {})
+        }
         this._queue.length = 0
         this._speaking = false
         if (this.currentAudio) { this.currentAudio.pause(); this.currentAudio = null }
