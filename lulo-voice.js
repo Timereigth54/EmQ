@@ -48,8 +48,17 @@ const LuloVoice = {
     // count as playback.
     _SILENCE: 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgLsAAAB3AQACABAAZGF0YQAAAAA=',
 
+    // Retries are for a gesture the browser did not accept — a tap that came
+    // too early, or one it did not count. They are not for a policy that will
+    // refuse every time: a CSP without data: in media-src blocked the silent
+    // clip on every tap, and re-arming after each refusal turned that into one
+    // console error per click, forever, on a page that was never going to
+    // succeed. A few attempts is enough to catch a bad gesture; past that,
+    // something is wrong that tapping again will not fix.
+    _unlockTries: 0,
+
     unlock() {
-        if (this._unlocked) return
+        if (this._unlocked || this._unlockTries >= 3) return
         // Never mid-sentence. This assigns src on the very element that is
         // playing, so unlocking while she talks cuts her off — and the error
         // that follows hands the rest of the line to the robot voice. A
@@ -58,12 +67,17 @@ const LuloVoice = {
         if (this._speaking || (this.currentAudio && !this.currentAudio.paused)) return
 
         this._unlocked = true
+        this._unlockTries++
         const el = this._el()
         el.src = this._SILENCE
-        el.play().catch(() => {
-            // Refused even here: this gesture wasn't one the browser accepts.
-            // Let the next one try again.
+        el.play().catch(err => {
+            // Refused: either the gesture wasn't one the browser accepts, or
+            // something is refusing categorically. Let the next tap try, up to
+            // the cap above.
             this._unlocked = false
+            if (this._unlockTries >= 3) {
+                console.warn('[LuloVoice] could not prime audio after 3 tries, giving up:', err?.name || err)
+            }
         })
     },
 

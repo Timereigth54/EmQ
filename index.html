@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- Security headers.
 
-         media-src is load-bearing: Lulo's voice arrives as a blob: URL, and
-         without that line media-src falls back to default-src 'self', which
-         does not cover blob:. Every clip she generated was refused by the page
-         before it could reach the speaker — valid audio, a 200 from the
+         media-src is load-bearing, and needs both sources. Lulo's voice
+         arrives as a blob: URL, and without that media-src falls back to
+         default-src 'self' — every clip she generated was refused by the page
+         before it could reach the speaker, with valid audio, a 200 from the
          worker, healthy server logs, and silence. Nothing but a
          securitypolicyviolation event says so.
+
+         data: is the silent clip LuloVoice.unlock() plays on first touch to
+         take the audio permission iOS grants during a gesture. Listing blob:
+         alone blocked it on every tap, and since a refused unlock re-arms
+         itself to try again on the next gesture, that was one console error
+         per click forever and an element that never actually got primed.
 
          connect-src covers two things that look like noise and are not quite:
          analytics resolves to a regional collector (region1.google-analytics
@@ -28,7 +34,7 @@
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self' data:;
-        media-src 'self' blob:;
+        media-src 'self' blob: data:;
         connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://*.google-analytics.com https://www.gstatic.com https://*.proxy.runpod.net;
         frame-ancestors 'none';
     ">
