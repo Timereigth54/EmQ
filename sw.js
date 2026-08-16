@@ -1,4 +1,4 @@
-const CACHE = 'emq-v41'
+const CACHE = 'emq-v42'
 
 // App shell — core files served cache-first
 const SHELL_ASSETS = [

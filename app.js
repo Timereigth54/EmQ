@@ -1856,6 +1856,37 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             const name = localStorage.getItem('luloUserName') || 'friend'
             const screen = document.getElementById('journal-screen')
 
+            // Prayers answered. Deliberately above the weekly numbers: a count
+            // of check-ins is a statistic, and this is the thing someone would
+            // actually reopen the app to look at.
+            const answered = answeredPrayers()
+            // Colours inherit rather than being stated. The journal screen is
+            // themed, and hardcoding white here put white text on the pale
+            // themes' white card — the same mistake that made the chat
+            // unreadable. Only the gold accent is fixed, because it reads on
+            // both grounds, and everything else rides the inherited colour at
+            // reduced opacity.
+            // One gold does not read on both grounds — the light card needs a
+            // darker one to clear 4.5:1 and the dark card needs a paler one.
+            const _lightJournal = ['light', 'soft'].includes(localStorage.getItem('luloTheme') || 'dark')
+            const _gold = _lightJournal ? '#7A5A12' : '#E8C367'
+            const answeredHTML = answered.length === 0 ? '' : `
+                <div style="background: rgba(201,160,60,0.08); border: 1px solid rgba(201,160,60,0.30); border-radius: 15px; padding: 16px; margin-bottom: 15px;">
+                    <div style="font-size: 0.72rem; letter-spacing: 1.5px; text-transform: uppercase; color: ${_gold}; font-weight: 600; margin-bottom: 12px;">
+                        Prayers answered · ${answered.length}
+                    </div>
+                    ${answered.slice(0, 12).map((t, i) => `
+                        <div style="display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; ${i ? 'border-top: 1px solid rgba(128,128,128,0.18);' : ''}">
+                            <span style="flex-shrink: 0;">🙏</span>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 0.85rem; line-height: 1.45; opacity: 0.92;">${escapeHtml(t.note || t.summary)}</div>
+                                <div style="font-size: 0.68rem; opacity: 0.68; margin-top: 2px;">
+                                    prayed ${new Date(t.opened).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}${t.closedAt ? ` · answered ${new Date(t.closedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}
+                                </div>
+                            </div>
+                        </div>`).join('')}
+                </div>`
+
             // Build weekly summary HTML
             let summaryHTML = ''
             if (summary) {
@@ -1915,7 +1946,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Update journal screen
             document.getElementById('journal-name').innerText = `${name}'s Journey`
             document.getElementById('journal-suggestion').innerText = suggestion
-            document.getElementById('journal-summary').innerHTML = summaryHTML
+            document.getElementById('journal-summary').innerHTML = answeredHTML + summaryHTML
             document.getElementById('journal-entries').innerHTML = entriesHTML
 
             screen.style.display = 'flex'
@@ -2435,10 +2466,64 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             saveLuloMemory(memory)
         }
 
-        function closeThread(id) {
+        function closeThread(id, outcome = 'closed', note = '') {
             const memory = getLuloMemory()
             const t = (memory.threads || []).find(t => t.id === id)
-            if (t) { t.closed = true; saveLuloMemory(memory) }
+            if (!t) return false
+            t.closed = true
+            t.outcome = outcome
+            t.closedAt = Date.now()
+            if (note) t.note = note.slice(0, 200)
+            saveLuloMemory(memory)
+            return true
+        }
+
+        // Prayers she watched get answered. This is the whole reason threads
+        // are worth storing: the asking was never the hard part, remembering
+        // the question long enough to notice the answer was. Nothing else in
+        // most people's lives keeps that ledger.
+        function answeredPrayers() {
+            return (getLuloMemory().threads || [])
+                .filter(t => t.outcome === 'answered')
+                .sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0))
+        }
+
+        // ─── HOW SHE TELLS US ────────────────────────────────────────────────
+        // She is the only one who can tell whether "she's home, thank God"
+        // means the prayer about someone's mother was answered. So she marks
+        // it, in a tag stripped before anything is shown or spoken.
+        //
+        // Stripping happens in _clean for speech and here for display, and the
+        // pattern is deliberately loose — a tag that leaks into a bubble is
+        // worse than one that is missed, so it matches even if she mangles the
+        // spacing or the id.
+        const ANSWER_TAG = /\[\[\s*answered\s*:?\s*([A-Za-z0-9]*)\s*\]\]/gi
+
+        function stripAnswerTags(text) {
+            return String(text || '').replace(ANSWER_TAG, '').replace(/\s{2,}/g, ' ').trim()
+        }
+
+        // Returns the cleaned text, having closed anything she flagged.
+        function harvestAnswerTags(text) {
+            const raw = String(text || '')
+            const ids = []
+            let m
+            ANSWER_TAG.lastIndex = 0
+            while ((m = ANSWER_TAG.exec(raw)) !== null) ids.push(m[1])
+
+            if (ids.length) {
+                const open = (getLuloMemory().threads || []).filter(t => !t.closed)
+                for (const id of ids) {
+                    // Exact id when she gives a usable one. When she doesn't —
+                    // and she won't always — fall back to the thread she was
+                    // most recently told to raise, which is the one she is
+                    // talking about.
+                    const target = open.find(t => t.id === id)
+                        || open.slice().sort((a, b) => (b.lastAsked || 0) - (a.lastAsked || 0))[0]
+                    if (target) closeThread(target.id, 'answered', target.summary)
+                }
+            }
+            return stripAnswerTags(raw)
         }
 
         // Open, old enough to have an answer, and not asked about recently.
@@ -4461,7 +4546,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 ? 'Nothing outstanding. Do not invent something to follow up on.'
                 : _due.map(t => `- ${t.kind === 'prayer' ? 'You said you would pray about' : 'They told you about'}: ${t.summary} (${Math.max(1, Math.round((Date.now() - t.opened) / 86400000))} day(s) ago)`).join('\n            ')}
             ${_due.length === 0 ? '' : `
-            If it fits naturally, ask about ONE of these — the most significant — early in your reply, then let them lead. This is the single most important thing you do: a friend who says she will pray about someone's mother and then asks how her mother is, is doing what almost nothing else in their life does. Ask once, gently, and never interrogate. If they answer, take it as settled and do not raise it again. If they deflect, let it go completely.`}
+            If it fits naturally, ask about ONE of these — the most significant — early in your reply, then let them lead. This is the single most important thing you do: a friend who says she will pray about someone's mother and then asks how her mother is, is doing what almost nothing else in their life does. Ask once, gently, and never interrogate. If they answer, take it as settled and do not raise it again. If they deflect, let it go completely.
+
+            WHEN A PRAYER IS ANSWERED:
+            If they tell you something you prayed about has resolved well — the surgery went fine, the job came through, the relationship healed — end your message with this exact tag on its own: [[answered]]
+            It is stripped before they ever see it, so it is never visible and never spoken. Do not mention it, do not explain it, and never write it where the answer is unclear, partial or bad. Only for a genuine yes. Getting this right is how she keeps a record of prayers answered that they can look back on, which for many people is the most precious thing here.
+            Respond to the news itself with real gladness first. The tag goes last, after your actual words.`}
 
             VERSES YOU HAVE ALREADY SHARED RECENTLY:
             ${recentlySharedRefs().length ? recentlySharedRefs().join(', ') : 'None yet.'}
@@ -4679,7 +4769,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
                 if (data.content && data.content[0]) {
                     hideTyping()
-                    const responseText = data.content[0].text
+                    // Close anything she flagged as answered, and take the tag
+                    // out before it can reach a bubble, the voice, a toast or
+                    // the conversation history. Done once, here, at the single
+                    // point her words enter the app.
+                    const responseText = harvestAnswerTags(data.content[0].text)
 
                     // Passive gender detection from conversation
                     const lower = responseText.toLowerCase()
