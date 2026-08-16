@@ -2,11 +2,26 @@ rules_version = '2';
 
 // Em_Q — Firestore security rules
 //
-// A MIRROR, NOT THE DEPLOYED RULES. Firebase is the source of truth. This file
-// exists because the rules are the reason cross-device sync has been failing
-// with "Missing or insufficient permissions", and a rule nobody can read is a
-// rule nobody can fix. Paste into Firebase console → Firestore → Rules, or
-// deploy with `firebase deploy --only firestore:rules`.
+// A MIRROR, NOT THE DEPLOYED RULES. Firebase is the source of truth. Paste
+// into Firebase console → Firestore → Rules, or deploy with
+// `firebase deploy --only firestore:rules`.
+//
+// ── WHAT THE PREVIOUS RULES GOT WRONG ───────────────────────────────────────
+// They were not missing. They read, in essence:
+//
+//     allow read, write: if request.resource.data.keys().hasOnly([...])
+//
+// request.resource is the document as it WOULD BE after a write. It does not
+// exist on a read. So the condition evaluated null.data on every read and
+// denied it, while writes passed normally — which is why data has been saving
+// to Firestore all along and never coming back, and why the only error anyone
+// ever saw was "Real-time sync error" from the snapshot listener and never
+// "Cloud save failed" from the write beside it.
+//
+// One condition covering both verbs is the trap. Read and write are asked
+// different questions and only one of them has a request.resource to ask
+// about, so they are split below and the read rule touches nothing that does
+// not exist during a read.
 //
 // ── WHAT THIS APP DOES ──────────────────────────────────────────────────────
 // There is no Firebase Auth. Not anonymous auth, none at all. A device makes
