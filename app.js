@@ -2399,9 +2399,21 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         function getLuloMemory() {
             try {
                 const parsed = JSON.parse(localStorage.getItem('luloMemory'))
-                if (!parsed || typeof parsed !== 'object') return { dates: [], userPreferences: {}, threads: [], saidVerses: [] }
+                if (!parsed || typeof parsed !== 'object') return { dates: [], preferences: {}, userPreferences: {}, threads: [], saidVerses: [] }
                 return {
                     dates: Array.isArray(parsed.dates) ? parsed.dates : [],
+                    // What she learns about someone — favourite colour, food,
+                    // hobbies. This key was missing from the whitelist, so
+                    // every preference was written to storage and then thrown
+                    // away by the next read: the learner started from {} each
+                    // time and the prompt said "Nothing learned yet." forever.
+                    // The feature has never once worked.
+                    //
+                    // `userPreferences` is the older, empty twin of the same
+                    // idea. Nothing has ever written to it, but it is in the
+                    // cloud sync payload, so it is merged rather than dropped
+                    // in case any device has something in it.
+                    preferences: { ...(parsed.userPreferences || {}), ...(parsed.preferences || {}) },
                     userPreferences: parsed.userPreferences || {},
                     // Absent on every memory written before continuity existed,
                     // and this runs against real stored data on real phones.
@@ -2409,7 +2421,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     saidVerses: Array.isArray(parsed.saidVerses) ? parsed.saidVerses : []
                 }
             } catch {
-                return { dates: [], userPreferences: {}, threads: [], saidVerses: [] }
+                return { dates: [], preferences: {}, userPreferences: {}, threads: [], saidVerses: [] }
             }
         }
 
@@ -2590,13 +2602,19 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             const lower = text.toLowerCase()
             const memory = getLuloMemory()
             if (!memory.preferences) memory.preferences = {}
+            const before = JSON.stringify(memory.preferences)
 
             // FAVOURITE FOOD
+            // Every one of these used to demand a trailing . , or ! — so
+            // "my favourite food is jollof rice" typed into a chat box, with
+            // no full stop, matched nothing. People do not punctuate the last
+            // line of a message. `$` is now an accepted ending everywhere,
+            // exactly as the colour and place patterns already had it.
             const foodPatterns = [
-                /my favou?rite food is (.+?)[\.\,\!]/i,
-                /i love eating (.+?)[\.\,\!]/i,
+                /my favou?rite food is (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
+                /i love eating (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
                 /i could eat (.+?) every day/i,
-                /best meal (?:is|for me is) (.+?)[\.\,\!]/i,
+                /best meal (?:is|for me is) (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
             ]
             for (const pattern of foodPatterns) {
                 const match = text.match(pattern)
@@ -2637,7 +2655,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // FAVOURITE BOOK
             const bookPatterns = [
                 /my favou?rite book is (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
-                /i love (?:reading )?(.+?)(?:[\.\,\!]|$) (?:so much|a lot|by)/i,
+                // Was `(?:[\.\,\!]|$) (?:so much|a lot|by)` — a `$` cannot be
+                // followed by a space, so that branch was dead, and the other
+                // demanded the literal ". so much", which nobody writes.
+                /i love reading (.+?)(?:\s+(?:so much|a lot)|[\.\,\!]|$)/i,
                 /best book (?:i(?:'ve| have) read )?is (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
             ]
             for (const pattern of bookPatterns) {
@@ -2651,7 +2672,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // FAVOURITE MOVIE
             const moviePatterns = [
                 /my favou?rite (?:movie|film) is (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
-                /i love (?:the (?:movie|film) )?(.+?)(?:[\.\,\!]|$) (?:so much|a lot)/i,
+                // Same dead branch as the book pattern above. Narrowed to an
+                // explicit movie mention too: the old one matched "i love"
+                // plus anything at all, so it claimed unrelated sentences as
+                // a favourite film.
+                /i love the (?:movie|film) (.+?)(?:\s+(?:so much|a lot)|[\.\,\!]|$)/i,
                 /best (?:movie|film) (?:i(?:'ve| have) seen )?is (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
             ]
             for (const pattern of moviePatterns) {
@@ -2663,8 +2688,14 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             }
 
             // HOBBIES
+            // Was `(.+?)(?:ing)(?:[\.\,\!]|$)` — the "ing" sat outside the
+            // capture, so "I love cooking" stored the hobby as "cook", and on
+            // "I love singing and dancing" the lazy match ran all the way to
+            // the last gerund and stored "singing and danc". The verb is now
+            // captured whole, with up to two words after it so "playing the
+            // piano" survives.
             const hobbyPatterns = [
-                /i (?:love|enjoy|like) (.+?)(?:ing)(?:[\.\,\!]|$)/i,
+                /i (?:love|enjoy|like) (\w+ing(?:\s+\w+){0,2}?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|when|because)\b)/i,
                 /my hobby is (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
                 /in my free time i (.+?)(?:[\.\,\!]|$|\s+(?:and|but|though|also|honestly|actually|right now|these days|lately)\b)/i,
             ]
@@ -2680,10 +2711,15 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 }
             }
 
+            // This runs on every single message, and almost every message
+            // teaches her nothing. Writing and syncing regardless meant a
+            // Firestore round trip per message to store an unchanged object.
+            if (JSON.stringify(memory.preferences) === before) return
+
             saveLuloMemory(memory)
             saveToCloud()
         }
-        
+
         function requestNotificationPermission() {
             if (!('Notification' in window)) return
             if (Notification.permission === 'granted' || Notification.permission === 'denied') return
