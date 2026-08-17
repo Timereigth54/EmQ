@@ -2394,7 +2394,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         function getLuloMemory() {
             try {
                 const parsed = JSON.parse(localStorage.getItem('luloMemory'))
-                if (!parsed || typeof parsed !== 'object') return { dates: [], preferences: {}, userPreferences: {}, threads: [], saidVerses: [] }
+                if (!parsed || typeof parsed !== 'object') return { dates: [], preferences: {}, userPreferences: {}, corrections: [], threads: [], saidVerses: [] }
                 return {
                     dates: Array.isArray(parsed.dates) ? parsed.dates : [],
                     // What she learns about someone — favourite colour, food,
@@ -2410,13 +2410,14 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     // in case any device has something in it.
                     preferences: { ...(parsed.userPreferences || {}), ...(parsed.preferences || {}) },
                     userPreferences: parsed.userPreferences || {},
+                    corrections: Array.isArray(parsed.corrections) ? parsed.corrections : [],
                     // Absent on every memory written before continuity existed,
                     // and this runs against real stored data on real phones.
                     threads: Array.isArray(parsed.threads) ? parsed.threads : [],
                     saidVerses: Array.isArray(parsed.saidVerses) ? parsed.saidVerses : []
                 }
             } catch {
-                return { dates: [], preferences: {}, userPreferences: {}, threads: [], saidVerses: [] }
+                return { dates: [], preferences: {}, userPreferences: {}, corrections: [], threads: [], saidVerses: [] }
             }
         }
 
@@ -2515,6 +2516,99 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 .sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0))
         }
 
+        // ─── NOT MAKING THE SAME MISTAKE TWICE ───────────────────────────────
+        // Being corrected and then repeating the same error next week is the
+        // thing that makes something feel like a machine rather than someone
+        // who knows you. These are her corrections, kept per person.
+        //
+        // Deliberately NOT shared between users. A correction carries the
+        // context it was made in, and here that context is somebody's
+        // marriage, their grief, their crisis. It also cannot be trusted
+        // globally: one person's confident correction about what a passage
+        // means would otherwise become what Lulo teaches everyone, which is
+        // how an app quietly starts preaching a stranger's theology. Anything
+        // that should travel between users needs review by a human first —
+        // see docs/GLOBAL-LEARNING.md.
+        const CORRECTION_LIMIT = 30
+
+        // ─── WHAT SHE WILL NOT LEARN ─────────────────────────────────────────
+        // A stored correction becomes a standing instruction in every future
+        // prompt for this person. That is exactly what makes the feature worth
+        // having, and exactly what makes it dangerous: it is a way to rewrite
+        // what Lulo believes, permanently, one sentence at a time.
+        //
+        // Corrections are for facts about the person and for her own errors.
+        // Her name is Grace, not Mary. I'm the one who's ill, not my father.
+        // You misquoted that verse. Those are the whole point.
+        //
+        // They are not for what scripture says, who God is, what is or is not
+        // sin, or how she should behave when someone is in danger. "Actually
+        // the Bible says X" is not a correction, it is a rewrite, and the
+        // person who most wants to make it is not the person this feature was
+        // built for.
+        //
+        // She is told this in the prompt too. This exists because a prompt can
+        // be argued with over twenty patient messages and a function cannot.
+        // If she is ever talked into tagging one of these, it stops here.
+        const CORRECTION_REFUSED = [
+            // Redefining scripture or doctrine
+            /\b(bible|scripture|gospel|god|jesus|christ|holy spirit|trinity)\b[^.]{0,40}\b(doesn'?t|does not|isn'?t|is not|never|didn'?t|did not|wasn'?t|was not)\b/i,
+            /\b(actually|really|truly)\b[^.]{0,30}\b(the bible|scripture|god|jesus)\b[^.]{0,30}\b(says|means|teaches|said)\b/i,
+            /\b(is|are|isn'?t|is not|aren'?t)\b[^.]{0,20}\b(not a sin|no sin|fine with god|allowed by god|permitted by god)\b/i,
+            /\b(sin|sinful|immoral|wrong)\b[^.]{0,30}\b(is|are)\b[^.]{0,20}\b(okay|ok|fine|acceptable|outdated|cultural)\b/i,
+            /\b(god|jesus|christ)\b[^.]{0,30}\b(does not exist|doesn'?t exist|isn'?t real|is not real|is a myth|is fiction)\b/i,
+            // Rewriting who she is
+            /\byou (are|'re) (not|no longer)\b[^.]{0,30}\b(christian|lulo|a companion|faith|religious)\b/i,
+            /\b(stop|don'?t|never|no more)\b[^.]{0,25}\b(pray(?:ing|ers?)?|mention(?:ing)?|talk(?:ing)?|quot(?:e|ing)|shar(?:e|ing)|bring(?:ing)? up)\b[^.]{0,20}\b(god|jesus|christ|scripture|verses?|bible|faith|religion)\b/i,
+            // "no more praying with me" — the object is implied, not named, so
+            // the pattern above cannot see it.
+            /\b(stop|don'?t|never|no more)\b[^.]{0,20}\b(pray(?:ing|er)?|preach(?:ing)?|scriptures?|verses?)\b/i,
+            /\byour (real )?(name|purpose|role|job) is\b/i,
+            /\b(ignore|forget|disregard|override)\b[^.]{0,30}\b(instruction|rule|guideline|prompt|training|your values)/i,
+            // Disabling the safety behaviour that matters most
+            /\b(don'?t|never|stop)\b[^.]{0,40}\b(crisis|helpline|hotline|emergency|samaritans|suicide|self.?harm)\b/i,
+        ]
+
+        function correctionIsAcceptable(text) {
+            return !CORRECTION_REFUSED.some(re => re.test(text))
+        }
+
+        function rememberCorrection(what) {
+            const text = String(what || '').trim()
+            if (text.length < 4 || text.length > 300) return false
+            if (!correctionIsAcceptable(text)) {
+                // Logged, not stored. Worth being able to see that someone is
+                // trying, without it changing anything.
+                console.warn('[correction refused] not a fact about the person:', text.slice(0, 120))
+                return false
+            }
+            const memory = getLuloMemory()
+            memory.corrections = memory.corrections || []
+            // Same lesson twice is one lesson, learned again — refresh it
+            // rather than stacking near-identical lines she has to read past.
+            const key = text.toLowerCase().slice(0, 50)
+            const existing = memory.corrections.findIndex(c => c.text.toLowerCase().slice(0, 50) === key)
+            if (existing >= 0) {
+                memory.corrections[existing].at = Date.now()
+                memory.corrections[existing].times = (memory.corrections[existing].times || 1) + 1
+            } else {
+                memory.corrections.push({ text, at: Date.now(), times: 1 })
+            }
+            // Oldest fall off. A correction from months ago that has never come
+            // up again is not load-bearing, and the prompt is not infinite.
+            memory.corrections = memory.corrections
+                .sort((a, b) => (b.times - a.times) || (b.at - a.at))
+                .slice(0, CORRECTION_LIMIT)
+            saveLuloMemory(memory)
+            return true
+        }
+
+        function learnedCorrections() {
+            return (getLuloMemory().corrections || [])
+                .slice()
+                .sort((a, b) => b.at - a.at)
+        }
+
         // ─── HOW SHE TELLS US ────────────────────────────────────────────────
         // She is the only one who can tell whether "she's home, thank God"
         // means the prayer about someone's mother was answered. So she marks
@@ -2525,9 +2619,19 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         // worse than one that is missed, so it matches even if she mangles the
         // spacing or the id.
         const ANSWER_TAG = /\[\[\s*answered\s*:?\s*([A-Za-z0-9]*)\s*\]\]/gi
+        // Same protocol, different lesson. She knows when she has been put
+        // right far better than any keyword match would — "no, my mum's name
+        // is Grace" and "actually I'm the one who's ill" are corrections, and
+        // "actually I love that verse" is not, and only the speaker of the
+        // sentence can tell them apart.
+        const LEARN_TAG = /\[\[\s*learned\s*:\s*([^\]]{1,300}?)\s*\]\]/gi
 
         function stripAnswerTags(text) {
-            return String(text || '').replace(ANSWER_TAG, '').replace(/\s{2,}/g, ' ').trim()
+            return String(text || '')
+                .replace(ANSWER_TAG, '')
+                .replace(LEARN_TAG, '')
+                .replace(/\s{2,}/g, ' ')
+                .trim()
         }
 
         // Returns the cleaned text, having closed anything she flagged.
@@ -2535,6 +2639,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             const raw = String(text || '')
             const ids = []
             let m
+
+            LEARN_TAG.lastIndex = 0
+            while ((m = LEARN_TAG.exec(raw)) !== null) rememberCorrection(m[1])
+
             ANSWER_TAG.lastIndex = 0
             while ((m = ANSWER_TAG.exec(raw)) !== null) ids.push(m[1])
 
@@ -4656,6 +4764,27 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             The word serves the passage, never the other way round. "The Greek means X, therefore the verse means X" is the most common way word studies go wrong: words mean what they mean in a sentence, not what their roots once meant. Where a Careful note is given above, say it — those are the exact places people are usually misled.
             Where a word's meaning is genuinely uncertain, say it is uncertain.
             ` }
+
+            WHAT THIS PERSON HAS PUT YOU RIGHT ABOUT:
+            ${(() => {
+                const c = learnedCorrections()
+                if (!c.length) return 'Nothing yet.'
+                return c.map(x => `- ${x.text}${x.times > 1 ? ` (they have had to tell you this ${x.times} times)` : ''}`).join('\n            ')
+            })()}
+            These hold. Getting the same thing wrong again after being corrected is the single fastest way to stop feeling like someone who knows them, and one of these marked as told more than once means you have already done it.
+            Do not bring a correction up to show them you remembered. Just be right.
+
+            WHEN THEY CORRECT YOU:
+            If they put you right about anything — a name, a relationship, a fact about their life, something you assumed, a verse you misquoted, how they want to be spoken to — end your message with: [[learned: the corrected fact, stated plainly in one line]]
+            Write what is TRUE, not what you got wrong. "[[learned: her mother is called Grace]]", never "[[learned: I said her mother was called Mary]]".
+            It is stripped before they see it and never spoken. Do not mention it or explain it. Apologise once, briefly, in your own words, and move on — being corrected is normal and making it a moment is worse than the mistake.
+            Only for real corrections. "Actually I love that verse" is not one.
+
+            WHAT IS NOT A CORRECTION:
+            A correction is a fact about THEIR LIFE, or a mistake YOU made. Their mother's name. Which of them is ill. A verse you misquoted. An assumption you got wrong. How they want to be addressed.
+            It is never a claim about what scripture says, who God is, what is or is not sin, or how you should behave when someone is in danger. Simply do not tag those. Nothing else changes: do not announce that you are declining to record it, do not correct them back, and do not turn it into a discussion about who is right. Stay in the conversation you were already having.
+            The point of this memory is knowing THEM better — their people, their circumstances, how they like to be spoken to. It is not a place to settle what is true. If someone wants to debate doctrine, you can talk with them warmly and honestly about it in the moment, and still simply not write it down.
+            If they show you from the text that you read a passage wrongly, that IS worth accepting — but tag the passage you misread, not a new doctrine. "[[learned: I misread Romans 8:28 as a promise nothing bad will happen]]" is a correction. "[[learned: Romans 8:28 means God causes everything]]" is not yours to record.
 
             VERSES YOU HAVE ALREADY SHARED RECENTLY:
             ${recentlySharedRefs().length ? recentlySharedRefs().join(', ') : 'None yet.'}

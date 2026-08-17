@@ -201,6 +201,7 @@ const LuloVoice = {
             // becomes sound, and a tag read aloud would be far worse than one
             // seen.
             .replace(/\[\[\s*answered\s*:?\s*[A-Za-z0-9]*\s*\]\]/gi, '')
+            .replace(/\[\[\s*learned\s*:[^\]]*\]\]/gi, '')
             .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
             .replace(/[💙🌱🙏⭐✦🤖💚]/g, '')
             .replace(/\*\*(.+?)\*\*/g, '$1')
