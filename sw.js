@@ -1,4 +1,4 @@
-const CACHE = 'emq-v43'
+const CACHE = 'emq-v45'
 
 // App shell — core files served cache-first
 const SHELL_ASSETS = [
@@ -8,6 +8,10 @@ const SHELL_ASSETS = [
     '/EmQ/lulo-scripture.js',
     '/EmQ/lulo-voice.js',
     '/EmQ/lulo-wave.js',
+    // The lookup code, not the 4.7MB of text it reads — bible.json is fetched
+    // on the first Bible question and cached then. See isBible below.
+    '/EmQ/lulo-bible.js',
+    '/EmQ/lulo-lexicon.js',
     '/EmQ/app.js',
     '/EmQ/site.webmanifest',
     // Her greeting. Precached so that turning her voice on works with no
@@ -122,6 +126,13 @@ self.addEventListener('fetch', e => {
 
     const isShell = SHELL_ASSETS.some(a => url.pathname === a || url.pathname === a + 'index.html')
     const isImage = url.pathname.includes('/images/')
+    // The Bible. 4.7MB, and the text of scripture does not change, so it is
+    // fetched once and then read from disk forever. Not precached on install:
+    // most sessions never ask a Bible question, and paying 4.7MB up front to
+    // make a first launch slower for everyone is the wrong trade. Cached on
+    // first use instead, which also makes it available offline afterwards —
+    // and a Bible you can only read with signal is a poor Bible.
+    const isBible = url.pathname.endsWith('/bible.json')
 
     if (isShell) {
         // Network-first for the shell.
@@ -142,6 +153,19 @@ self.addEventListener('fetch', e => {
                     })
                     .catch(() => cache.match(e.request))
             )
+        )
+    } else if (isBible) {
+        e.respondWith(
+            caches.match(e.request).then(cached => {
+                if (cached) return cached
+                return fetch(e.request).then(response => {
+                    if (response && response.status === 200) {
+                        const copy = response.clone()
+                        caches.open(CACHE).then(cache => cache.put(e.request, copy))
+                    }
+                    return response
+                })
+            })
         )
     } else if (isImage) {
         // Cache-first for images — they don't change often.

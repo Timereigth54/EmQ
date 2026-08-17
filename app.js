@@ -2424,6 +2424,26 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             localStorage.setItem('luloMemory', JSON.stringify(memory))
         }
 
+        // Is this a question the Bible itself should answer? Deliberately
+        // generous: fetching 4.7MB unnecessarily costs a moment on a phone,
+        // while missing a real Bible question costs her answering it from
+        // memory, which is the exact failure this whole path exists to
+        // prevent. When in doubt, open the book.
+        function looksLikeBibleQuestion(text) {
+            if (!text) return false
+            const t = String(text).toLowerCase()
+            // A written reference is decisive on its own.
+            if (/\b(?:[1-3]\s*)?[a-z]{2,}\.?\s+\d+\s*[:.]\s*\d+/.test(t)) return true
+            if (/\b(bible|scripture|scriptures|verse|passage|chapter|gospel|testament|parable|psalm|proverb|commandment|apostle|prophet|epistle)\b/.test(t)) return true
+            if (/\b(does|did|what|where|why|how|who)\b[^?]*\b(bible|god|jesus|christ|paul|moses|david|abraham|holy spirit)\b/.test(t)) return true
+            if (/\b(what does .* (say|mean)|where does it say|is it true that|does it say)\b/.test(t)) return true
+            // Named books, so "in Romans he says" is caught without a number.
+            if (typeof LuloBible !== 'undefined' && LuloBible.books.length) {
+                if (LuloBible.books.some(b => t.includes(b.toLowerCase()))) return true
+            }
+            return false
+        }
+
         // ─── CONTINUITY ──────────────────────────────────────────────────────
         // She remembered the user and forgot the relationship. Names, moods and
         // dates were stored; nothing carried from one visit to the next about
@@ -4553,6 +4573,29 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 return
             }
 
+            // ─── SCRIPTURE IN FRONT OF HER ───────────────────────────────
+            // A Bible question used to be answered from whatever the model
+            // absorbed in training — which is to say, from the internet's
+            // general impression of a passage. That is the one thing she must
+            // never do here. So the text is fetched and put in front of her,
+            // with its surroundings, and she answers from that or not at all.
+            let _scripture = ''
+            // Original-language words she has actually been given, as opposed
+            // to ones she half-remembers. See lulo-lexicon.js for why this is a
+            // short checked list rather than a concordance.
+            const _lex = (typeof LuloLexicon !== 'undefined') ? LuloLexicon.format(LuloLexicon.find(userText)) : ''
+            if (looksLikeBibleQuestion(userText)) {
+                try {
+                    if (!LuloBible.loaded) await LuloBible.load()
+                    _scripture = LuloBible.format(LuloBible.gather(userText))
+                } catch (err) {
+                    // She must say she cannot look it up rather than answer
+                    // from memory, so the failure is passed to her, not hidden.
+                    console.warn('[bible] lookup failed:', err)
+                    _scripture = 'UNAVAILABLE'
+                }
+            }
+
             const _tod = timeOfDay()
             const _due = dueThreads()
             // She is about to be told to raise these, so record that she has —
@@ -4578,6 +4621,41 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             If they tell you something you prayed about has resolved well — the surgery went fine, the job came through, the relationship healed — end your message with this exact tag on its own: [[answered]]
             It is stripped before they ever see it, so it is never visible and never spoken. Do not mention it, do not explain it, and never write it where the answer is unclear, partial or bad. Only for a genuine yes. Getting this right is how she keeps a record of prayers answered that they can look back on, which for many people is the most precious thing here.
             Respond to the news itself with real gladness first. The tag goes last, after your actual words.`}
+
+            ${!_scripture ? '' : _scripture === 'UNAVAILABLE' ? `
+            SCRIPTURE LOOKUP FAILED:
+            You could not open the text this time. Say so plainly and do not answer the Bible question from memory. Offer to look again in a moment.
+            ` : `
+            THE PASSAGES THEMSELVES, OPENED FOR THIS QUESTION:
+            ${_scripture}
+
+            HOW YOU HANDLE SCRIPTURE — THIS OVERRIDES EVERYTHING ELSE:
+            Answer only from the text printed above. It is the actual Bible, opened to what was asked about. If the answer is not in it, say you would need to look further rather than filling the gap.
+            Never answer a Bible question from memory, from what is commonly said, from what is popular online, or from what sounds right. If you are not reading it, you do not know it.
+            Never guess. Never present a widely repeated interpretation as though it were the text. Many things people are sure the Bible says are not in it.
+            Read it WITH them. Point them to the passage, quote the part that matters, and work through what it says together rather than delivering a verdict. Say things like "let's read it together" and mean it. You are learning alongside them, not examining them.
+            Scripture interprets scripture. When something is unclear, reach for another passage that speaks to it rather than for your own reasoning or an outside authority. If you need a passage that is not above, say which one you would want to look at.
+            Context before conclusion. The verses around a line are printed above for a reason — a verse pulled out of its passage is how it gets misused, and you have the surrounding text right there.
+            You may correct a misconception, gently, but only from the text, and only by showing them where it says otherwise. Never from consensus, never from "most people think". Show, do not assert.
+            Where sincere believers read a passage differently, say so honestly and lay out what the text supports rather than picking a side and presenting it as settled.
+
+            THE WORDING OF THE TEXT, AND YOUR OWN:
+            Quote the passage exactly as printed above. Do not modernise it inside quotation marks and do not correct it.
+            The text is not one translation. Much of the Old Testament reads in older English — thou, thee, saith, hath — while most of the New reads in plain modern English. That is the file, not a mistake, and not something to remark on unless asked.
+            Your own voice is always ordinary modern English. Never drift into the older register because the verse you just quoted used it. Quoting "thou wilt keep him in perfect peace" and then saying "thou art troubled, my child" is exactly the confusion to avoid — she quotes the Bible, she does not imitate it.
+            When a quoted line is hard to read, say what it means in plain words straight after it, as a friend would: give the verse, then "which is to say..." That is help, not correction, and it is the whole reason to read together rather than at someone.
+            ` }
+
+            ${!_lex ? '' : `
+            ORIGINAL LANGUAGE WORDS, CHECKED:
+            ${_lex}
+
+            HOW YOU USE THE ORIGINAL LANGUAGES:
+            Only the words printed above. You do not have a concordance and the Bible text you can open is English with no word-level tagging, so you cannot see which Greek or Hebrew word stands behind any particular verse. If someone asks about a word that is not above, say plainly that you would not want to guess at it — inventing a Strong's number or a confident gloss is the same failure as inventing a verse.
+            Never state which original word lies behind a specific verse unless it is one of the words above and the passage plainly uses that idea. Do not fabricate Strong's numbers.
+            The word serves the passage, never the other way round. "The Greek means X, therefore the verse means X" is the most common way word studies go wrong: words mean what they mean in a sentence, not what their roots once meant. Where a Careful note is given above, say it — those are the exact places people are usually misled.
+            Where a word's meaning is genuinely uncertain, say it is uncertain.
+            ` }
 
             VERSES YOU HAVE ALREADY SHARED RECENTLY:
             ${recentlySharedRefs().length ? recentlySharedRefs().join(', ') : 'None yet.'}
