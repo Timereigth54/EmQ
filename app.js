@@ -2423,6 +2423,44 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             document.getElementById('home-greeting')?.classList.add('greeting-dismissed')
         }
 
+        // ─── SAYING THAT SHE IS STILL LEARNING ───────────────────────────
+        // There is a real gap between sending something and hearing her: the
+        // reply has to be written, and then spoken by a GPU that may be
+        // starting from cold. Streaming took seconds off it but cannot remove
+        // it, and a silent screen during a wait reads as a broken app rather
+        // than as someone thinking.
+        //
+        // So the wait is named instead of hidden. Told the truth about — she
+        // is small and still learning — it stops being a fault and becomes
+        // something to be patient with.
+        const LULO_WAIT_NOTES = [
+            'Lulo is a baby learning to speak.\nGive her a moment to find her words. 💙',
+            'She is still learning how to talk.\nA few seconds, and she will be with you. 💙',
+            'Lulo is finding her words.\nShe is still little, so it takes her a moment. 💙',
+            'Still learning to speak, this one.\nStay with her a second. 💙',
+        ]
+        let _waitNoteTimer = null
+
+        function showLuloWaitNote() {
+            const greeting = document.getElementById('home-greeting')
+            const note = document.getElementById('lulo-wait-note')
+            if (!greeting || !note) return
+            note.innerText = LULO_WAIT_NOTES[Math.floor(Math.random() * LULO_WAIT_NOTES.length)]
+            greeting.classList.add('greeting-waiting')
+            // Nothing is guaranteed to arrive. A request can die quietly, and
+            // the one thing this must never do is become the permanent text on
+            // the home screen telling you to keep waiting for something that
+            // is not coming.
+            clearTimeout(_waitNoteTimer)
+            _waitNoteTimer = setTimeout(hideLuloWaitNote, 60000)
+        }
+
+        function hideLuloWaitNote() {
+            clearTimeout(_waitNoteTimer)
+            _waitNoteTimer = null
+            document.getElementById('home-greeting')?.classList.remove('greeting-waiting')
+        }
+
         function preloadLuloFaces() {
             const faces = [
                 'images/lulo.png', 'images/lulo_happy.png', 'images/lulo_sad.png',
@@ -4654,6 +4692,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         let typingTimeout = null
 
         function showTyping() {
+            showLuloWaitNote()
             const indicator = document.getElementById('typing-indicator')
             const thread = document.getElementById('chat-thread')
             // Text mode has its own copy — the main thread is hidden now
@@ -4674,6 +4713,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
         }
 
         function hideTyping() {
+            // Deliberately not taken down with the typing dots. Her text now
+            // arrives well before her voice does, so the wait this explains is
+            // still running at this point — it ends when she makes a sound,
+            // in onSpeechStart. When no sound is coming at all, this is the
+            // end of the wait and the note goes with it.
+            if (!LuloVoice.enabled) hideLuloWaitNote()
             const indicator = document.getElementById('typing-indicator')
             if (indicator) indicator.style.display = 'none'
             const textTyping = document.getElementById('text-mode-typing')
@@ -5257,6 +5302,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     // error in the thread or arm the retry button.
                     if (err?.name === 'AbortError') {
                         hideTyping()
+                        // Nothing further is coming, whether you cut her off or
+                        // the stream died. Either way the wait is over.
+                        hideLuloWaitNote()
                         // Keep the part she actually got out. Dropping it would
                         // leave her next turn with no memory of what she was
                         // saying when you cut in.
@@ -5280,6 +5328,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     }
                     console.error('[luloListen] API error:', err)
                     hideTyping()
+                    hideLuloWaitNote()
                     // Don't speak the error — it would trigger onDrainComplete → mic restart → loop.
                     // Show it silently in chat only, and let the retry button break the cycle.
                     _luloSuppressAutoMic = true
@@ -7378,6 +7427,8 @@ function initApp() {
     }
     LuloVoice.onSpeechStart = () => {
         LuloWave.speakStart()
+        // She is audible: the wait is genuinely over, whatever the screen says.
+        hideLuloWaitNote()
         // Open the mic the moment she starts, not when she stops. Waiting for
         // her to finish is what made every exchange a walkie-talkie: there was
         // no window in which being interrupted was even possible.
