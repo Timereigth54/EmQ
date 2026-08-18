@@ -130,7 +130,10 @@ const LuloVoice = {
         fetch(this.endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: 'Hello.', language: 'en', tone: 'neutral' })
+            // Same empty voice as a real line — see _prefetch. A warm-up that
+            // took a different path through the server would be warming
+            // something other than what she actually uses.
+            body: JSON.stringify({ text: 'Hello.', language: 'en', tone: 'neutral', voice: '' })
         }).catch(() => { this._warmedAt = 0 })   // let the next toggle retry
     },
 
@@ -318,7 +321,23 @@ const LuloVoice = {
         item.audio = fetch(this.endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: item.text, language: 'en', tone: item.tone })
+            // ─── voice: '' — DO NOT REMOVE WITHOUT READING THIS ──────────
+            // The voice server describes her in a parenthetical before her
+            // line, which VoxCPM reads as an instruction only while it is
+            // inventing a speaker. Since she has been pinned to a reference
+            // recording it is cloning instead, and the description stops
+            // being an instruction and gets spoken: every line arrived with
+            // "with a soothing and caring tone" read out in front of it.
+            //
+            // An explicit empty string means "no description at all", which
+            // the server honours over its own default. That is the whole fix,
+            // applied from this side so it needs no image rebuild.
+            //
+            // main.py makes the same choice server-side once rebuilt, and the
+            // two agree: an empty voice there produces this exact prompt. So
+            // this stays correct either way, and stops mattering the day the
+            // new image is deployed.
+            body: JSON.stringify({ text: item.text, language: 'en', tone: item.tone, voice: '' })
         }).then(res => {
             if (!res.ok) throw new Error('TTS ' + res.status)
             return res.blob()
