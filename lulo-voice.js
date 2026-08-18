@@ -242,6 +242,52 @@ const LuloVoice = {
         return out.length ? out : [text]
     },
 
+    // ─── WHAT SHE HAS JUST SAID ──────────────────────────────────────────
+    // Kept so the microphone can recognise her own voice coming back through
+    // the speaker. Barge-in means listening while she talks, and on a phone
+    // held at arm's length the recogniser hears her far better than it hears
+    // you — without this, her first sentence transcribes as user speech and
+    // she interrupts herself. See _looksLikeEcho in app.js.
+    _recentSpoken: [],
+
+    recentSpokenText() {
+        return this._recentSpoken.join(' ')
+    },
+
+    _rememberSpoken(text) {
+        this._recentSpoken.push(text)
+        // Two lines is enough: a phrase echoes back within a second or so of
+        // being said, not a paragraph later.
+        while (this._recentSpoken.length > 3) this._recentSpoken.shift()
+    },
+
+    // ─── HOLDING THE QUEUE OPEN WHILE SHE IS STILL BEING WRITTEN ─────────
+    // Streaming means sentences arrive one at a time, so the queue legitimately
+    // runs dry between them while the rest of the answer is still coming. That
+    // empty moment is indistinguishable from her having finished, and
+    // onDrainComplete reopens the microphone — which cuts her off mid-answer,
+    // because opening the mic stops her speaking.
+    //
+    // beginStream says "more is coming, do not call this the end". endStream
+    // releases it and delivers the completion that was withheld.
+    _holdingStream: false,
+
+    beginStream() {
+        this._holdingStream = true
+    },
+
+    endStream() {
+        if (!this._holdingStream) return
+        this._holdingStream = false
+        // If the last sentence finished playing while the stream was still
+        // open, the drain that would have announced it was suppressed. Nothing
+        // else will fire, so deliver it here.
+        if (!this._speaking && this._queue.length === 0) {
+            this._releaseWakeLock()
+            if (typeof this.onDrainComplete === 'function') this.onDrainComplete()
+        }
+    },
+
     speak(text, tone) {
         if (!this.enabled) return
         if (!text) return
@@ -249,9 +295,13 @@ const LuloVoice = {
         if (!clean) return
         // Cap the queue so a burst of messages can't leave her talking for
         // minutes. Counted in chunks now, so the ceiling is higher — a single
-        // long answer is legitimately several of them.
+        // long answer is legitimately several of them, and a streamed answer
+        // arrives as a dozen or more separate speak() calls. The cap drops from
+        // the front, so setting it too low does not shorten her: it silently
+        // deletes sentences she has not said yet, mid-answer. 24 chunks is more
+        // than max_tokens can produce, so a single reply can never trip it.
         for (const piece of this._chunk(clean)) {
-            if (this._queue.length >= 12) this._queue.shift()
+            if (this._queue.length >= 24) this._queue.shift()
             this._queue.push({ text: piece, tone: tone || 'neutral' })
         }
         // Start the first fetch now rather than when the queue is next drained.
@@ -323,6 +373,10 @@ const LuloVoice = {
         if (this._speaking) return
         const next = this._queue.shift()
         if (next === undefined) {
+            // Empty, but not necessarily finished: a streamed answer runs the
+            // queue dry between sentences. Keep the wake lock and stay quiet
+            // until endStream() says the last sentence has been written.
+            if (this._holdingStream) return
             // Queue empty — release wake lock and notify caller
             this._releaseWakeLock()
             if (fromRecursion && typeof this.onDrainComplete === 'function') {
@@ -330,6 +384,7 @@ const LuloVoice = {
             }
             return
         }
+        this._rememberSpoken(next.text)
         this._speaking = true
         // Keep screen on for the duration of speech
         if (!this._wakeLock) await this._acquireWakeLock()
@@ -463,6 +518,10 @@ const LuloVoice = {
         }
         this._queue.length = 0
         this._speaking = false
+        // Interrupting her abandons the answer being streamed too. Leaving the
+        // hold set would suppress every future onDrainComplete, and the
+        // microphone would never reopen again for the rest of the session.
+        this._holdingStream = false
         if (this.currentAudio) { this.currentAudio.pause(); this.currentAudio = null }
         if ('speechSynthesis' in window) speechSynthesis.cancel()
         this._releaseWakeLock()

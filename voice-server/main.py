@@ -205,18 +205,41 @@ def handler(job):
     # be wrong.
     voice = job_input.get("voice")
     if voice is None:
-        # With a reference clip the identity clause is not just redundant, it
-        # competes: the clip says who she is and the description asks for
-        # someone matching a sentence. Describing the delivery alone leaves the
-        # timbre to the audio and keeps the tone range, which is what we
-        # actually want from each.
-        voice = f"({tone_text})" if HAS_REFERENCE else f"({LULO_IDENTITY}, {tone_text})"
+        # ─── WHY THERE IS NO DESCRIPTION WHEN SHE IS CLONED ──────────────
+        # Voice Design and reference cloning cannot both be on. The
+        # parenthetical is only read as an instruction when the model is
+        # inventing a speaker; once prompt_wav_path pins the speaker to a
+        # recording, the model is cloning, and the parenthetical stops being
+        # an instruction and becomes ordinary text to read out.
+        #
+        # Which is exactly what it did. Every line came out with the wording
+        # of its own tone spoken in front of it — "with a soothing and caring
+        # tone", "low and close" — and the reference transcript with it.
+        # Confirmed against the deployed worker: "I hear you.", 11 characters
+        # and about a second of speech, generated 5.9 seconds of audio,
+        # failed the sanity check below three times and returned an error,
+        # which the app plays as the robot voice.
+        #
+        # Keeping half of Voice Design was the mistake. The clip already
+        # carries who she is; asking for a description on top asks the model
+        # to say the description.
+        #
+        # The cost is real and deliberate: tone came from these words, so
+        # until each tone has a reference clip of its own she has one
+        # delivery. One Lulo who always sounds like herself beats seven who
+        # announce their own stage directions.
+        voice = "" if HAS_REFERENCE else f"({LULO_IDENTITY}, {tone_text})"
     voice = voice.strip()
+
+    if HAS_REFERENCE and tone != "neutral" and not job_input.get("voice"):
+        # Say so rather than accepting it silently, or the next person to
+        # wonder why `sad` and `happy` sound identical has nothing to go on.
+        print(f"tone {tone!r} accepted but not applied: cloning takes delivery from the reference clip")
 
     seed = job_input.get("seed", LULO_SEED)
 
-    # What the model is asked to say; the description rides along as an
-    # instruction and is not spoken.
+    # What the model is asked to say. With a reference clip this is her line
+    # and nothing else — see above; anything prepended here gets spoken.
     prompt = f"{voice} {text}".strip() if voice else text
 
     output_sr = SAMPLE_RATE

@@ -74,9 +74,26 @@ export default {
                 })
                 const sync = await submitRes.json()
 
+                // RunPod hands the audio back as base64 in a JSON body, so it
+                // has to be decoded here before it can be played.
+                //
+                // This was Uint8Array.from(atob(s), c => c.charCodeAt(0)),
+                // which invokes a callback once per byte — around 750,000
+                // calls for six seconds of 48kHz audio. A Worker gets a small
+                // CPU allowance per request and exceeding it kills the worker
+                // mid-response, which reaches the caller as a connection reset
+                // rather than as an error. That matches what we measured:
+                // requests that FAILED came back cleanly and quickly, while
+                // every request that actually produced audio died on the way
+                // home, the more audio the more reliably.
+                //
+                // A plain loop over the string does the identical work with no
+                // per-byte call, which is far cheaper for the same result.
                 const asAudio = out => {
                     if (!out?.audio) return null
-                    const bytes = Uint8Array.from(atob(out.audio), c => c.charCodeAt(0))
+                    const bin = atob(out.audio)
+                    const bytes = new Uint8Array(bin.length)
+                    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
                     return new Response(bytes, {
                         headers: { 'Content-Type': 'audio/wav', 'Access-Control-Allow-Origin': '*' }
                     })
@@ -140,6 +157,40 @@ export default {
                 },
                 body: JSON.stringify(body),
             })
+
+            // ── Streaming ────────────────────────────────────────────────
+            // With `stream: true` the reply arrives as server-sent events and
+            // is handed straight back, unread. Buffering it here would undo
+            // the entire point: the app speaks each sentence as it lands, so
+            // the first word has to leave Anthropic and reach the phone while
+            // the rest is still being written. Calling .json() on this would
+            // hold every token until the last one, which is the wait we are
+            // removing.
+            //
+            // Only on the success path. An error still comes back as one JSON
+            // body no matter what was asked for, so it falls through below and
+            // reaches the app in the shape its error handling expects.
+            if (body.stream && claudeRes.ok && claudeRes.body) {
+                return new Response(claudeRes.body, {
+                    status: claudeRes.status,
+                    headers: {
+                        // The content type is what keeps this unbuffered end to
+                        // end: text/event-stream is exempt from the buffering
+                        // and compression an ordinary body gets, which would
+                        // hold the early sentences back and deliver the lot in
+                        // one piece at the end — exactly the wait being removed.
+                        //
+                        // Deliberately not setting Content-Encoding here. The
+                        // runtime handles encoding itself and a header claiming
+                        // something the bytes do not match breaks the body.
+                        'Content-Type': 'text/event-stream; charset=utf-8',
+                        'Cache-Control': 'no-cache',
+                        'X-Accel-Buffering': 'no',
+                        'Access-Control-Allow-Origin': '*',
+                    },
+                })
+            }
+
             const data = await claudeRes.json()
             return new Response(JSON.stringify(data), {
                 status: claudeRes.status,

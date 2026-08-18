@@ -310,6 +310,9 @@
             padding: 6px 0 0 0;
             transition: opacity 0.5s ease;
             overflow: hidden;
+            /* Anchors the wait note, which sits on top of the greeting rather
+               than under it so the two can cross-fade without moving Lulo. */
+            position: relative;
         }
         /* Fades once the conversation starts, but keeps its footprint.
            Collapsing the height instead dragged Lulo and the whole rail up 73px
@@ -355,6 +358,52 @@
             font-family: 'Inter', sans-serif;
             font-weight: 300;
             white-space: pre-line;
+        }
+
+        /* ── "SHE IS STILL LEARNING TO SPEAK" ──────────────────────────────
+           Her first word takes real seconds to arrive: the reply has to be
+           written, then spoken by a GPU that may be starting from cold. An
+           empty screen for that long reads as broken rather than as thinking,
+           so the greeting steps aside and this explains the wait.
+
+           Laid over the greeting rather than replacing it in flow, so the two
+           cross-fade without Lulo or the mood deck moving a pixel. */
+        #welcome-message,
+        #welcome-subtext { transition: opacity 0.4s ease; }
+
+        #lulo-wait-note {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 6px 14px 0;
+            font-size: 0.8rem;
+            font-weight: 300;
+            line-height: 1.5;
+            letter-spacing: 0.1px;
+            color: rgba(255,255,255,0.58);
+            font-family: 'Inter', sans-serif;
+            white-space: pre-line;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.45s ease;
+        }
+        #home-greeting.greeting-waiting #lulo-wait-note { opacity: 1; }
+        #home-greeting.greeting-waiting #welcome-message,
+        #home-greeting.greeting-waiting #welcome-subtext { opacity: 0; }
+
+        /* The greeting is normally already dismissed by the time she is
+           thinking, and dismissed means the whole block is transparent. Two
+           classes out-specifies the one on .greeting-dismissed, which is what
+           lets the note show through something that has been faded out. */
+        #home-greeting.greeting-dismissed.greeting-waiting { opacity: 1; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #lulo-wait-note,
+            #welcome-message,
+            #welcome-subtext { transition: none; }
         }
 
         /* LAST CONVERSATION PANEL — reached from the menu */

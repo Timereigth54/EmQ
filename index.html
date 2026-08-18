@@ -304,6 +304,11 @@
     <div id="home-greeting">
         <h1 id="welcome-message"></h1>
         <p id="welcome-subtext"></p>
+        <!-- Shown while she is working out what to say, in place of the
+             greeting. Her voice takes real seconds to arrive and silence with
+             nothing on screen reads as broken, so this says what is happening.
+             aria-live so it is announced rather than only seen. -->
+        <p id="lulo-wait-note" aria-live="polite"></p>
     </div>
 
     <!-- LULO FACE -->
