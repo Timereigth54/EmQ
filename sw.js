@@ -1,6 +1,13 @@
 const CACHE = 'emq-v46'
 
-// App shell — core files served cache-first
+// App shell — served NETWORK-first, see the fetch handler below. The cache is
+// the offline fallback, not the source, so a deploy is live on the next launch
+// and bumping CACHE is not needed to make code changes appear. Bump it only to
+// evict the offline copy.
+//
+// This said "cache-first" for a while, which is the opposite of what the code
+// does, and sent at least one debugging session hunting a stale service worker
+// when the real answer was that the change had not been deployed.
 const SHELL_ASSETS = [
     '/EmQ/',
     '/EmQ/index.html',
