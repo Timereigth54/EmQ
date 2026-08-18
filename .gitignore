@@ -1,2 +1,8 @@
 config.js
 .claude/
+
+# Voice auditions and test clips — build artifacts from tuning sessions.
+# lulo_reference.wav is NOT here: the image bakes her voice from it.
+voice-server/test_*.wav
+voice-server/tone_*.wav
+test2.json

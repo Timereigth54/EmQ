@@ -140,6 +140,40 @@ export default {
                 },
                 body: JSON.stringify(body),
             })
+
+            // ── Streaming ────────────────────────────────────────────────
+            // With `stream: true` the reply arrives as server-sent events and
+            // is handed straight back, unread. Buffering it here would undo
+            // the entire point: the app speaks each sentence as it lands, so
+            // the first word has to leave Anthropic and reach the phone while
+            // the rest is still being written. Calling .json() on this would
+            // hold every token until the last one, which is the wait we are
+            // removing.
+            //
+            // Only on the success path. An error still comes back as one JSON
+            // body no matter what was asked for, so it falls through below and
+            // reaches the app in the shape its error handling expects.
+            if (body.stream && claudeRes.ok && claudeRes.body) {
+                return new Response(claudeRes.body, {
+                    status: claudeRes.status,
+                    headers: {
+                        // The content type is what keeps this unbuffered end to
+                        // end: text/event-stream is exempt from the buffering
+                        // and compression an ordinary body gets, which would
+                        // hold the early sentences back and deliver the lot in
+                        // one piece at the end — exactly the wait being removed.
+                        //
+                        // Deliberately not setting Content-Encoding here. The
+                        // runtime handles encoding itself and a header claiming
+                        // something the bytes do not match breaks the body.
+                        'Content-Type': 'text/event-stream; charset=utf-8',
+                        'Cache-Control': 'no-cache',
+                        'X-Accel-Buffering': 'no',
+                        'Access-Control-Allow-Origin': '*',
+                    },
+                })
+            }
+
             const data = await claudeRes.json()
             return new Response(JSON.stringify(data), {
                 status: claudeRes.status,

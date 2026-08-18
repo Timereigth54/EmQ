@@ -38,8 +38,66 @@ let _micSilenceTimer = null     // fires when the pause is long enough to be an 
 let _micFinalising = false      // true once we have decided the turn is over
 let _micUserStopped = false     // true when they tapped the mic to stop
 let _micTurnStarted = 0
-const MIC_SILENCE_MS = 2500     // a pause this long reads as "finished"
+// ─── HOW LONG A PAUSE HAS TO BE ─────────────────────────────────────────────
+// This was 2500ms, and it was 2500ms for a good reason: results only arrived
+// when the recogniser finalised, which it does at every natural pause, so a
+// short countdown ended the sentence every time someone drew breath. Two and a
+// half seconds of dead air was the price of not cutting people off.
+//
+// Interim results remove the need to pay it. They arrive continuously while
+// someone is actually speaking, several times a second, and each one restarts
+// the countdown — so the timer now measures real silence rather than the gap
+// between finalised phrases. That makes a much shorter wait safe, and it comes
+// off the front of every single turn.
+//
+// This is the one number here to tune by feel. Longer if it clips the end of
+// sentences, shorter if the wait still drags.
+const MIC_SILENCE_MS = 1200     // a pause this long reads as "finished"
 const MIC_MAX_TURN_MS = 90000   // hard ceiling on one listening turn
+
+// ─── TALKING OVER HER ───────────────────────────────────────────────────────
+// The microphone used to open only once she had completely finished, which
+// made every exchange a walkie-talkie: you could not stop her, only wait her
+// out. Being able to cut in is most of what makes a conversation feel live.
+//
+// The cost is that the mic is now open while a speaker is playing her voice
+// into it. Phone echo cancellation is built for a call, not for this, and what
+// it lets through gets transcribed as though you had said it — so she hears
+// herself, stops herself, and answers herself. Hence _looksLikeEcho below.
+let _micBargeMode = false       // mic is open only to catch an interruption
+
+// Set localStorage.luloBargeIn = 'off' to go back to strict turn-taking
+// without a redeploy. Worth knowing if a particular phone echoes badly.
+function _bargeInEnabled() {
+    return localStorage.getItem('luloBargeIn') !== 'off'
+}
+
+// Short words that mean "stop" even alone. Barge-in normally needs two words,
+// because a single stray one is far more likely to be echo or a cough than an
+// interruption — but these are exactly how a person actually cuts in, and
+// making someone say two words to stop her is the thing we are fixing.
+const MIC_BARGE_WORDS = new Set(['stop', 'wait', 'lulo', 'no', 'sorry', 'hey', 'hold'])
+
+const _words = s => s.toLowerCase().replace(/[^a-z0-9\s']/g, ' ').split(/\s+/).filter(Boolean)
+
+// Is this her own voice coming back through the speaker?
+//
+// Content, not audio: whatever the microphone picked up is compared against
+// what she has just been saying. Her words echo back as her words, so a phrase
+// that is mostly drawn from the last few lines she spoke is almost certainly
+// not you. Anything genuinely new survives, which is the only case that
+// matters — you interrupt to say something she has not said.
+function _looksLikeEcho(heard) {
+    const said = new Set(_words(LuloVoice.recentSpokenText()))
+    if (!said.size) return false
+    const got = _words(heard)
+    if (!got.length) return true
+    let hits = 0
+    for (const w of got) if (said.has(w)) hits++
+    // Some overlap is normal and innocent — you might answer a question using
+    // a word from it. Most of the phrase matching is what gives echo away.
+    return hits / got.length >= 0.6
+}
 
 // Restart the "have they stopped?" countdown. Called on every result and every
 // pause, so it only expires after real silence.
@@ -4623,6 +4681,101 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             clearTimeout(typingTimeout)
         }
 
+        // ─── SPEAKING HER WHILE SHE IS STILL BEING WRITTEN ──────────────────
+        // The reply used to be awaited whole before a single word was spoken,
+        // so the first sound waited on the last token. Streaming turns that
+        // around: sentences are handed to the voice as they finish, and the
+        // wait becomes the time to write one sentence instead of all of them.
+        //
+        // In flight, so a new turn can abandon an answer she is mid-way
+        // through. Without this, interrupting her stops the audio but leaves
+        // the stream running, and the rest of the abandoned reply queues up
+        // behind whatever she says next.
+        let _luloReplyAbort = null
+
+        function _abortLuloReply() {
+            if (_luloReplyAbort) { try { _luloReplyAbort.abort() } catch {} }
+            _luloReplyAbort = null
+        }
+
+        // How much of the buffer can safely be spoken now.
+        //
+        // Sentences are kept whole because the voice model reads punctuation
+        // for breath and phrasing, so a fragment comes back sounding like a
+        // fragment. Nothing is released past an unclosed [[ either: her
+        // answered-prayer tags are stripped in one place, and a tag split
+        // across two deltas would slip through both that and the voice's own
+        // stripper, and get read out loud.
+        function _speakableSlice(buf, flush) {
+            let limit = buf.length
+            const open = buf.lastIndexOf('[[')
+            if (open !== -1 && buf.indexOf(']]', open) === -1) limit = open
+            const head = buf.slice(0, limit)
+            // A tag that arrived complete has to come out of what is spoken.
+            // Holding back the unclosed ones above only defers the problem:
+            // once the closing ]] lands the tag is no longer partial, and the
+            // final flush would hand the whole thing to the voice.
+            //
+            // Offsets are measured on the raw text and the tag removed only
+            // from what is returned, so the remainder stays aligned with the
+            // buffer the caller is still filling.
+            const strip = s => s.replace(/\[\[[^\]]*\]\]/g, ' ')
+            if (flush) return [strip(head), buf.slice(limit)]
+            const m = head.match(/^[\s\S]*[.!?…]["')\]]*(?=\s|$)/)
+            if (!m) return ['', buf]
+            return [strip(m[0]), buf.slice(m[0].length)]
+        }
+
+        // Reads the server-sent event stream, speaking as it goes. Returns
+        // nothing — the text accumulates into `acc.text` so that an answer cut
+        // short by an interruption is still readable by the caller.
+        async function _streamLuloReply(response, { tone, speak, onFirst, acc }) {
+            const reader = response.body.getReader()
+            const decoder = new TextDecoder()
+            let sse = ''        // bytes not yet forming a whole event
+            let pending = ''    // text not yet handed to the voice
+            let first = true
+
+            for (;;) {
+                const { value, done } = await reader.read()
+                if (done) break
+                sse += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n')
+
+                let split
+                while ((split = sse.indexOf('\n\n')) !== -1) {
+                    const frame = sse.slice(0, split)
+                    sse = sse.slice(split + 2)
+
+                    for (const line of frame.split('\n')) {
+                        if (!line.startsWith('data:')) continue
+                        let ev
+                        try { ev = JSON.parse(line.slice(5).trim()) } catch { continue }
+
+                        if (ev.type === 'error') {
+                            throw new Error(ev.error?.message || 'stream error')
+                        }
+                        if (ev.type !== 'content_block_delta') continue
+                        if (ev.delta?.type !== 'text_delta') continue
+
+                        if (first) { first = false; onFirst?.() }
+                        acc.text += ev.delta.text
+                        pending += ev.delta.text
+
+                        if (!speak) continue
+                        const [say, rest] = _speakableSlice(pending, false)
+                        pending = rest
+                        if (say.trim()) LuloVoice.speak(say, tone)
+                    }
+                }
+            }
+
+            // Her last sentence may not carry closing punctuation.
+            if (speak) {
+                const [tail] = _speakableSlice(pending, true)
+                if (tail.trim()) LuloVoice.speak(tail, tone)
+            }
+        }
+
         // LULO BRAIN — Claude conversation layer
         async function luloThink(userText) {
             window._lastFreeChatTimestamp = Date.now()
@@ -4983,10 +5136,24 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             }
 
             _luloListenInflight = true
+            // Whatever she was still saying belongs to the previous turn.
+            _abortLuloReply()
+            const ctl = new AbortController()
+            _luloReplyAbort = ctl
+
+            // Accumulates as the stream arrives, so an answer she is cut off
+            // part-way through is still recoverable below.
+            const acc = { text: '' }
+            // Someone who has opened the keyboard has chosen to read. Decided
+            // once, up front, so the whole reply is handled one way — half of
+            // it spoken and half of it not would be worse than either.
+            const speakLive = !isTextModeOpen()
+
             try {
                 const response = await fetch('https://em1-prayer.kayuso2011.workers.dev', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    signal: ctl.signal,
                     body: JSON.stringify({
                         model: LULO_MODEL,
                         // Room for a real reply. She is told to write short,
@@ -4994,38 +5161,77 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                         // a budget that truncates her mid-sentence.
                         max_tokens: 1024,
                         system: systemPrompt,
-                        messages: conversationHistory
+                        messages: conversationHistory,
+                        // The whole point: her first sentence leaves for the
+                        // voice server while the rest is still being written.
+                        stream: true
                     })
                 })
 
-                const data = await response.json()
-
-                if (data.content && data.content[0]) {
-                    hideTyping()
-                    // Close anything she flagged as answered, and take the tag
-                    // out before it can reach a bubble, the voice, a toast or
-                    // the conversation history. Done once, here, at the single
-                    // point her words enter the app.
-                    const responseText = harvestAnswerTags(data.content[0].text)
-
-                    // Passive gender detection from conversation
-                    const lower = responseText.toLowerCase()
-                    if (!localStorage.getItem('luloUserGender')) {
-                        if (lower.includes('he ') || lower.includes('his ') || lower.includes('him ')) {
-                            localStorage.setItem('luloUserGender', 'male')
-                        } else if (lower.includes('she ') || lower.includes('her ')) {
-                            localStorage.setItem('luloUserGender', 'female')
-                        }
-                    }
-
-                    addToChatHistory('lulo', responseText)
-                    conversationHistory.push({ role: 'assistant', content: responseText })
-                    localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
-                } else {
-                    throw new Error(`Unexpected response shape: ${JSON.stringify(data).slice(0, 120)}`)
+                if (!response.ok || !response.body) {
+                    const detail = await response.text().catch(() => '')
+                    throw new Error(`HTTP ${response.status}: ${detail.slice(0, 160)}`)
                 }
 
+                if (speakLive) LuloVoice.beginStream()
+                try {
+                    await _streamLuloReply(response, {
+                        tone: LuloVoice.toneForMood(currentMood),
+                        speak: speakLive,
+                        // She starts talking the moment the first sentence
+                        // lands, so the typing dots have to go then. When she
+                        // is not speaking they stay until the bubble replaces
+                        // them, or there would be a gap showing nothing at all.
+                        onFirst: speakLive ? hideTyping : null,
+                        acc
+                    })
+                } finally {
+                    // Releases the hold that stops a gap between sentences
+                    // being mistaken for her having finished.
+                    if (speakLive) LuloVoice.endStream()
+                }
+
+                hideTyping()
+                if (!acc.text.trim()) throw new Error('Empty reply from stream')
+
+                // Close anything she flagged as answered, and take the tag
+                // out before it can reach a bubble, the voice, a toast or
+                // the conversation history. Done once, here, at the single
+                // point her words enter the app.
+                const responseText = harvestAnswerTags(acc.text)
+
+                // Passive gender detection from conversation
+                const lower = responseText.toLowerCase()
+                if (!localStorage.getItem('luloUserGender')) {
+                    if (lower.includes('he ') || lower.includes('his ') || lower.includes('him ')) {
+                        localStorage.setItem('luloUserGender', 'male')
+                    } else if (lower.includes('she ') || lower.includes('her ')) {
+                        localStorage.setItem('luloUserGender', 'female')
+                    }
+                }
+
+                // Already spoken, sentence by sentence, as it arrived.
+                addToChatHistory('lulo', responseText, { silent: speakLive })
+                conversationHistory.push({ role: 'assistant', content: responseText })
+                localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+
                 } catch (err) {
+                    // Interrupted on purpose — you talked over her, or sent
+                    // something new. Not a failure, and it must not put an
+                    // error in the thread or arm the retry button.
+                    if (err?.name === 'AbortError') {
+                        hideTyping()
+                        // Keep the part she actually got out. Dropping it would
+                        // leave her next turn with no memory of what she was
+                        // saying when you cut in.
+                        const partial = harvestAnswerTags(acc.text).trim()
+                        if (partial) {
+                            addToChatHistory('lulo', partial, { silent: true })
+                            conversationHistory.push({ role: 'assistant', content: partial })
+                            localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+                        }
+                        return
+                    }
                     console.error('[luloListen] API error:', err)
                     hideTyping()
                     // Don't speak the error — it would trigger onDrainComplete → mic restart → loop.
@@ -5035,6 +5241,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     addRetryButton()
                 } finally {
                     _luloListenInflight = false
+                    if (_luloReplyAbort === ctl) _luloReplyAbort = null
                 }
 }
         
@@ -6573,8 +6780,24 @@ async function primeMicPermission() {
     }
 }
 
-async function toggleVoiceInput() {
+// `barge` opens the mic while she is still speaking, to catch an interruption
+// rather than to take a turn. Everything it hears in that state is treated as
+// suspect until it proves it is not her own voice echoing back.
+async function toggleVoiceInput({ barge = false } = {}) {
     if (isVoiceInputActive) {
+        // The mic is open while she talks now, so a tap during her answer
+        // lands here rather than opening anything. It means "stop, I want to
+        // say something" — the same thing tapping always meant while she was
+        // speaking. Closing the mic instead would leave her talking over a
+        // user who has just asked her not to.
+        if (_micBargeMode) {
+            _micBargeMode = false
+            LuloVoice.stop()
+            _abortLuloReply()
+            LuloWave.micSpeaking(true)
+            _micTurnStarted = Date.now()
+            return
+        }
         // Tapping the mic to stop means "I'm done", not "throw that away" —
         // send what she has already heard rather than discarding it.
         _micUserStopped = true
@@ -6593,7 +6816,12 @@ async function toggleVoiceInput() {
 
     const r = new SR()
     r.lang = 'en-US'
-    r.interimResults = false
+    // Interim results are what let the silence window come down from 2500ms to
+    // 1200ms. They arrive while a word is still being spoken rather than only
+    // when the recogniser finalises a phrase, so the countdown measures actual
+    // silence instead of the gap between finalised phrases. They are also the
+    // only way to catch an interruption early enough for it to feel like one.
+    r.interimResults = true
     r.maxAlternatives = 1
     // continuous = true keeps the session alive across natural speech pauses
     // so a long sentence isn't cut off mid-way by the browser's ~20s hard limit.
@@ -6603,18 +6831,27 @@ async function toggleVoiceInput() {
     _micSessionText = ''
     _micFinalising = false
     _micUserStopped = false
+    _micBargeMode = barge
     _micTurnStarted = Date.now()
 
     r.onstart = () => {
         isVoiceInputActive = true
         document.getElementById('mic-btn')?.classList.add('listening')
         LuloWave.micStart()
-        LuloVoice.stop()
+        // Opening the mic normally means the user is taking a turn, so she
+        // stops talking. In barge mode it means the opposite: the mic is open
+        // *because* she is talking, and stopping her here would silence her
+        // the instant she began.
+        if (!_micBargeMode) LuloVoice.stop()
         // "No-speech" guard: if the mic opens and nothing is ever said, close
         // after 10s. Only on a genuinely silent turn — once she has heard
         // anything, silence is handled by the grace period instead, or a pause
         // in a long sentence would trip this and close the mic.
-        if (!_micHeard) {
+        //
+        // Not while she is speaking: an answer can run well past 10s and the
+        // listener is not silent, they are listening. The timer is armed when
+        // she finishes instead, in onDrainComplete.
+        if (!_micHeard && !_micBargeMode) {
             clearTimeout(_micTimeout)
             _micTimeout = setTimeout(() => {
                 if (!_micHeard && !_micSessionText) stopVoiceInput()
@@ -6623,6 +6860,10 @@ async function toggleVoiceInput() {
     }
 
     r.onspeechstart = () => {
+        // In barge mode "a voice" is usually hers, arriving back through the
+        // speaker. Nothing may react to it until the transcript has been read
+        // and cleared as genuinely someone else — see onresult.
+        if (_micBargeMode) return
         // User started talking — cancel the no-speech timer.
         // Let the browser (or onspeechend) decide when they're done.
         clearTimeout(_micTimeout)
@@ -6633,6 +6874,9 @@ async function toggleVoiceInput() {
     }
 
     r.onspeechend = () => {
+        // Arming the countdown here while she is talking would end a turn the
+        // user never started, and send an empty transcript on her own voice.
+        if (_micBargeMode) return
         // A pause is not the end of a sentence. Start the silence countdown,
         // but nothing is sent until it actually expires.
         LuloWave.micSpeaking(false)
@@ -6649,14 +6893,50 @@ async function toggleVoiceInput() {
         // silence countdown. She keeps listening until you have genuinely
         // stopped, which is what a companion who listens has to do.
         let sessionText = ''
+        let interim = ''
         for (let i = 0; i < e.results.length; i++) {
             if (e.results[i].isFinal) sessionText += e.results[i][0].transcript + ' '
+            else interim += e.results[i][0].transcript + ' '
         }
+        sessionText = sessionText.trim()
+        interim = interim.trim()
+
+        // ── While she is talking ────────────────────────────────────────
+        // The mic is open only to catch you cutting in, and most of what it
+        // hears will be her. Nothing counts until it has failed to look like
+        // her own voice coming back.
+        if (_micBargeMode) {
+            const heard = (sessionText + ' ' + interim).trim()
+            if (!heard || _looksLikeEcho(heard)) return
+            const w = _words(heard)
+            if (!w.length) return
+            // One word is usually noise. The exceptions are the words people
+            // actually interrupt with, and demanding two of them would be the
+            // very thing this feature exists to remove.
+            if (w.length < 2 && !MIC_BARGE_WORDS.has(w[0])) return
+
+            // A real interruption. Stop her mid-sentence, abandon the rest of
+            // the answer she was still being sent, and let this become an
+            // ordinary listening turn carrying what has been heard so far.
+            _micBargeMode = false
+            LuloVoice.stop()
+            _abortLuloReply()
+            LuloWave.micSpeaking(true)
+            _micTurnStarted = Date.now()
+            _micSessionText = sessionText
+            _micArmSilence()
+            return
+        }
+
         // `e.results` only covers the current recogniser session. Safari ends
         // sessions on its own during a long utterance, so the text carried
         // across restarts lives in _micHeard and this is only the tail.
-        _micSessionText = sessionText.trim()
-        if (_micSessionText) _micArmSilence()
+        _micSessionText = sessionText
+        // Interim text restarts the countdown as well as final text. That is
+        // what makes a 1200ms window safe: it is reset several times a second
+        // while someone is still speaking, so it can only expire on real
+        // silence rather than on the pause before a phrase is finalised.
+        if (sessionText || interim) _micArmSilence()
     }
 
     r.onerror = e => {
@@ -6685,7 +6965,12 @@ async function toggleVoiceInput() {
         // listening turn has run its maximum, open a fresh session and carry
         // on — the accumulated text survives in _micHeard.
         if (_micFinalising || _micUserStopped) { stopVoiceInput(); return }
-        if (Date.now() - _micTurnStarted > MIC_MAX_TURN_MS) { _micFinalise(); return }
+        // The turn ceiling is a limit on how long one person may talk for. In
+        // barge mode nobody is talking yet, so time spent listening to her
+        // must not count against it, or a long answer would close the mic and
+        // take the chance to interrupt away.
+        if (_micBargeMode) _micTurnStarted = Date.now()
+        else if (Date.now() - _micTurnStarted > MIC_MAX_TURN_MS) { _micFinalise(); return }
         try {
             r.start()
         } catch {
@@ -6708,6 +6993,7 @@ function stopVoiceInput() {
     clearTimeout(_micSilenceTimer)
     _micSilenceTimer = null
     isVoiceInputActive = false
+    _micBargeMode = false
     document.getElementById('mic-btn')?.classList.remove('listening')
     LuloWave.micStop()
     if (currentRecognition) {
@@ -7044,16 +7330,41 @@ function initApp() {
         new MutationObserver(fitCardText)
             .observe(verseEl, { childList: true, characterData: true, subtree: true })
     }
-    LuloVoice.onSpeechStart = () => LuloWave.speakStart()
+    LuloVoice.onSpeechStart = () => {
+        LuloWave.speakStart()
+        // Open the mic the moment she starts, not when she stops. Waiting for
+        // her to finish is what made every exchange a walkie-talkie: there was
+        // no window in which being interrupted was even possible.
+        if (!_bargeInEnabled()) return
+        if (!LuloVoice.enabled || isVoiceInputActive) return
+        if (isTextModeOpen()) return
+        toggleVoiceInput({ barge: true })
+    }
     LuloVoice.onSpeechEnd   = () => LuloWave.speakStop()
 
     // Auto-restart mic after Lulo finishes speaking — enables continuous conversation.
     // Suppressed after API errors so a failed call doesn't loop into itself.
     LuloVoice.onDrainComplete = () => {
         if (_luloSuppressAutoMic) { _luloSuppressAutoMic = false; return }
-        if (LuloVoice.enabled && !isVoiceInputActive) {
-            toggleVoiceInput()
+        if (!LuloVoice.enabled) return
+
+        // Usually already open, listening for an interruption that never came.
+        // She has finished, so it stops being suspicious of what it hears and
+        // becomes an ordinary listening turn — reopening it instead would drop
+        // the first word of a reply that has already started.
+        if (isVoiceInputActive) {
+            if (!_micBargeMode) return
+            _micBargeMode = false
+            _micTurnStarted = Date.now()
+            // The silent-turn guard was held back while she was talking, since
+            // a listener is not a silent user. It applies from here.
+            clearTimeout(_micTimeout)
+            _micTimeout = setTimeout(() => {
+                if (!_micHeard && !_micSessionText) stopVoiceInput()
+            }, 10000)
+            return
         }
+        toggleVoiceInput()
     }
 
     updateStreak()
