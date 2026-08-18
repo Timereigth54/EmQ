@@ -4726,16 +4726,44 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             return [strip(m[0]), buf.slice(m[0].length)]
         }
 
+        // ─── WHEN THE STREAM JUST STOPS ──────────────────────────────────────
+        // An event stream is a connection held open on purpose, so a stalled
+        // one does not fail — it waits. One measured against the deployed
+        // Worker sat open for seventy-nine seconds before the socket gave up,
+        // and with nothing watching it that is seventy-nine seconds of silence
+        // with no message, no error and no way to retry.
+        //
+        // Timed from the last thing she actually said rather than from the
+        // start, so a long answer is never cut off for taking a while. Fifteen
+        // seconds is far longer than the gap between deltas ever legitimately
+        // is; a whole reply arrives in about five.
+        const STREAM_IDLE_MS = 15000
+
         // Reads the server-sent event stream, speaking as it goes. Returns
         // nothing — the text accumulates into `acc.text` so that an answer cut
         // short by an interruption is still readable by the caller.
-        async function _streamLuloReply(response, { tone, speak, onFirst, acc }) {
+        async function _streamLuloReply(response, { tone, speak, onFirst, acc, ctl, state }) {
             const reader = response.body.getReader()
             const decoder = new TextDecoder()
             let sse = ''        // bytes not yet forming a whole event
             let pending = ''    // text not yet handed to the voice
             let first = true
 
+            // Deliberately not reset on every read. The keep-alive pings that
+            // ride along an idle stream would hold the watchdog off forever,
+            // which is exactly the case it exists to catch — a connection that
+            // is alive but has stopped producing her.
+            let idle = null
+            const bump = () => {
+                clearTimeout(idle)
+                idle = setTimeout(() => {
+                    state.stalled = true
+                    try { ctl.abort() } catch {}
+                }, STREAM_IDLE_MS)
+            }
+
+            try {
+            bump()
             for (;;) {
                 const { value, done } = await reader.read()
                 if (done) break
@@ -4758,6 +4786,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                         if (ev.delta?.type !== 'text_delta') continue
 
                         if (first) { first = false; onFirst?.() }
+                        bump()
                         acc.text += ev.delta.text
                         pending += ev.delta.text
 
@@ -4767,6 +4796,9 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                         if (say.trim()) LuloVoice.speak(say, tone)
                     }
                 }
+            }
+            } finally {
+                clearTimeout(idle)
             }
 
             // Her last sentence may not carry closing punctuation.
@@ -5144,6 +5176,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Accumulates as the stream arrives, so an answer she is cut off
             // part-way through is still recoverable below.
             const acc = { text: '' }
+            // Tells an abort we asked for (you cut in) from one the watchdog
+            // forced because the stream stopped producing. They arrive as the
+            // same AbortError and mean opposite things.
+            const state = { stalled: false }
             // Someone who has opened the keyboard has chosen to read. Decided
             // once, up front, so the whole reply is handled one way — half of
             // it spoken and half of it not would be worse than either.
@@ -5183,7 +5219,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                         // is not speaking they stay until the bubble replaces
                         // them, or there would be a gap showing nothing at all.
                         onFirst: speakLive ? hideTyping : null,
-                        acc
+                        acc, ctl, state
                     })
                 } finally {
                     // Releases the hold that stops a gap between sentences
@@ -5229,6 +5265,16 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                             addToChatHistory('lulo', partial, { silent: true })
                             conversationHistory.push({ role: 'assistant', content: partial })
                             localStorage.setItem('luloConversationHistory', JSON.stringify(conversationHistory.slice(-20)))
+                        }
+                        // A stall that produced nothing is a failure and has to
+                        // look like one. Silently returning would leave the
+                        // message you sent sitting there unanswered, with no
+                        // reason given and nothing to press.
+                        if (state.stalled && !partial) {
+                            console.warn('[luloListen] stream stalled, no output')
+                            _luloSuppressAutoMic = true
+                            addToChatHistory('lulo', `Hmm... it seems I can't reach my brain right now...`, { silent: true })
+                            addRetryButton()
                         }
                         return
                     }
