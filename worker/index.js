@@ -74,9 +74,26 @@ export default {
                 })
                 const sync = await submitRes.json()
 
+                // RunPod hands the audio back as base64 in a JSON body, so it
+                // has to be decoded here before it can be played.
+                //
+                // This was Uint8Array.from(atob(s), c => c.charCodeAt(0)),
+                // which invokes a callback once per byte — around 750,000
+                // calls for six seconds of 48kHz audio. A Worker gets a small
+                // CPU allowance per request and exceeding it kills the worker
+                // mid-response, which reaches the caller as a connection reset
+                // rather than as an error. That matches what we measured:
+                // requests that FAILED came back cleanly and quickly, while
+                // every request that actually produced audio died on the way
+                // home, the more audio the more reliably.
+                //
+                // A plain loop over the string does the identical work with no
+                // per-byte call, which is far cheaper for the same result.
                 const asAudio = out => {
                     if (!out?.audio) return null
-                    const bytes = Uint8Array.from(atob(out.audio), c => c.charCodeAt(0))
+                    const bin = atob(out.audio)
+                    const bytes = new Uint8Array(bin.length)
+                    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
                     return new Response(bytes, {
                         headers: { 'Content-Type': 'audio/wav', 'Access-Control-Allow-Origin': '*' }
                     })

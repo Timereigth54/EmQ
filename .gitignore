@@ -6,3 +6,4 @@ config.js
 voice-server/test_*.wav
 voice-server/tone_*.wav
 test2.json
+voice-server/__pycache__/
