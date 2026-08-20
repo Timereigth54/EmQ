@@ -2144,8 +2144,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
     if (cardDivider) cardDivider.style.display = 'none'
     if (anotherBtn) anotherBtn.style.display = 'none'
 
-    const tonguesTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : 'rgba(255,255,255,0.85)'
-    const tonguesBtnColor = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+    const tonguesTextColor = sv('--sv-text', 'rgba(255,255,255,0.85)')
+    const tonguesBtnColor = sv('--sv-accent-ink', '#00d4ff')
 
     textEl.innerHTML = `
         <p style="color:${tonguesTextColor};font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
@@ -2153,8 +2153,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             Do you speak in tongues, ${name}?
         </p>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button onclick="unlockTongues('yes')" style="background:rgba(0,212,255,0.1);border:2px solid ${tonguesBtnColor};color:${tonguesTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Yes I do 🕊️</button>
-            <button onclick="unlockTongues('no')" style="background:rgba(0,212,255,0.1);border:2px solid ${tonguesBtnColor};color:${tonguesTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Not yet 💙</button>
+            <button onclick="unlockTongues('yes')" style="background:rgba(var(--sv-accent-rgb,0,212,255),0.12);border:2px solid ${tonguesBtnColor};color:${tonguesTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Yes I do 🕊️</button>
+            <button onclick="unlockTongues('no')" style="background:rgba(var(--sv-accent-rgb,0,212,255),0.12);border:2px solid ${tonguesBtnColor};color:${tonguesTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Not yet 💙</button>
         </div>
     `
     box.style.display = 'block'
@@ -2174,8 +2174,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 document.getElementById('lulo-reaction').innerText = `${name}... this changes everything. 💙`
                 animateLulo('nod')
 
-                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : '#e0f4ff'
-                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+                const unlockTextColor = sv('--sv-text', '#e0f4ff')
+                const unlockAccent = sv('--sv-accent-ink', '#00d4ff')
 
                 text.innerHTML = `
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
@@ -2197,8 +2197,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 document.getElementById('lulo-reaction').innerText = `That's okay, ${name}. 💙`
                 animateLulo('nod')
 
-                const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : '#e0f4ff'
-                const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+                const unlockTextColor = sv('--sv-text', '#e0f4ff')
+                const unlockAccent = sv('--sv-accent-ink', '#00d4ff')
 
                 text.innerHTML = `
                     <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
@@ -2238,18 +2238,18 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             if (cardDivider) cardDivider.style.display = 'none'
             if (anotherBtn) anotherBtn.style.display = 'none'
 
-            const studyTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : 'rgba(255,255,255,0.85)'
-            const studyBtnColor = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+            const studyTextColor = sv('--sv-text', 'rgba(255,255,255,0.85)')
+            const studyBtnColor = sv('--sv-accent-ink', '#00d4ff')
 
             textEl.innerHTML = `
                 <p style="color:${studyTextColor};font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
                     You want to study it with me? 📖💙<br><br>
-                    Then let me open it properly, ${name}. Not just the English — the Hebrew and the Greek underneath it, word by word, so we can see what is actually there rather than what we have been told is there.<br><br>
-                    I will only ever show you what I can genuinely read. Where the tagging does not reach, I will say so instead of filling it in.
+                    Then let me open it properly, ${name} — the Hebrew and Greek underneath the English, word by word.<br><br>
+                    I will only show you what I can genuinely read. Where the tagging does not reach, I will say so.
                 </p>
                 <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                    <button onclick="unlockStudyMode('yes')" style="background:rgba(0,212,255,0.1);border:2px solid ${studyBtnColor};color:${studyTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Open it 📖</button>
-                    <button onclick="unlockStudyMode('no')" style="background:rgba(0,212,255,0.1);border:2px solid ${studyBtnColor};color:${studyTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Just talk for now 💙</button>
+                    <button onclick="unlockStudyMode('yes')" style="background:rgba(var(--sv-accent-rgb,0,212,255),0.12);border:2px solid ${studyBtnColor};color:${studyTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Open it 📖</button>
+                    <button onclick="unlockStudyMode('no')" style="background:rgba(var(--sv-accent-rgb,0,212,255),0.12);border:2px solid ${studyBtnColor};color:${studyTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Just talk for now 💙</button>
                 </div>
             `
             box.style.display = 'block'
@@ -2262,8 +2262,8 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             const box = document.getElementById('scripture-card')
             const text = document.getElementById('scripture-text')
             const anotherBtn = document.getElementById('another-btn')
-            const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : '#e0f4ff'
-            const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+            const unlockTextColor = sv('--sv-text', '#e0f4ff')
+            const unlockAccent = sv('--sv-accent-ink', '#00d4ff')
 
             if (answer === 'yes') {
                 localStorage.setItem('luloStudyMode', 'true')
@@ -2286,7 +2286,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                         <em style="color:${unlockAccent};">"Open my eyes, that I may behold wondrous things out of thy law.", Psalms 119:18</em>
                     </p>
                     <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
-                        <button onclick="openStudyScreen()" style="background:rgba(0,212,255,0.1);border:2px solid ${unlockAccent};color:${unlockTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Go to the study room 📖</button>
+                        <button onclick="openStudyScreen()" style="background:rgba(var(--sv-accent-rgb,0,212,255),0.12);border:2px solid ${unlockAccent};color:${unlockTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Go to the study room 📖</button>
                     </div>
                 `
                 anotherBtn.style.display = 'none'
@@ -2696,7 +2696,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             codeDiv.textContent = code
 
             const btn = document.createElement('button')
-            btn.style.cssText = 'background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:Inter,sans-serif;transition:all 0.3s ease;text-transform:uppercase;'
+            btn.style.cssText = 'background:rgba(var(--sv-accent-rgb,0,212,255),0.12);border:1px solid rgba(0,212,255,0.4);color:rgba(0,212,255,0.9);padding:13px 35px;border-radius:50px;font-size:0.85rem;cursor:pointer;letter-spacing:2px;font-family:Inter,sans-serif;transition:all 0.3s ease;text-transform:uppercase;'
             btn.textContent = "I've saved it →"
             btn.addEventListener('click', () => confirmCodeSaved(name))
 
@@ -3452,7 +3452,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                     promptDiv.id = 'notification-prompt'
                     promptDiv.style.cssText = `margin-top:10px;display:flex;gap:8px;justify-content:center;`
                     promptDiv.innerHTML = `
-                        <button onclick="grantNotificationPermission()" style="background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:rgba(0,212,255,0.9);padding:8px 18px;border-radius:50px;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;">Yes, remind me 💙</button>
+                        <button onclick="grantNotificationPermission()" style="background:rgba(var(--sv-accent-rgb,0,212,255),0.12);border:1px solid rgba(0,212,255,0.3);color:rgba(0,212,255,0.9);padding:8px 18px;border-radius:50px;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;">Yes, remind me 💙</button>
                         <button onclick="document.getElementById('notification-prompt').remove()" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);padding:8px 18px;border-radius:50px;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;">Not now</button>
                     `
                     const thread = document.getElementById('chat-thread')
@@ -6484,11 +6484,12 @@ if (    mood !== 'home') lockCarousel()
 
         
 
-            const isLight = localStorage.getItem('luloTheme') === 'light'
-            const btnColor = isLight ? '#1E7A5A' : 'rgba(0,255,100,0.9)'
-            const btnBorder = isLight ? 'rgba(30,122,90,0.4)' : 'rgba(0,255,100,0.3)'
-            const btnBg = isLight ? 'rgba(30,122,90,0.1)' : 'rgba(0,255,100,0.1)'
-            const textColor = isLight ? '#17323C' : 'rgba(255,255,255,0.6)'
+            // Was `theme === 'light'`, so the `soft` theme got the dark
+            // theme's pale text on its pale card.
+            const btnColor = sv('--sv-accent-ink', 'rgba(0,255,100,0.9)')
+            const btnBorder = 'rgba(var(--sv-accent-rgb,0,255,100),0.4)'
+            const btnBg = 'rgba(var(--sv-accent-rgb,0,255,100),0.1)'
+            const textColor = sv('--sv-text', 'rgba(255,255,255,0.6)')
 
             const prayerPrompt = document.createElement('div')
             prayerPrompt.id = 'sick-prayer-prompt'
@@ -7652,6 +7653,19 @@ function dismissPhase3Welcome(skip = false) {
     localStorage.setItem('luloPhase3WelcomeSeen', '1')
 
     if (!skip && !LuloVoice.FROZEN && !LuloVoice.enabled) toggleSound()
+}
+
+// Reads a token published by setTheme(). Cards built as HTML strings cannot
+// use a stylesheet, so they have to name a colour — and the way they used to
+// pick one was `localStorage.getItem('luloTheme') === 'light'`, which is true
+// for exactly one of the two pale themes. On `soft` that returned the dark
+// theme's white text and painted it onto a pale pink card.
+//
+// Asking for the token instead means the card cannot get it wrong, and a
+// theme added later is handled without touching any of this.
+function sv(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    return v || fallback
 }
 
 // ─── HELP LULO SPEAK ────────────────────────────────────────────────────────

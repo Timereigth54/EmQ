@@ -129,10 +129,10 @@ Pushing to `main` deploys to real users. Kay asks for pushes explicitly.
 **Lulo's voice is FROZEN.** Not broken — switched off, because the GPU cost is
 not sustainable yet. Frozen in three places: `lulo-voice.js` (`FROZEN` flag,
 endpoint nulled), `lulo-wave.js` (the visualiser went with it), and
-`worker/index.js` (`/tts` returns 410 without calling RunPod). **The Worker
-half still needs deploying** — until then a cached old client can still reach
-RunPod. RunPod max/active workers are set to 0, which closes the spend but not
-the data path.
+`worker/index.js` (`/tts` returns 410 without calling RunPod). All three are
+live — the Worker was deployed 2026-08-20 and verified returning
+`410 {"error":"tts_frozen"}`. RunPod max/active workers are also set to 0, so
+the spend and the data path are both closed.
 
 Mic input, speech recognition and everything Lulo says in text still work.
 In its place there is an appeal: the speaker pill opens a card, and a line
