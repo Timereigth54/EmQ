@@ -995,18 +995,25 @@ function setTheme(theme) {
     document.querySelectorAll('.glass-card p, .glass-card li').forEach(p => {
         p.style.color = t.glassCardText
     })
+    // glassCardTitle and backBtnText are the accent used as TEXT. On the pale
+    // themes that is the same mistake as painting the Greek word in the
+    // accent: soft's #e8a0a0 measures about 2:1 on its own card. Pale themes
+    // get the readable walk; dark themes keep exactly the colour they had.
+    const titleInk = isLight ? accentInk : t.glassCardTitle
+    const backInk = isLight ? accentInk : t.backBtnText
     document.querySelectorAll('.glass-card h3').forEach(h => {
-        h.style.color = t.glassCardTitle
+        h.style.color = titleInk
     })
     document.querySelectorAll('.back-btn').forEach(btn => {
         btn.style.borderColor = t.backBtn
-        btn.style.color = t.backBtnText
+        btn.style.color = backInk
     })
     document.querySelectorAll('.screen-title').forEach(t2 => {
         t2.style.color = isLight ? '#17323C' : 'white'
     })
     document.querySelectorAll('.screen-subtitle').forEach(s => {
-        s.style.color = isLight ? '#5C7480' : 'rgba(255,255,255,0.35)'
+        // Was 0.35 white, which is 3.1:1 on the very screen it labels.
+        s.style.color = isLight ? '#4A6270' : 'rgba(255,255,255,0.62)'
     })
 
     // SCROLLBAR
@@ -1263,20 +1270,27 @@ function setTheme(theme) {
             border-color: ${isLight ? 'rgba(30,122,90,0.25)' : 'rgba(255,255,255,0.08)'} !important;
         }
 
-        /* JOURNAL TABS */
+        /* JOURNAL TABS
+           The inactive tab is the control you press to reach the other half of
+           the screen. At 0.3 white it measured 1.5:1 — visible only if you
+           already knew it was there. */
         .journal-tab {
-            color: ${isLight ? 'rgba(61,53,80,0.4)' : 'rgba(255,255,255,0.3)'} !important;
+            color: ${isLight ? 'rgba(32,28,44,0.92)' : 'rgba(255,255,255,0.62)'} !important;
         }
+        /* Accent text on an accent-tinted fill is the same hue twice, and on
+           the pale themes it lands around 4:1 however dark the text is walked.
+           The fill is what gives: nearly nothing, so the ink has the card to
+           work against, with the accent kept in the border. */
         .journal-tab.active {
-            color: ${isLight ? '#1E7A5A' : 'rgba(100,255,200,0.9)'} !important;
-            background: ${isLight ? 'rgba(30,122,90,0.1)' : 'rgba(100,255,200,0.1)'} !important;
-            border-color: ${isLight ? 'rgba(30,122,90,0.3)' : 'rgba(100,255,200,0.2)'} !important;
+            color: ${isLight ? accentInk : 'rgba(100,255,200,0.9)'} !important;
+            background: ${isLight ? 'rgba(var(--sv-accent-rgb),0.05)' : 'rgba(100,255,200,0.1)'} !important;
+            border-color: ${isLight ? 'rgba(var(--sv-accent-rgb),0.35)' : 'rgba(100,255,200,0.2)'} !important;
         }
         .journal-mood {
             color: ${isLight ? '#1E7A5A' : 'rgba(0,212,255,0.8)'} !important;
         }
         .journal-ref {
-            color: ${isLight ? '#5C7480' : 'rgba(255,255,255,0.35)'} !important;
+            color: ${isLight ? '#4A6270' : 'rgba(255,255,255,0.62)'} !important;
         }
         .journal-time {
             color: ${isLight ? '#5C7480' : 'rgba(255,255,255,0.25)'} !important;
@@ -2078,7 +2092,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Build entries HTML
             let entriesHTML = ''
             if (entries.length === 0) {
-                entriesHTML = `<p style="color: #a0c4d8; text-align: center; font-size: 0.9rem; padding: 20px;">Your journey starts the moment you click your first emotion.</p>`
+                entriesHTML = `<p style="color: var(--sv-text); opacity: 0.6; text-align: center; font-size: 0.9rem; padding: 20px;">Your journey starts the moment you click your first emotion.</p>`
             } else {
                 entriesHTML = entries.slice(0, 30).map((entry, i) => `
                     <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:15px;padding:15px;margin-bottom:10px;cursor:pointer;" 
@@ -2087,16 +2101,16 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                             <div style="font-size:1.8rem;flex-shrink:0;">${getMoodEmoji(entry.mood)}</div>
                             <div style="flex:1;">
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                                    <span style="color:#00d4ff;font-size:0.85rem;font-weight:500;text-transform:capitalize;">${entry.mood === 'prayer' ? 'Prayer' : entry.mood}</span>
-                                    <span style="color:#a0c4d8;font-size:0.75rem;">${entry.date} · ${entry.time}</span>
+                                    <span style="color:var(--sv-accent-ink);font-size:0.85rem;font-weight:500;text-transform:capitalize;">${entry.mood === 'prayer' ? 'Prayer' : entry.mood}</span>
+                                    <span style="color:var(--sv-text);opacity:0.78;font-size:0.75rem;">${entry.date} · ${entry.time}</span>
                                 </div>
-                                <div style="color:#e0f4ff;font-size:0.8rem;opacity:0.8;">${entry.ref}</div>
+                                <div style="color:var(--sv-text);font-size:0.8rem;opacity:0.8;">${entry.ref}</div>
                             </div>
-                            <div style="color:rgba(255,255,255,0.2);font-size:0.7rem;">▼</div>
+                            <div style="color:var(--sv-text);opacity:0.65;font-size:0.7rem;">▼</div>
                         </div>
                         <div id="journal-entry-${i}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,212,255,0.1);">
-                            <p style="font-size:0.85rem;color:rgba(255,255,255,0.8);line-height:1.7;font-style:italic;margin-bottom:8px;">"${entry.verseText || entry.preview}"</p>
-                            <p style="font-size:0.75rem;color:rgba(0,212,255,0.7);">${entry.ref}</p>
+                            <p style="font-size:0.85rem;color:var(--sv-text);opacity:0.85;line-height:1.7;font-style:italic;margin-bottom:8px;">"${entry.verseText || entry.preview}"</p>
+                            <p style="font-size:0.75rem;color:var(--sv-accent-ink);">${entry.ref}</p>
                         </div>
                     </div>
                 `).join('')
@@ -5176,7 +5190,7 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             const name = localStorage.getItem('luloUserName') || 'friend'
 
             if (favourites.length === 0) {
-                container.innerHTML = `<p style="color:rgba(255,255,255,0.25);text-align:center;font-size:0.85rem;padding:30px 0;">
+                container.innerHTML = `<p style="color:var(--sv-text);opacity:0.7;text-align:center;font-size:0.85rem;padding:30px 0;">
                     No saved scriptures yet, ${escapeHtml(name)}. 💙<br>Tap ⭐ on any scripture to save it here.
                 </p>`
                 return

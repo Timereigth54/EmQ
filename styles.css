@@ -1692,17 +1692,23 @@
             line-height: 1.8;
         }
 
+        /* NOTE: setTheme() sets .screen-title/.screen-subtitle/.back-btn and
+           the journal tabs with INLINE styles and a #dynamic-theme block full
+           of !important, so the colours here are only what shows before the
+           first setTheme() call. Change them in setTheme(), not here — and do
+           not add `opacity` to these, because it is not overridden and
+           multiplies with whatever alpha setTheme picked. */
         .screen-title {
             font-size: 1.3rem;
             font-weight: 600;
-            color: white;
+            color: var(--sv-text, white);
             text-align: center;
             margin-bottom: 5px;
         }
 
         .screen-subtitle {
             font-size: 0.8rem;
-            color: rgba(255,255,255,0.35);
+            color: var(--sv-text, rgba(255,255,255,0.55));
             text-align: center;
             margin-bottom: 20px;
         }
@@ -1711,8 +1717,8 @@
             width: 100%;
             max-width: 500px;
             background: transparent;
-            border: 1px solid rgba(0,212,255,0.3);
-            color: rgba(0,212,255,0.8);
+            border: 1px solid rgba(var(--sv-accent-rgb, 0,212,255), 0.35);
+            color: var(--sv-accent-ink, rgba(0,212,255,0.8));
             padding: 14px;
             border-radius: 50px;
             font-size: 0.88rem;
@@ -1723,7 +1729,7 @@
         }
 
         .back-btn:hover {
-            background: rgba(0,212,255,0.1);
+            background: rgba(var(--sv-accent-rgb, 0,212,255), 0.1);
         }
 
         /* SHARE & SAVE BUTTONS */
@@ -1783,16 +1789,20 @@
             letter-spacing: 1px;
             cursor: pointer;
             text-align: center;
-            color: rgba(255,255,255,0.3);
+            color: var(--sv-text, rgba(255,255,255,0.55));
             border: none;
             background: transparent;
             transition: all 0.3s ease;
         }
 
+        /* The inactive tab still has to be readable — it is the control you
+           press to get to the other half of the screen, and at 0.3 white it
+           measured 2.1:1 even on the dark theme. */
         .journal-tab.active {
-            background: rgba(100,255,200,0.1);
-            color: rgba(100,255,200,0.9);
-            border: 1px solid rgba(100,255,200,0.2);
+            background: rgba(var(--sv-accent-rgb, 100,255,200), 0.12);
+            color: var(--sv-accent-ink, rgba(100,255,200,0.9));
+            border: 1px solid rgba(var(--sv-accent-rgb, 100,255,200), 0.25);
+            opacity: 1;
         }
 
         /* FAVOURITE CARD */
@@ -3048,3 +3058,17 @@ body.theme-pale #voice-appeal-btn:hover {
     padding: 6px;
 }
 #voice-appeal-close:hover { color: var(--sv-text, rgba(255,255,255,0.7)); }
+
+/* A section label inside a glass screen. Was rgba(255,255,255,0.2) inline,
+   which measured 1.76:1 on the dark theme it was designed for and 1.01:1 on
+   the pale ones — below the 1.0 floor is impossible, so that is as invisible
+   as a colour can get. */
+.section-label {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    color: var(--sv-text, rgba(255,255,255,0.2));
+    opacity: 0.55;
+}
+body.theme-pale .section-label { opacity: 0.7; }

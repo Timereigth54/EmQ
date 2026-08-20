@@ -90,7 +90,22 @@ cannot be forgotten the way a new inline-styled element can.
 
 **The theme `accent` is not safe for text.** It is a decorative colour.
 `soft`'s is `#e8a0a0`, which measures 1.8:1 as text on a white card. Use
-`--sv-accent-ink` for words and `--sv-accent` for borders and fills.
+`--sv-accent-ink` for words and `--sv-accent` for borders and fills. Note
+that accent-coloured text on an accent-tinted fill is the same hue twice and
+lands around 4:1 no matter how dark the ink is walked — the *fill* has to give.
+
+**`setTheme()` owns the colours, and it wins.** It sets `.screen-title`,
+`.screen-subtitle`, `.back-btn`, `.glass-card h3` and more with **inline
+styles**, and injects a `#dynamic-theme` `<style>` block full of
+`!important` for the journal tabs and entry classes. Editing those colours in
+`styles.css` does nothing — the stylesheet loses to both. **Fix them inside
+`setTheme()`.**
+
+The trap inside the trap: `opacity` in the stylesheet is NOT overridden, so it
+still applies and *multiplies* with whatever alpha `setTheme` chose. Adding
+`opacity: 0.55` to a rule whose colour is already `rgba(255,255,255,0.35)`
+gives an effective 0.19 and makes things worse. Before styling any existing
+element, check whether `setTheme()` already claims it.
 
 **Heredocs eat backslashes.** `python - <<'PY'` in this environment collapses
 `\\n` to a real newline and `\'` to `'`, which produces broken JS. Write the
@@ -161,10 +176,23 @@ pipeline, not the data.
 **Verify before reporting, and verify the thing Kay will actually look at.**
 
 Not "the syntax parses". Run it. Open the app. Check every theme, not the one
-you happened to be on. Measure rather than eyeball — a contrast script across
+you happened to be on. Check the diff before committing. Say plainly what you
+tested and what you did not.
+
+**Measure AND look — they catch different things.** A contrast script across
 4 themes and 18 elements found four failures that looked fine in a screenshot.
-Check the diff before committing. Say plainly what you tested and what you did
-not.
+A screenshot found a button sitting under the mic that the contrast script
+called perfect. Neither alone is enough.
+
+**Sweep generically, do not name selectors.** Walking every element that owns
+a text node inside a screen finds the things you did not know were there. On
+the journal that turned up twice as many broken elements as the reported one,
+including several on the dark theme nobody had complained about.
+
+**Re-measure after every change, including your own fixes.** One "fix" here
+made the dark theme worse (3.12 to 1.71) by adding an opacity that compounded
+with a colour `setTheme` was already setting. It would have shipped unnoticed
+if the sweep had only run once at the end.
 
 Kay has said it directly: **always double check your work.** Every correction
 so far has been something a proper check would have caught first.
