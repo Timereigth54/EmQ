@@ -1,4 +1,4 @@
-const CACHE = 'emq-v46'
+const CACHE = 'emq-v47'
 
 // App shell — served NETWORK-first, see the fetch handler below. The cache is
 // the offline fallback, not the source, so a deploy is live on the next launch
@@ -139,7 +139,15 @@ self.addEventListener('fetch', e => {
     // make a first launch slower for everyone is the wrong trade. Cached on
     // first use instead, which also makes it available offline afterwards —
     // and a Bible you can only read with signal is a poor Bible.
+    // Same policy for the Strong's data under /data/: the tagging of Genesis
+    // does not change either. Split per book, so this caches ~10KB at a time
+    // as someone reads rather than 10MB up front. lexicon-index.json comes
+    // with the first tagged book; lexicon-defs.json only if a definition is
+    // actually opened.
     const isBible = url.pathname.endsWith('/bible.json')
+        || url.pathname.includes('/data/tagged/')
+        || url.pathname.endsWith('/lexicon-index.json')
+        || url.pathname.endsWith('/lexicon-defs.json')
 
     if (isShell) {
         // Network-first for the shell.

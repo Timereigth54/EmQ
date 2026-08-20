@@ -1586,7 +1586,7 @@ function conversationIsOpen() {
     if (isTextModeOpen()) return true
     const card = document.getElementById('scripture-card')
     if (card && getComputedStyle(card).display !== 'none') return true
-    for (const id of ['crisis-screen', 'journal-screen', 'emergency-screen']) {
+    for (const id of ['crisis-screen', 'journal-screen', 'emergency-screen', 'study-screen']) {
         const el = document.getElementById(id)
         if (el && getComputedStyle(el).display !== 'none') return true
     }
@@ -2122,6 +2122,296 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             box.style.animation = 'fadeIn 0.8s ease'
         }
 
+        function showStudyInvitation() {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const box = document.getElementById('scripture-card')
+            const textEl = document.getElementById('scripture-text')
+            const loading = document.getElementById('loading-text')
+            const anotherBtn = document.getElementById('another-btn')
+            const luloMsgSection = document.getElementById('lulo-message-section')
+            const cardDivider = document.getElementById('card-divider')
+
+            document.getElementById('lulo-reaction').innerText = ''
+            animateLulo('nod')
+            updateLuloMood('expecting')
+
+            if (loading) loading.style.display = 'none'
+            if (luloMsgSection) luloMsgSection.style.display = 'none'
+            if (cardDivider) cardDivider.style.display = 'none'
+            if (anotherBtn) anotherBtn.style.display = 'none'
+
+            const studyTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : 'rgba(255,255,255,0.85)'
+            const studyBtnColor = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+
+            textEl.innerHTML = `
+                <p style="color:${studyTextColor};font-size:0.95rem;line-height:1.8;margin-bottom:20px;">
+                    You want to study it with me? 📖💙<br><br>
+                    Then let me open it properly, ${name}. Not just the English — the Hebrew and the Greek underneath it, word by word, so we can see what is actually there rather than what we have been told is there.<br><br>
+                    I will only ever show you what I can genuinely read. Where the tagging does not reach, I will say so instead of filling it in.
+                </p>
+                <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                    <button onclick="unlockStudyMode('yes')" style="background:rgba(0,212,255,0.1);border:2px solid ${studyBtnColor};color:${studyTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Open it 📖</button>
+                    <button onclick="unlockStudyMode('no')" style="background:rgba(0,212,255,0.1);border:2px solid ${studyBtnColor};color:${studyTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Just talk for now 💙</button>
+                </div>
+            `
+            box.style.display = 'block'
+            playCardIntro(box)
+            setTimeout(() => centreCard(box), 100)
+        }
+
+        function unlockStudyMode(answer) {
+            const name = localStorage.getItem('luloUserName') || 'friend'
+            const box = document.getElementById('scripture-card')
+            const text = document.getElementById('scripture-text')
+            const anotherBtn = document.getElementById('another-btn')
+            const unlockTextColor = localStorage.getItem('luloTheme') === 'light' ? '#17323C' : '#e0f4ff'
+            const unlockAccent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+
+            if (answer === 'yes') {
+                localStorage.setItem('luloStudyMode', 'true')
+                updateLuloMood('peaceful')
+                document.getElementById('lulo-reaction').innerText = `Then let us read it together, ${name}. 📖`
+                animateLulo('nod')
+
+                // Warm the lexicon index while she is still talking. 258KB, and
+                // it means the first word tapped answers instantly rather than
+                // after a fetch. Failure is swallowed on purpose — loadTags()
+                // fetches it again when it is actually needed.
+                if (typeof LuloBible !== 'undefined') LuloBible.loadLexicon().catch(() => {})
+                refreshStudyMenuEntry()
+
+                text.innerHTML = `
+                    <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
+                        It is open, ${name}. 📖💙<br><br>
+                        There is a study room now. Tap any word with a mark under it and I will show you what it is in Hebrew or Greek, and how often it is used across the whole book.<br><br>
+                        One promise: I will not let a word study run away with the passage. A word means what it means in its sentence, not what its root once meant. That is how most word studies go wrong, and I would rather be useful than impressive.<br><br>
+                        <em style="color:${unlockAccent};">"Open my eyes, that I may behold wondrous things out of thy law.", Psalms 119:18</em>
+                    </p>
+                    <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;">
+                        <button onclick="openStudyScreen()" style="background:rgba(0,212,255,0.1);border:2px solid ${unlockAccent};color:${unlockTextColor};padding:10px 25px;border-radius:50px;font-size:0.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Go to the study room 📖</button>
+                    </div>
+                `
+                anotherBtn.style.display = 'none'
+                setTimeout(() => { updateLuloMood(currentMood || 'home') }, 20000)
+
+            } else {
+                localStorage.setItem('luloStudyMode', 'false')
+                updateLuloMood('home')
+                document.getElementById('lulo-reaction').innerText = `Of course, ${name}. 💙`
+                animateLulo('nod')
+
+                text.innerHTML = `
+                    <p style="color:${unlockTextColor};font-size:0.95rem;line-height:1.8;">
+                        That is completely okay, ${name}. 💙<br><br>
+                        We can just talk. The Bible is still here whenever you ask about it — I simply will not open the Hebrew and Greek unless you want that.<br><br>
+                        Ask me to study with you any time and I will open it then.
+                    </p>
+                `
+                anotherBtn.style.display = 'none'
+                setTimeout(() => { updateLuloMood(currentMood || 'home') }, 20000)
+            }
+
+            box.style.animation = 'none'
+            void box.offsetHeight
+            box.style.animation = 'fadeIn 0.8s ease'
+        }
+
+        // ─── THE STUDY ROOM ──────────────────────────────────────────────────
+        // A screen rather than a card. Word study is a sit-down activity: the
+        // passage has to stay put while you tap through it, and a card that
+        // redraws itself on every tap loses your place in the chapter.
+
+        let studyRef = null            // { book, chapter }
+        let studyActiveWord = null     // index into the rendered word list
+
+        async function openStudyScreen(ref) {
+            closeFloatingPanels()
+            // A toast already on screen when they walk in would sit on top of
+            // the passage — shouldToast() keeps new ones away, but says nothing
+            // about one that is already up.
+            if (typeof hideLuloToast === 'function') hideLuloToast()
+            localStorage.setItem('luloStudyMode', 'true')
+            const screen = document.getElementById('study-screen')
+            screen.style.display = 'flex'
+            screen.scrollTop = 0
+            closeStudyWord()
+
+            const opening = ref || studyRef || lastStudyRef() || { book: 'John', chapter: 3 }
+            refreshStudyMenuEntry()
+            document.getElementById('study-ref-input').value = `${opening.book} ${opening.chapter}`
+            await studyOpen(opening.book, opening.chapter)
+        }
+
+        function closeStudy() {
+            document.getElementById('study-screen').style.display = 'none'
+            closeStudyWord()
+        }
+
+        function closeStudyWord() {
+            const panel = document.getElementById('study-word')
+            if (panel) panel.style.display = 'none'
+            const screen = document.getElementById('study-screen')
+            if (screen) screen.classList.remove('sheet-open')
+            document.querySelectorAll('#study-passage .sw-active').forEach(n => n.classList.remove('sw-active'))
+        }
+
+        function lastStudyRef() {
+            try { return JSON.parse(localStorage.getItem('luloStudyLastRef') || 'null') } catch { return null }
+        }
+
+        function studyGo() {
+            const raw = document.getElementById('study-ref-input').value
+            const parsed = LuloBible.parseRef(raw) || (LuloBible.loaded ? null : null)
+            if (!parsed) {
+                setStudyStatus('I could not read that reference. Try something like "John 3" or "Psalm 23".')
+                return
+            }
+            studyOpen(parsed.book, parsed.chapter, parsed.verse)
+        }
+
+        function setStudyStatus(msg) {
+            const el = document.getElementById('study-ref-status')
+            if (el) el.textContent = msg || ''
+        }
+
+        async function studyOpen(book, chapter, focusVerse) {
+            setStudyStatus('Opening...')
+            try {
+                if (!LuloBible.loaded) await LuloBible.load()
+                const b = LuloBible.normaliseBook(book)
+                if (!b || !LuloBible.chapterLength(b, chapter)) {
+                    setStudyStatus(`I do not have ${escapeHTML(String(book))} ${escapeHTML(String(chapter))}.`)
+                    return
+                }
+                await LuloBible.loadTags(b)
+                studyRef = { book: b, chapter: +chapter }
+                localStorage.setItem('luloStudyLastRef', JSON.stringify(studyRef))
+                document.getElementById('study-ref-input').value = `${b} ${chapter}`
+                renderStudyPassage(b, +chapter, focusVerse)
+                setStudyStatus('')
+            } catch (err) {
+                // She does not pretend to have opened something she has not.
+                console.warn('[study] open failed:', err)
+                setStudyStatus('I could not open it just now. Try again in a moment.')
+            }
+        }
+
+        function renderStudyPassage(book, chapter, focusVerse) {
+            const host = document.getElementById('study-passage')
+            const len = LuloBible.chapterLength(book, chapter)
+            const parts = []
+            let tagged = 0, total = 0
+
+            // One row per verse, number in its own column. A chapter set as
+            // continuous prose is a wall — you cannot find verse 14, you lose
+            // your line when the word panel opens above you, and every tappable
+            // word looks like part of the same undifferentiated block.
+            for (let v = 1; v <= len; v++) {
+                const got = LuloBible.verse(book, chapter, v)
+                if (!got) continue
+                const words = got.text.trim().split(/\s+/)
+                const tags = LuloBible.tagged(book, chapter, v)
+                const byIndex = {}
+                for (const t of tags) byIndex[t.index] = t
+                total += words.length
+                tagged += tags.length
+
+                const rendered = words.map((w, i) => {
+                    const t = byIndex[i]
+                    if (!t || !t.lemma) return escapeHTML(w)
+                    return `<span class="sw" onclick="studyTapWord(${chapter},${v},${i},this)">${escapeHTML(w)}</span>`
+                }).join(' ')
+
+                parts.push(
+                    `<div class="study-verse" id="study-v${v}">`
+                    + `<span class="study-vnum">${v}</span>`
+                    + `<span class="study-vtext">${rendered}</span>`
+                    + `</div>`
+                )
+            }
+
+            closeStudyWord()
+            host.innerHTML =
+                `<div class="study-head">${escapeHTML(book)} ${chapter}</div>`
+                + parts.join('')
+            studyActiveWord = null
+
+            const pct = total ? Math.round(tagged * 100 / total) : 0
+            document.getElementById('study-coverage').innerHTML =
+                `<strong>${tagged} of ${total}</strong> words here carry a Strong's number (${pct}%).`
+                + `<br>An untagged word means the tagging did not reach it — not that it has no Hebrew or Greek behind it.`
+
+            if (focusVerse) {
+                const el = document.getElementById('study-v' + focusVerse)
+                if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
+            }
+        }
+
+        async function studyTapWord(chapter, verse, index, el) {
+            if (!studyRef) return
+            const tags = LuloBible.tagged(studyRef.book, chapter, verse)
+            const t = tags.find(x => x.index === index)
+            if (!t) return
+
+            document.querySelectorAll('#study-passage .sw-active').forEach(n => n.classList.remove('sw-active'))
+            if (el) el.classList.add('sw-active')
+
+            const panel = document.getElementById('study-word')
+            const accent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+
+            // The hand-written note and caution, looked up by Strong's number.
+            // Present for 27 of the 61 words in lulo-lexicon.js and absent for
+            // every other number, which is the honest answer — see byStrongs().
+            // This is the reason that file was kept: no generated lexicon
+            // contains a caution, and it is the part that stops a word study
+            // going wrong.
+            let hand = null
+            if (typeof LuloLexicon !== 'undefined') hand = LuloLexicon.byStrongs(t.strongs)
+
+            const rows = [
+                ['Strong\'s', t.strongs],
+                ['Pronounced', t.pron],
+                ['Language', t.language],
+                ['In this text', t.occurrences ? t.occurrences + ' times' : null],
+                ['Most often rendered', t.gloss]
+            ].filter(r => r[1])
+
+            panel.style.display = 'block'
+            document.getElementById('study-screen').classList.add('sheet-open')
+            panel.innerHTML = `
+                <div class="sw-close" onclick="closeStudyWord()" role="button" aria-label="Close">&times;</div>
+                <div class="sw-head">
+                    <span class="sw-word">${escapeHTML(t.word)}</span>
+                    <span class="sw-ref">${escapeHTML(studyRef.book)} ${chapter}:${verse}</span>
+                </div>
+                <div class="sw-lemma" style="color:${accent};">${escapeHTML(t.lemma || '')}</div>
+                <dl class="sw-rows">
+                    ${rows.map(([k, v]) => `<dt>${escapeHTML(k)}</dt><dd>${escapeHTML(String(v))}</dd>`).join('')}
+                </dl>
+                ${hand && hand.note ? `<div class="sw-block"><span class="sw-label">How it is used</span>${escapeHTML(hand.note)}</div>` : ''}
+                <div class="sw-block"><span class="sw-label">Dictionary entry</span><span id="sw-definition" style="opacity:0.55;">Reading it...</span></div>
+                ${hand && hand.caution ? `<div class="sw-caution"><span class="sw-label">Careful</span>${escapeHTML(hand.caution)}</div>` : ''}
+            `
+
+            // The definitions file is 544KB and most sessions never open one,
+            // so it waits until a word is actually tapped. After the first tap
+            // it is cached for good.
+            try {
+                await LuloBible.loadDefinitions()
+                const full = LuloBible.strongs(t.strongs)
+                const target = document.getElementById('sw-definition')
+                if (target) {
+                    target.style.opacity = '0.9'
+                    target.innerHTML = full && full.definition
+                        ? escapeHTML(full.definition)
+                        : '<em style="opacity:0.6;">No definition in the dictionary for this entry.</em>'
+                }
+            } catch {
+                const target = document.getElementById('sw-definition')
+                if (target) target.innerHTML = '<em style="opacity:0.6;">Could not open the dictionary just now.</em>'
+            }
+        }
+
         function showTonguesResponse() {
     const name = localStorage.getItem('luloUserName') || 'friend'
     const box = document.getElementById('scripture-card')
@@ -2519,6 +2809,109 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
 
         function saveLuloMemory(memory) {
             localStorage.setItem('luloMemory', JSON.stringify(memory))
+        }
+
+        // ─── THE STUDY LEVEL ─────────────────────────────────────────────────
+        // The word-level Hebrew and Greek behind the text is not something she
+        // volunteers. Someone who mentions a verse in passing wants a friend
+        // who knows it, not a concordance opened across the table.
+        //
+        // So it is a level, unlocked the way tongues is: by asking. When
+        // someone says they want to STUDY — not merely ask — she opens the
+        // book properly, and it stays open from then on.
+        //
+        // Note what is NOT gated: scripture retrieval itself. She still never
+        // answers a Bible question from memory, unlocked or not. That is a
+        // safety rail, not a feature. This level only decides whether the
+        // original languages come with it.
+        function looksLikeStudyInvitation(text) {
+            if (!text) return false
+            const t = String(text).toLowerCase()
+            if (/\bbible study\b/.test(t)) return true
+            if (/\b(study|studying|dig|digging|deeper|unpack|word study|exegesis|original language|hebrew|greek|strongs|strong's)\b/.test(t)
+                && /\b(bible|scripture|word|verse|passage|together|with me|with you)\b/.test(t)) return true
+            if (/\b(lets|let's|can we|could we|will you|would you|i want to|id like to|i'd like to|help me)\b[^?]*\b(study|read)\b[^?]*\b(bible|scripture|word|together)\b/.test(t)) return true
+            return false
+        }
+
+        function studyModeOn() {
+            return localStorage.getItem('luloStudyMode') === 'true'
+        }
+
+        // ─── THE WAYS IN ─────────────────────────────────────────────────────
+        // Four of them, none advertised. A hidden room with one entrance is a
+        // room almost nobody finds; the point is that several different kinds
+        // of person stumble into the same place. Someone who asks outright,
+        // someone curious about a Greek word, someone who fiddles with the
+        // logo, and someone who says the words on the card.
+        //
+        // Every door leads to the same invitation, never straight in. Being
+        // asked first is what makes it feel given rather than sprung.
+        //
+        // There was a fifth — a bare reference typed on its own, "John 3:16"
+        // and nothing else. Removed: people write a reference to talk ABOUT
+        // it far more often than to open it, and a door that common is not a
+        // secret, it is an interruption.
+
+        // DOOR 2 — asking what something is in the original. Someone who wants
+        // the Greek is already standing in the doorway.
+        function asksOriginalLanguage(text) {
+            if (!text) return false
+            const t = String(text).toLowerCase()
+            if (!/\b(hebrew|greek|aramaic|strongs|strong's|septuagint|in the original)\b/.test(t)) return false
+            return /\b(word|mean|means|meaning|say|says|behind|for|translated|render|rendered|actually)\b/.test(t)
+        }
+
+        // DOOR 4 — the words on the unlock card, said back. Psalms 119:18.
+        const STUDY_PASSPHRASES = [
+            'open the book', 'open my eyes', 'open the word',
+            'show me the greek', 'show me the hebrew',
+            'teach me the word', 'i want to go deeper'
+        ]
+        function saysPassphrase(text) {
+            if (!text) return false
+            const t = String(text).toLowerCase()
+            return STUDY_PASSPHRASES.some(phrase => t.includes(phrase))
+        }
+
+        // DOOR 3 — the knock. Seven taps on the logo, because seven is the
+        // number you would pick. Resets if you dawdle, so an idle finger
+        // resting on the header does not open anything.
+        let studyKnocks = 0
+        let studyKnockTimer = null
+        function studyKnock() {
+            clearTimeout(studyKnockTimer)
+            studyKnocks++
+            studyKnockTimer = setTimeout(() => { studyKnocks = 0 }, 1600)
+
+            const name = document.getElementById('app-name')
+            if (name && studyKnocks >= 4 && studyKnocks < 7) {
+                // A hint that something is happening, on the last few taps only.
+                name.style.transition = 'opacity 0.15s ease'
+                name.style.opacity = String(1 - (studyKnocks - 3) * 0.18)
+                setTimeout(() => { name.style.opacity = '1' }, 160)
+            }
+            if (studyKnocks >= 7) {
+                studyKnocks = 0
+                clearTimeout(studyKnockTimer)
+                if (studyModeOn()) openStudyScreen()
+                else showStudyInvitation()
+            }
+        }
+
+        // Any door at all. Returns null, or why it opened.
+        function studyDoorway(text) {
+            if (looksLikeStudyInvitation(text)) return { door: 'asked' }
+            if (saysPassphrase(text)) return { door: 'passphrase' }
+            if (asksOriginalLanguage(text)) return { door: 'original-language' }
+            return null
+        }
+
+        // The menu entry only exists once the level does. Called on load and
+        // straight after unlocking, so it appears without a reload.
+        function refreshStudyMenuEntry() {
+            const el = document.getElementById('more-menu-study')
+            if (el) el.style.display = studyModeOn() ? 'flex' : 'none'
         }
 
         // Is this a question the Bible itself should answer? Deliberately
@@ -3824,6 +4217,20 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             return
         }
         
+        // STUDY LEVEL DETECTION — the second secret unlock, five doors
+        const studyDoor = studyDoorway(text)
+        if (studyDoor) {
+            input.value = ''
+            if (studyModeOn()) {
+                openStudyScreen()
+            } else {
+                // "Just talk for now" is not a permanent no. Trying any door
+                // again reopens it, the same way mentioning tongues does.
+                showStudyInvitation()
+            }
+            return
+        }
+
             // Check crisis level first
             const boundaryLevel = checkBoundaries(text)
             if (boundaryLevel) {
@@ -4925,7 +5332,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             if (looksLikeBibleQuestion(userText)) {
                 try {
                     if (!LuloBible.loaded) await LuloBible.load()
-                    _scripture = LuloBible.format(LuloBible.gather(userText))
+                    const _passages = LuloBible.gather(userText)
+                    // Word-level tagging for the verse actually asked about,
+                    // and only once the study level is unlocked. Fetched per
+                    // book, so this is ~10KB rather than the whole 10MB.
+                    if (studyModeOn()) await LuloBible.attachTags(_passages)
+                    _scripture = LuloBible.format(_passages)
                 } catch (err) {
                     // She must say she cannot look it up rather than answer
                     // from memory, so the failure is passed to her, not hidden.
@@ -4989,8 +5401,10 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             ${_lex}
 
             HOW YOU USE THE ORIGINAL LANGUAGES:
-            Only the words printed above. You do not have a concordance and the Bible text you can open is English with no word-level tagging, so you cannot see which Greek or Hebrew word stands behind any particular verse. If someone asks about a word that is not above, say plainly that you would not want to guess at it — inventing a Strong's number or a confident gloss is the same failure as inventing a verse.
-            Never state which original word lies behind a specific verse unless it is one of the words above and the passage plainly uses that idea. Do not fabricate Strong's numbers.
+            Two sources, and they are not the same kind of thing. The words listed above are the checked ones, with usage and cautions written by hand. Where the passage section also prints "The original-language words behind" a verse, that is real word-level tagging of that exact verse — you may say which Hebrew or Greek word stands behind a word there, and give its Strong's number, because you are reading it rather than recalling it.
+            Outside those two, you are back to not knowing. If a word is in neither, say plainly that you would not want to guess at it — inventing a Strong's number or a confident gloss is the same failure as inventing a verse. Never fabricate Strong's numbers, and never carry a number from one verse to another.
+            The tagging is not complete, and its gaps are not random. It covers nearly every word of the Old Testament but only about seven in ten of the New, because this text reads modern there and a tag was dropped wherever the wording did not line up rather than guessed at. So a word appearing untagged means only that the tagging did not reach it — never that it has no Hebrew or Greek behind it, and never that it is unimportant.
+            The glosses are one-word and blunt by design; they are the word's most common rendering in this text, not its definition. Do not build an argument on a gloss.
             The word serves the passage, never the other way round. "The Greek means X, therefore the verse means X" is the most common way word studies go wrong: words mean what they mean in a sentence, not what their roots once meant. Where a Careful note is given above, say it — those are the exact places people are usually misled.
             Where a word's meaning is genuinely uncertain, say it is uncertain.
             ` }
@@ -6665,7 +7079,7 @@ function shouldToast() {
     const app = document.getElementById('main-app')
     if (!app || app.style.display === 'none') return false
     // Not while a full-screen panel owns the view
-    for (const id of ['crisis-screen', 'journal-screen', 'emergency-screen']) {
+    for (const id of ['crisis-screen', 'journal-screen', 'emergency-screen', 'study-screen']) {
         const el = document.getElementById(id)
         if (el && getComputedStyle(el).display !== 'none') return false
     }
@@ -7415,6 +7829,9 @@ function retryLastMessage() {
 
 function initApp() {
     LuloVoice.load()
+
+    // The study level persists, so its entrance has to come back with it.
+    refreshStudyMenuEntry()
 
     // Voice made visible — the ring around the mic and the bars under Lulo.
     LuloWave.init()

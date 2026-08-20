@@ -240,6 +240,38 @@
     </div>
 </div>
 
+<!-- STUDY SCREEN — the unlocked level. See looksLikeStudyInvitation() in app.js. -->
+<div id="study-screen" class="glass-screen">
+    <div style="width:100%;max-width:560px;padding-bottom:40px;padding-top:20px;">
+        <div style="text-align:center;margin-bottom:18px;">
+            <div style="font-size:40px;margin-bottom:10px;">📖</div>
+            <h2 class="screen-title">The Study</h2>
+            <p class="screen-subtitle">Tap any underlined word 💙</p>
+        </div>
+
+        <div class="glass-card" style="padding:14px;">
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="study-ref-input" placeholder="John 3, Psalm 23, Romans 8:28..."
+                       onkeypress="if(event.key==='Enter')studyGo()" class="study-input"/>
+                <button onclick="studyGo()" class="study-go">Open</button>
+            </div>
+            <p id="study-ref-status" class="study-status"></p>
+        </div>
+
+        <div id="study-passage" class="glass-card"></div>
+
+        <p id="study-coverage" class="study-status" style="text-align:center;"></p>
+
+        <button onclick="closeStudy()" class="back-btn">Back to Lulo 💙</button>
+    </div>
+</div>
+
+<!-- STUDY WORD SHEET — body level on purpose. It is position:fixed, and
+     .glass-screen sets backdrop-filter, which makes that element a containing
+     block for fixed descendants. Nested inside, the sheet anchored to the
+     scrolling screen rather than the viewport. -->
+<div id="study-word" class="glass-card" style="display:none;"></div>
+
 <!-- MAIN APP -->
 <div id="main-app" style="display:none;width:100%;">
 <div id="app">
@@ -261,7 +293,7 @@
         </div>
 
         <!-- CENTRE: wordmark -->
-        <div id="app-name">EM_Q</div>
+        <div id="app-name" onclick="studyKnock()">EM_Q</div>
 
         <!-- RIGHT: streak shield + menu -->
         <div id="top-icons">
@@ -558,6 +590,8 @@
     <div onclick="closeMoreMenu();toggleThemePanel()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🎨 Themes</div>
     <div onclick="closeMoreMenu();toggleSyncPanel()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🔗 Sync Devices</div>
     <div onclick="closeMoreMenu();showEmergencyKit()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">🆘 Emergency Kit</div>
+    <!-- Hidden until the study level is unlocked. See refreshStudyMenuEntry(). -->
+    <div id="more-menu-study" onclick="closeMoreMenu();openStudyScreen()" style="display:none;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.75);font-size:0.85rem;font-family:'Inter',sans-serif;">📖 The Study</div>
 </div>
 
 <!-- BOTTOM BAR — VOICE MODE (default) -->

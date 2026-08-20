@@ -25,6 +25,23 @@ const LuloBible = {
     _loading: null,
     source: 'bible.json',
 
+    // Word-level Strong's tagging. Split per book on purpose: the combined
+    // file is 317,497 tiny {w,strongs} objects, and parsing all of it leaves
+    // tens of MB resident on a phone that is already holding bible.json, the
+    // wave canvas and her decoded audio. A book is fetched when a book is
+    // read. The median one is 10KB gzipped.
+    tagSource: 'data/tagged/',
+    lexiconIndexSource: 'data/lexicon-index.json',
+    lexiconDefsSource: 'data/lexicon-defs.json',
+
+    _tagManifest: null,      // book -> { file, chapters }
+    _tags: new Map(),        // book -> { chapter: { verse: [ {w, strongs} ] } }
+    _tagLoads: new Map(),    // book -> in-flight promise
+    _lexicon: null,          // strongs -> { lemma, pron, language, gloss, occurrences }
+    _defs: null,             // strongs -> definition
+    _defsLoading: null,
+    TAG_BOOKS_KEPT: 4,       // small LRU; a study ranges, it does not roam
+
     // ─── LOADING ────────────────────────────────────────────────────────────
     // One in-flight load, shared. Several things can ask at once — a question
     // arriving while a card is opening — and 4.7MB fetched twice is a real
@@ -72,7 +89,28 @@ const LuloBible = {
         this._byBook = byBook
     },
 
-    get books() { return this._byBook ? Object.keys(this._byBook) : [] },
+    // The 66, in order. Needed because normaliseBook() falls back to this list
+    // when the text has not loaded yet — without it parseRef('John 3:16')
+    // returned null before the first fetch, since 'john' is not in _ALIASES
+    // and there was nothing else to match against. Anything that wants to
+    // recognise a reference *in order to decide whether to load* was broken
+    // by that, which is every caller that matters.
+    _BOOK_NAMES: [
+        'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy', 'Joshua',
+        'Judges', 'Ruth', '1 Samuel', '2 Samuel', '1 Kings', '2 Kings',
+        '1 Chronicles', '2 Chronicles', 'Ezra', 'Nehemiah', 'Esther', 'Job',
+        'Psalms', 'Proverbs', 'Ecclesiastes', 'Song of Solomon', 'Isaiah',
+        'Jeremiah', 'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
+        'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk', 'Zephaniah',
+        'Haggai', 'Zechariah', 'Malachi',
+        'Matthew', 'Mark', 'Luke', 'John', 'Acts', 'Romans',
+        '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
+        'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians',
+        '1 Timothy', '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James',
+        '1 Peter', '2 Peter', '1 John', '2 John', '3 John', 'Jude', 'Revelation'
+    ],
+
+    get books() { return this._byBook ? Object.keys(this._byBook) : this._BOOK_NAMES },
 
     // ─── REFERENCE PARSING ──────────────────────────────────────────────────
     // People write references the way they say them: "Jn 3:16", "1 cor 13",
@@ -201,6 +239,143 @@ const LuloBible = {
             p.chapterLength = len
         }
         return p
+    },
+
+    // ─── WORD-LEVEL TAGGING ─────────────────────────────────────────────────
+    // What Hebrew or Greek word stands behind a word on the page. Until this
+    // existed she genuinely could not know, and was told to say so.
+    //
+    // The tagging is aligned to this file's own wording, and where the two
+    // diverge the tag was dropped rather than guessed — so coverage is near
+    // total in the Old Testament and around 72% in the New, where this text
+    // reads modern. A word with no tag is a word she must not claim to know.
+
+    // The index is small enough (259KB gzipped) to hold for the session; the
+    // definitions are four times that and most sessions never open one, so
+    // they wait until something actually asks for a definition.
+    loadLexicon() {
+        if (this._lexicon) return Promise.resolve(this._lexicon)
+        if (this._lexLoading) return this._lexLoading
+        this._lexLoading = fetch(this.lexiconIndexSource)
+            .then(r => { if (!r.ok) throw new Error('lexicon-index ' + r.status); return r.json() })
+            .then(data => { this._lexicon = data; return data })
+            .catch(err => { this._lexLoading = null; throw err })
+        return this._lexLoading
+    },
+
+    loadDefinitions() {
+        if (this._defs) return Promise.resolve(this._defs)
+        if (this._defsLoading) return this._defsLoading
+        this._defsLoading = fetch(this.lexiconDefsSource)
+            .then(r => { if (!r.ok) throw new Error('lexicon-defs ' + r.status); return r.json() })
+            .then(data => { this._defs = data; return data })
+            .catch(err => { this._defsLoading = null; throw err })
+        return this._defsLoading
+    },
+
+    // One book's tagging, plus the lexicon index it is meaningless without.
+    // Shared in-flight, like load() — a passage and a cross reference can ask
+    // for the same book in the same tick.
+    loadTags(book) {
+        const b = this.normaliseBook(book)
+        if (!b) return Promise.resolve(null)
+        if (this._tags.has(b)) {
+            // Touch it so the LRU keeps what is being read.
+            const held = this._tags.get(b)
+            this._tags.delete(b); this._tags.set(b, held)
+            return Promise.resolve(held)
+        }
+        if (this._tagLoads.has(b)) return this._tagLoads.get(b)
+
+        const manifest = this._tagManifest
+            ? Promise.resolve(this._tagManifest)
+            : fetch(this.tagSource + 'index.json')
+                .then(r => { if (!r.ok) throw new Error('tag index ' + r.status); return r.json() })
+                .then(m => { this._tagManifest = m; return m })
+
+        const job = Promise.all([manifest, this.loadLexicon()])
+            .then(([m]) => {
+                const file = m[b] && m[b].file
+                if (!file) return null
+                return fetch(this.tagSource + file)
+                    .then(r => { if (!r.ok) throw new Error(file + ' ' + r.status); return r.json() })
+            })
+            .then(data => {
+                if (data) {
+                    this._tags.set(b, data)
+                    while (this._tags.size > this.TAG_BOOKS_KEPT) {
+                        this._tags.delete(this._tags.keys().next().value)
+                    }
+                }
+                this._tagLoads.delete(b)
+                return data
+            })
+            .catch(err => {
+                // Tagging is an enrichment. Losing it must never take the
+                // passage down with it — she simply goes back to not knowing.
+                this._tagLoads.delete(b)
+                console.warn('tagging unavailable for ' + b, err)
+                return null
+            })
+
+        this._tagLoads.set(b, job)
+        return job
+    },
+
+    // Synchronous once loadTags() has resolved for the book. Returns the
+    // tagged words of one verse, each joined to its lexicon entry.
+    //
+    // A tag is {i, strongs}: the index of the word in this verse's whitespace
+    // split, and the number it carries. The index rather than the word's text
+    // is what makes a reader able to underline the right one — a verse that
+    // says "God" twice under two different numbers cannot be resolved by
+    // matching on the text, and guessing there is the sort of quiet wrongness
+    // this whole module exists to avoid.
+    tagged(book, chapter, verse) {
+        const b = this.normaliseBook(book)
+        if (!b || !this._lexicon) return []
+        const held = this._tags.get(b)
+        const raw = held && held[String(chapter)] && held[String(chapter)][String(verse)]
+        if (!raw) return []
+        const got = this.verse(b, chapter, verse)
+        if (!got) return []
+        const words = got.text.trim().split(/\s+/)
+        return raw.map(t => {
+            const e = this._lexicon[t.strongs] || {}
+            return {
+                index: t.i,
+                word: words[t.i] || '',
+                strongs: t.strongs,
+                lemma: e.lemma || null, pron: e.pron || null,
+                language: e.language || null, gloss: e.gloss || null,
+                occurrences: typeof e.occurrences === 'number' ? e.occurrences : null
+            }
+        }).filter(t => t.word)
+    },
+
+    // One Strong's number, without needing a verse. Definition only if
+    // loadDefinitions() has run — the caller decides whether it is worth it.
+    strongs(number) {
+        if (!this._lexicon || !number) return null
+        const key = String(number).trim().toUpperCase()
+        const e = this._lexicon[key]
+        if (!e) return null
+        return { strongs: key, ...e, definition: (this._defs && this._defs[key]) || null }
+    },
+
+    // Rendered for a prompt. Deliberately only the verse asked about: the
+    // surrounding passage carries hundreds of tagged words and printing all
+    // of them buries the question the way a concordance does.
+    formatTags(list, ref) {
+        if (!list || !list.length) return ''
+        const lines = list
+            .filter(t => t.lemma)
+            .map(t => `  ${t.word} — ${t.strongs} ${t.lemma}`
+                + (t.pron ? ` (${t.pron})` : '')
+                + (t.gloss ? `, ${t.gloss}` : '')
+                + (t.occurrences ? `, ${t.occurrences}x in this text` : ''))
+        if (!lines.length) return ''
+        return `The original-language words behind ${ref}:\n` + lines.join('\n')
     },
 
     // ─── SEARCH ─────────────────────────────────────────────────────────────
@@ -360,12 +535,41 @@ const LuloBible = {
         return out
     },
 
+    // Loads the tagging the gathered passages need, and attaches it to the
+    // verse each passage is actually about. Only the focus verse: a passage
+    // is nine verses and every one of them carries a dozen tagged words, so
+    // tagging the lot would bury the question under a concordance — the very
+    // failure mode the lexicon's own caution notes exist to prevent.
+    //
+    // Always resolves. Tagging is enrichment; if it fails she is simply back
+    // to not knowing, which she is already told how to say.
+    async attachTags(passages) {
+        if (!passages || !passages.length) return passages
+        const wanted = passages.slice(0, 1)
+        await Promise.all(wanted.map(p => this.loadTags(p.book)))
+        for (const p of wanted) {
+            const parsed = p.focus ? this.parseRef(p.focus) : null
+            const verse = parsed && parsed.verse
+                ? parsed.verse
+                : p.verses[Math.floor(p.verses.length / 2)].verse
+            const list = this.tagged(p.book, p.chapter, verse)
+            if (list.length) {
+                p.tags = list
+                p.tagsRef = `${p.book} ${p.chapter}:${verse}`
+            }
+        }
+        return passages
+    },
+
     // Rendered for a prompt. Verse numbers are kept so she can point at a line
     // and the user can find it on the page in front of them.
     format(passages) {
         if (!passages || !passages.length) return ''
         return passages.map(p => {
             let s = `${p.ref}${p.focus ? ` (asked about: ${p.focus})` : ''}\n${p.text}`
+            if (p.tags && p.tags.length) {
+                s += '\n\n' + this.formatTags(p.tags, p.tagsRef)
+            }
             if (p.crossRefs && p.crossRefs.length) {
                 s += '\n\nElsewhere in scripture, sharing this passage\'s distinctive wording:\n'
                     + p.crossRefs.map(c => `  ${c.ref} — ${c.text}`).join('\n')

@@ -36,13 +36,24 @@
 const LuloLexicon = {
     // language: 'Greek' | 'Hebrew'
     // word: transliteration people would type or say
+    // strongs: the number this word carries, where the study screen's tagging
+    //          and this list are certainly the same word. Present on 27 of the
+    //          61; the rest are left off deliberately. Matching a
+    //          transliteration ('yadah') against a pronunciation key
+    //          ("yaw-daw'") is close to reliable and not actually reliable --
+    //          it offered H3045 "know" for the entry that means praise, and
+    //          "abba" for a word meaning "servants". Every number here was
+    //          checked against that entry's own definition by hand. Where the
+    //          match was not certain, there is no number, and the caution
+    //          simply does not fire for that word. That is the right way round:
+    //          a caution attached to the wrong word is worse than none.
     // also: other spellings and closely related forms
     // gloss: what it means, plainly
     // note: how it is actually used
     // caution: where people go wrong with it
     entries: [
         // ── LOVE, and the family of words people compare ──────────────────
-        { word: 'agape', language: 'Greek', also: ['agapao'], gloss: 'love; self-giving, committed love',
+        { word: 'agape', strongs: 'G25', language: 'Greek', also: ['agapao'], gloss: 'love; self-giving, committed love',
           note: 'The most common New Testament word for love, used of God\'s love and of the love believers are commanded to have.',
           caution: 'Often taught as a uniquely divine love distinct from phileo. The New Testament does not hold that line strictly — John 21 uses both words of the same love, and agape is used of wrong loves too, as in 2 Timothy 4:10.' },
         { word: 'phileo', language: 'Greek', also: ['philia'], gloss: 'love; affection, the love of friendship',
@@ -53,12 +64,12 @@ const LuloLexicon = {
           caution: 'Frequently included in sermon lists of "the four loves". It is not a biblical word.' },
         { word: 'storge', language: 'Greek', gloss: 'family affection',
           note: 'Appears only in compounds in the New Testament.', caution: '' },
-        { word: 'chesed', language: 'Hebrew', also: ['hesed', 'checed'], gloss: 'steadfast love; covenant faithfulness, mercy, loyal kindness',
+        { word: 'chesed', strongs: 'H2617', language: 'Hebrew', also: ['hesed', 'checed'], gloss: 'steadfast love; covenant faithfulness, mercy, loyal kindness',
           note: 'One of the central words of the Old Testament. Often rendered lovingkindness or mercy. It carries commitment, not just feeling.',
           caution: 'No single English word covers it, which is why translations vary. Do not treat any one rendering as the meaning.' },
 
         // ── GOD, SPIRIT, WORD ─────────────────────────────────────────────
-        { word: 'logos', language: 'Greek', gloss: 'word; message, account, reason',
+        { word: 'logos', strongs: 'G3056', language: 'Greek', gloss: 'word; message, account, reason',
           note: 'Ordinary Greek for a word or statement, and used of Christ in John 1.',
           caution: 'John 1 gives it that weight by how he uses it, not because the word itself always means the divine Word.' },
         { word: 'rhema', language: 'Greek', gloss: 'word; an utterance, something spoken',
@@ -71,13 +82,13 @@ const LuloLexicon = {
         { word: 'YHWH', language: 'Hebrew', also: ['yahweh', 'jehovah', 'tetragrammaton'], gloss: 'the personal name of God',
           note: 'Rendered LORD in small capitals in most English Bibles. Connected to "I AM" in Exodus 3:14.',
           caution: '"Jehovah" is a later hybrid form, not how the name was pronounced.' },
-        { word: 'elohim', language: 'Hebrew', gloss: 'God; also gods, or rulers',
+        { word: 'elohim', strongs: 'H430', language: 'Hebrew', gloss: 'God; also gods, or rulers',
           note: 'Grammatically plural, used of the one God with singular verbs.',
           caution: 'The plural form is not by itself evidence of the Trinity; Hebrew uses plural forms for majesty and the same word is used of pagan gods.' },
         { word: 'adonai', language: 'Hebrew', gloss: 'Lord, master', note: 'Spoken in place of the divine name when reading aloud.', caution: '' },
 
         // ── PEACE, JOY, HOPE, FAITH ───────────────────────────────────────
-        { word: 'shalom', language: 'Hebrew', gloss: 'peace; wholeness, completeness, welfare',
+        { word: 'shalom', strongs: 'H7965', language: 'Hebrew', gloss: 'peace; wholeness, completeness, welfare',
           note: 'Far wider than absence of conflict — health, safety and things being as they should be. Used as a greeting.', caution: '' },
         { word: 'eirene', language: 'Greek', gloss: 'peace', note: 'The New Testament word, carrying much of shalom\'s breadth.', caution: '' },
         { word: 'chara', language: 'Greek', also: ['chairo'], gloss: 'joy, gladness', note: 'Shares a root with charis, grace.', caution: '' },
@@ -85,30 +96,30 @@ const LuloLexicon = {
           note: 'Ordinary Greek for favour or kindness, taken up by Paul for God\'s unearned favour.', caution: '' },
         { word: 'elpis', language: 'Greek', gloss: 'hope; confident expectation',
           note: 'Not wishing. It carries expectation rather than uncertainty.', caution: '' },
-        { word: 'pistis', language: 'Greek', also: ['pisteuo'], gloss: 'faith, trust, faithfulness',
+        { word: 'pistis', strongs: 'G4102', language: 'Greek', also: ['pisteuo'], gloss: 'faith, trust, faithfulness',
           note: 'Covers both believing something and being trustworthy. Context decides which is in view.', caution: '' },
         { word: 'emunah', language: 'Hebrew', gloss: 'faithfulness, steadiness, reliability',
           note: 'The Hebrew idea leans toward faithfulness and firmness more than mental assent.', caution: '' },
 
         // ── SIN, REPENTANCE, FORGIVENESS ──────────────────────────────────
-        { word: 'hamartia', language: 'Greek', gloss: 'sin; missing the mark',
+        { word: 'hamartia', strongs: 'G266', language: 'Greek', gloss: 'sin; missing the mark',
           note: 'An archery image lies behind the word.',
           caution: 'The image is often pressed too hard. In use it simply means sin or wrongdoing, not merely falling short of a target.' },
-        { word: 'metanoia', language: 'Greek', also: ['metanoeo'], gloss: 'repentance; a change of mind and direction',
+        { word: 'metanoia', strongs: 'G3341', language: 'Greek', also: ['metanoeo'], gloss: 'repentance; a change of mind and direction',
           note: 'A turning, not only regret.', caution: '' },
         { word: 'teshuvah', language: 'Hebrew', also: ['shuv'], gloss: 'returning, turning back',
           note: 'The Old Testament picture of repentance is coming back to where you belong.', caution: '' },
-        { word: 'aphesis', language: 'Greek', gloss: 'forgiveness; release, letting go, cancellation of a debt', note: '', caution: '' },
-        { word: 'splanchnizomai', language: 'Greek', gloss: 'to be moved with compassion, from the inward parts',
+        { word: 'aphesis', strongs: 'G859', language: 'Greek', gloss: 'forgiveness; release, letting go, cancellation of a debt', note: '', caution: '' },
+        { word: 'splanchnizomai', strongs: 'G4697', language: 'Greek', gloss: 'to be moved with compassion, from the inward parts',
           note: 'Used of Jesus seeing crowds. A physical, gut-level word.', caution: '' },
 
         // ── FLESH, SOUL, HEART, MIND ──────────────────────────────────────
-        { word: 'sarx', language: 'Greek', gloss: 'flesh; the body, or human nature turned from God',
+        { word: 'sarx', strongs: 'G4561', language: 'Greek', gloss: 'flesh; the body, or human nature turned from God',
           note: 'Paul uses it both plainly and morally. Which one is meant depends entirely on the sentence.',
           caution: 'Reading the moral sense everywhere makes Paul appear to condemn the body itself, which he does not.' },
         { word: 'psuche', language: 'Greek', also: ['psyche'], gloss: 'soul, life, self',
           note: 'Often simply "life" — the same word behind losing your life and losing your soul.', caution: '' },
-        { word: 'nephesh', language: 'Hebrew', gloss: 'soul, life, living being, appetite',
+        { word: 'nephesh', strongs: 'H5315', language: 'Hebrew', gloss: 'soul, life, living being, appetite',
           note: 'Genesis 2:7 has the man become a living nephesh. It describes the whole living creature.',
           caution: 'Not a detachable immaterial part in the way later thought imagined.' },
         { word: 'leb', language: 'Hebrew', also: ['lebab'], gloss: 'heart; the inner person, mind and will',
@@ -117,45 +128,45 @@ const LuloLexicon = {
         { word: 'nous', language: 'Greek', gloss: 'mind, understanding', note: 'The renewing of the nous in Romans 12:2.', caution: '' },
 
         // ── WORSHIP, PRAYER, GLORY ────────────────────────────────────────
-        { word: 'proskuneo', language: 'Greek', gloss: 'to worship; to bow down, to prostrate oneself',
+        { word: 'proskuneo', strongs: 'G4352', language: 'Greek', gloss: 'to worship; to bow down, to prostrate oneself',
           note: 'A word of physical posture and homage.', caution: '' },
-        { word: 'latreia', language: 'Greek', gloss: 'service, worship', note: 'Romans 12:1 calls offering the body a reasonable latreia.', caution: '' },
-        { word: 'halal', language: 'Hebrew', gloss: 'to praise; to boast, to shine, to celebrate',
+        { word: 'latreia', strongs: 'G2999', language: 'Greek', gloss: 'service, worship', note: 'Romans 12:1 calls offering the body a reasonable latreia.', caution: '' },
+        { word: 'halal', strongs: 'H1984', language: 'Hebrew', gloss: 'to praise; to boast, to shine, to celebrate',
           note: 'The root behind hallelujah — praise YAH.', caution: '' },
-        { word: 'yadah', language: 'Hebrew', gloss: 'to give thanks, to confess, to praise with extended hands', note: '', caution: '' },
-        { word: 'kabod', language: 'Hebrew', also: ['kavod'], gloss: 'glory; weight, heaviness, honour',
+        { word: 'yadah', strongs: 'H3034', language: 'Hebrew', gloss: 'to give thanks, to confess, to praise with extended hands', note: '', caution: '' },
+        { word: 'kabod', strongs: 'H3519', language: 'Hebrew', also: ['kavod'], gloss: 'glory; weight, heaviness, honour',
           note: 'The root idea is weight — glory as substance and significance.', caution: '' },
-        { word: 'doxa', language: 'Greek', gloss: 'glory, honour, splendour', note: 'Used to render kabod in the Greek Old Testament.', caution: '' },
-        { word: 'parakaleo', language: 'Greek', also: ['parakletos'], gloss: 'to call alongside; to comfort, urge, encourage',
+        { word: 'doxa', strongs: 'G1391', language: 'Greek', gloss: 'glory, honour, splendour', note: 'Used to render kabod in the Greek Old Testament.', caution: '' },
+        { word: 'parakaleo', strongs: 'G3870', language: 'Greek', also: ['parakletos'], gloss: 'to call alongside; to comfort, urge, encourage',
           note: 'Parakletos, the Helper or Comforter, is from this — one called to your side.', caution: '' },
 
         // ── TIME, WORD-PAIRS PEOPLE ASK ABOUT ─────────────────────────────
         { word: 'kairos', language: 'Greek', gloss: 'time; a season, an opportune moment', note: '',
           caution: 'Commonly contrasted with chronos as "God\'s time" against "clock time". The New Testament does not keep them that separate; both are used for ordinary time.' },
-        { word: 'chronos', language: 'Greek', gloss: 'time; duration, a span of time', note: '', caution: 'See kairos.' },
+        { word: 'chronos', strongs: 'G5550', language: 'Greek', gloss: 'time; duration, a span of time', note: '', caution: 'See kairos.' },
         { word: 'aion', language: 'Greek', gloss: 'age, era, a long period', note: 'Behind "forever and ever" and "the end of the age".', caution: '' },
-        { word: 'olam', language: 'Hebrew', gloss: 'a long duration, age, everlasting', note: 'Its length depends on what it is describing.', caution: '' },
+        { word: 'olam', strongs: 'H5769', language: 'Hebrew', gloss: 'a long duration, age, everlasting', note: 'Its length depends on what it is describing.', caution: '' },
 
         // ── COVENANT, LAW, RIGHTEOUSNESS ──────────────────────────────────
-        { word: 'berit', language: 'Hebrew', also: ['berith'], gloss: 'covenant; a binding agreement', note: '', caution: '' },
+        { word: 'berit', strongs: 'H1285', language: 'Hebrew', also: ['berith'], gloss: 'covenant; a binding agreement', note: '', caution: '' },
         { word: 'diatheke', language: 'Greek', gloss: 'covenant, testament, will', note: 'The word behind Old and New Testament.', caution: '' },
-        { word: 'torah', language: 'Hebrew', gloss: 'instruction, teaching, law',
+        { word: 'torah', strongs: 'H8451', language: 'Hebrew', gloss: 'instruction, teaching, law',
           note: 'Wider than legislation — it is teaching and direction.',
           caution: 'Rendering it only as "law" makes the Old Testament sound more legal than it reads in Hebrew.' },
         { word: 'dikaiosune', language: 'Greek', gloss: 'righteousness, justice',
           note: 'One Greek word covers both English words, which is why some passages can be read either way.', caution: '' },
-        { word: 'tsedeq', language: 'Hebrew', also: ['tzedek', 'tsedaqah'], gloss: 'righteousness, justice, rightness', note: '', caution: '' },
-        { word: 'mishpat', language: 'Hebrew', gloss: 'justice, judgement, right ruling', note: 'Frequently paired with tsedeq.', caution: '' },
+        { word: 'tsedeq', strongs: 'H6664', language: 'Hebrew', also: ['tzedek', 'tsedaqah'], gloss: 'righteousness, justice, rightness', note: '', caution: '' },
+        { word: 'mishpat', strongs: 'H4941', language: 'Hebrew', gloss: 'justice, judgement, right ruling', note: 'Frequently paired with tsedeq.', caution: '' },
 
         // ── CHURCH, GOSPEL, KINGDOM ───────────────────────────────────────
         { word: 'ekklesia', language: 'Greek', gloss: 'assembly, gathering; the church',
           note: 'Ordinary Greek for a called-together assembly, including secular ones, as in Acts 19.',
           caution: '"Called-out ones" is a popular etymology pressed further than the usage supports.' },
         { word: 'euangelion', language: 'Greek', gloss: 'good news, gospel', note: 'Announcement of good news, as a herald brings.', caution: '' },
-        { word: 'basileia', language: 'Greek', gloss: 'kingdom, reign, rule', note: 'Often the reign itself rather than a territory.', caution: '' },
+        { word: 'basileia', strongs: 'G932', language: 'Greek', gloss: 'kingdom, reign, rule', note: 'Often the reign itself rather than a territory.', caution: '' },
         { word: 'koinonia', language: 'Greek', gloss: 'fellowship, sharing, participation, partnership',
           note: 'Carries having something in common, including shared money and practical partnership.', caution: '' },
-        { word: 'diakonos', language: 'Greek', gloss: 'servant, minister, deacon', note: '', caution: '' },
+        { word: 'diakonos', strongs: 'G1249', language: 'Greek', gloss: 'servant, minister, deacon', note: '', caution: '' },
         { word: 'kurios', language: 'Greek', gloss: 'lord, master, owner',
           note: 'Used for God, for Jesus, and for ordinary masters and sirs.', caution: '' },
         { word: 'christos', language: 'Greek', also: ['messiah', 'mashiach'], gloss: 'anointed one',
@@ -191,6 +202,21 @@ const LuloLexicon = {
         if (!this._index) this._build()
         if (!word) return null
         return this._index[String(word).trim().toLowerCase()] || null
+    },
+
+    // By Strong's number, for the study screen: someone taps a word, the
+    // tagging says which number it is, and this says whether there is a
+    // hand-written caution for it. Returns null for the great majority of
+    // numbers, which is correct -- this list is 61 words, not a concordance.
+    byStrongs(number) {
+        if (!number) return null
+        if (!this._byStrongs) {
+            this._byStrongs = {}
+            for (const e of this.entries) {
+                if (e.strongs) this._byStrongs[e.strongs.toUpperCase()] = e
+            }
+        }
+        return this._byStrongs[String(number).trim().toUpperCase()] || null
     },
 
     // Words named anywhere in a question. Matched on whole words so "eros"

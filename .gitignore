@@ -7,3 +7,19 @@ voice-server/test_*.wav
 voice-server/tone_*.wav
 test2.json
 voice-server/__pycache__/
+
+# Strong's pipeline — what ships vs what is reproducible.
+#
+# data/ IS committed: Pages serves it, so the app needs it in the repo.
+# These are the inputs and intermediates that produced it, and nothing
+# fetches them at runtime.
+
+# The monoliths. Superseded by data/ — kept locally as the inputs to
+# split_for_phone.py, but 15MB of dead weight in a Pages deploy.
+/bible-tagged.json
+/strongs-lexicon.json
+
+# 40MB of upstream source blobs. NOTES.md §5 has the exact commands to
+# refetch both from GitHub. em_q_strongs_pipeline/output/ stays tracked, so
+# the split can be re-run without them.
+em_q_strongs_pipeline/sources/
