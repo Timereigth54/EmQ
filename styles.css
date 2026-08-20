@@ -2895,3 +2895,121 @@
     border-radius: 0 10px 10px 0;
 }
 #study-word .sw-caution .sw-label { opacity: 0.75; }
+
+/* ─── HELP LULO SPEAK ────────────────────────────────────────────────────────
+   Her voice is frozen; see the note at the top of lulo-voice.js. This is the
+   quiet ask that lives on the home screen, and the card behind the speaker
+   pill is the long version. */
+
+#voice-appeal-line {
+    margin-top: 18px;
+    font-size: 0.74rem;
+    line-height: 1.7;
+    text-align: center;
+    opacity: 0.42;
+    cursor: pointer;
+    transition: opacity 0.45s ease;
+    user-select: none;
+}
+#voice-appeal-line span {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    opacity: 0.9;
+}
+#voice-appeal-line:hover { opacity: 0.72; }
+
+/* Out of the way while she is being spoken to. An ask for money over the top
+   of someone opening their mouth to pray is the wrong thing at the wrong
+   moment, and the mic screen should hold nothing but her. */
+body.mic-live #voice-appeal-line {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* The speaker pill no longer toggles anything, so it should not look like a
+   live control — but it must still read as tappable, because it opens the
+   appeal. Dimmed, slash showing, full strength under a finger. */
+#sound-btn.voice-frozen { opacity: 0.5; }
+#sound-btn.voice-frozen:hover { opacity: 0.85; }
+
+/* ─── THE APPEAL CARD ─────────────────────────────────────────────────────── */
+#voice-appeal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(5,5,16,0.72);
+    backdrop-filter: blur(14px);
+}
+#voice-appeal-card {
+    width: 100%;
+    max-width: 380px;
+    max-height: 88vh;
+    overflow-y: auto;
+    text-align: center;
+    padding: 28px 24px 22px;
+    border-radius: 26px;
+    background: rgba(18,18,40,0.97);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.5);
+}
+#voice-appeal-lulo {
+    width: 74px;
+    height: 74px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+#voice-appeal-eyebrow {
+    font-size: 0.64rem;
+    letter-spacing: 2.2px;
+    text-transform: uppercase;
+    color: rgba(0,212,255,0.75);
+    margin-bottom: 8px;
+}
+#voice-appeal-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 14px;
+}
+#voice-appeal-body {
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: rgba(255,255,255,0.72);
+    text-align: left;
+    margin-bottom: 20px;
+}
+#voice-appeal-btn {
+    display: block;
+    width: 100%;
+    padding: 13px 20px;
+    border-radius: 50px;
+    background: rgba(0,220,110,0.16);
+    border: 1px solid rgba(0,220,110,0.5);
+    color: rgba(190,255,220,0.96);
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+}
+#voice-appeal-btn:hover { background: rgba(0,220,110,0.26); }
+#voice-appeal-mail {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.35);
+    margin-top: 10px;
+    word-break: break-all;
+}
+#voice-appeal-close {
+    margin-top: 14px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    padding: 6px;
+}
+#voice-appeal-close:hover { color: rgba(255,255,255,0.7); }

@@ -3740,8 +3740,12 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             updateStreakBadge()
             updateVoiceToggleUI()
 
-            // Phase 3 welcome — shown once, first time the main app loads
-            if (!localStorage.getItem('luloPhase3WelcomeSeen')) {
+            // Phase 3 welcome — "Lulo can speak now", shown once. Suppressed
+            // while her voice is frozen: it announces a feature that is off
+            // and its button turns on a voice that will not arrive. The markup
+            // and CSS stay put for when she can speak again.
+            if (!localStorage.getItem('luloPhase3WelcomeSeen')
+                && !(typeof LuloVoice !== 'undefined' && LuloVoice.FROZEN)) {
                 setTimeout(() => showPhase3Welcome(), 800)
             }
 
@@ -6983,6 +6987,14 @@ const LuloSound = {
 // Phase 3: the top-left pill now toggles Lulo's *voice*. The Web Audio tone
 // system (LuloSound) is separate and stays on — LuloVoice is additive.
 function toggleSound() {
+    // While her voice is frozen the pill opens the appeal instead of toggling
+    // anything. Anything else that still calls this — a keyboard shortcut, an
+    // onboarding step — lands here and gets the appeal too, rather than
+    // silently flipping a setting that does nothing.
+    if (typeof LuloVoice !== 'undefined' && LuloVoice.FROZEN) {
+        showVoiceAppeal()
+        return
+    }
     const on = LuloVoice.toggle() // updateVoiceToggleUI() handles the icon state
     if (on) LuloSound.response()
 
@@ -7346,6 +7358,9 @@ async function toggleVoiceInput({ barge = false } = {}) {
     r.onstart = () => {
         isVoiceInputActive = true
         document.getElementById('mic-btn')?.classList.add('listening')
+        // Fades the "help Lulo speak" line out of the way — CSS owns the
+        // transition, this only says when.
+        document.body.classList.add('mic-live')
         LuloWave.micStart()
         // Opening the mic normally means the user is taking a turn, so she
         // stops talking. In barge mode it means the opposite: the mic is open
@@ -7504,6 +7519,7 @@ function stopVoiceInput() {
     isVoiceInputActive = false
     _micBargeMode = false
     document.getElementById('mic-btn')?.classList.remove('listening')
+    document.body.classList.remove('mic-live')
     LuloWave.micStop()
     if (currentRecognition) {
         // Null it out first: stop() fires onend, and onend restarts the
@@ -7533,7 +7549,27 @@ function dismissPhase3Welcome(skip = false) {
     }
     localStorage.setItem('luloPhase3WelcomeSeen', '1')
 
-    if (!skip && !LuloVoice.enabled) toggleSound()
+    if (!skip && !LuloVoice.FROZEN && !LuloVoice.enabled) toggleSound()
+}
+
+// ─── HELP LULO SPEAK ────────────────────────────────────────────────────────
+// Her voice is frozen (see the note at the top of lulo-voice.js). The speaker
+// pill opens this instead of toggling a setting that no longer does anything.
+//
+// Deliberately a mailto and nothing else. No payment form, no account details,
+// no third-party donation widget — just a way to reach a person. Anything more
+// would need handling money, and that is not what was asked for.
+
+function showVoiceAppeal() {
+    closeFloatingPanels()
+    const el = document.getElementById('voice-appeal')
+    if (!el) return
+    el.style.display = 'flex'
+}
+
+function closeVoiceAppeal() {
+    const el = document.getElementById('voice-appeal')
+    if (el) el.style.display = 'none'
 }
 
 // ─── NOTIFICATION CENTRE ────────────────────────────────────────────────────

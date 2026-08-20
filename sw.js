@@ -1,4 +1,4 @@
-const CACHE = 'emq-v47'
+const CACHE = 'emq-v48'
 
 // App shell — served NETWORK-first, see the fetch handler below. The cache is
 // the offline fallback, not the source, so a deploy is live on the next launch
@@ -24,7 +24,11 @@ const SHELL_ASSETS = [
     // Her greeting. Precached so that turning her voice on works with no
     // signal and without waiting on a GPU. install() skips assets that fail,
     // so listing it before the file exists costs nothing.
-    '/EmQ/audio/lulo-greeting.wav',
+    //
+    // Dropped while her voice is frozen (see lulo-voice.js): nothing plays it,
+    // and precaching a few hundred KB of audio nobody will hear is a cost paid
+    // on every install for no reason. Put it back when she speaks again.
+    // '/EmQ/audio/lulo-greeting.wav',
 ]
 
 // Images — cached on install, served cache-first indefinitely

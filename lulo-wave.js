@@ -28,6 +28,17 @@
  */
 
 const LuloWave = {
+    // ─── FROZEN, 2026-08-20 ──────────────────────────────────────────────
+    // The bars visualised her voice, so they go quiet with it. A visualiser
+    // with nothing to visualise is just a decoration that implies a feature
+    // the app no longer has.
+    //
+    // Both canvases sit at opacity 0 in CSS and only appear when _show() adds
+    // .wave-on, so a frozen init() is enough to make them invisible — there is
+    // no markup to remove and none to put back. The drawing code below is
+    // untouched; set FROZEN to false and the bars return exactly as they were.
+    FROZEN: true,
+
     // Theme accent as "r,g,b" — setTheme() keeps this in step.
     rgb: '0,255,120',
 
@@ -54,6 +65,7 @@ const LuloWave = {
     _envHold: 0,
 
     init() {
+        if (this.FROZEN) return
         this._reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
         const mic = document.getElementById('mic-wave')
@@ -71,6 +83,7 @@ const LuloWave = {
     // percentage that works on a tall phone puts the bars through her chin on
     // a short one.
     place() {
+        if (this.FROZEN) return
         const el = this.voice && this.voice.el
         if (!el) return
         const behind = document.body.classList.contains('room-focus')
@@ -130,12 +143,12 @@ const LuloWave = {
 
     // ─── PUBLIC ─────────────────────────────────────────────────────────────
 
-    micStart()          { this.micOn = true;  this.micHot = false; this._show(this.mic, true);  this._run() },
-    micSpeaking(on)     { this.micHot = !!on },
-    micStop()           { this.micOn = false; this.micHot = false; this._show(this.mic, false); this._run() },
+    micStart()          { if (this.FROZEN) return; this.micOn = true;  this.micHot = false; this._show(this.mic, true);  this._run() },
+    micSpeaking(on)     { if (this.FROZEN) return; this.micHot = !!on },
+    micStop()           { if (this.FROZEN) return; this.micOn = false; this.micHot = false; this._show(this.mic, false); this._run() },
 
-    speakStart()        { this.luloOn = true;  this.place(); this._show(this.voice, true);  this._run() },
-    speakStop()         { this.luloOn = false; this._show(this.voice, false); this._run() },
+    speakStart()        { if (this.FROZEN) return; this.luloOn = true;  this.place(); this._show(this.voice, true);  this._run() },
+    speakStop()         { if (this.FROZEN) return; this.luloOn = false; this._show(this.voice, false); this._run() },
 
     // She has moved. The bars follow her, mid-sentence if need be.
     syncTraces() { this.place() },
@@ -147,6 +160,7 @@ const LuloWave = {
     },
 
     _run() {
+        if (this.FROZEN) return
         if (this._raf !== null) return
         this._lastT = 0
         this._raf = requestAnimationFrame(t => this._tick(t))

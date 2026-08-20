@@ -2,20 +2,57 @@
  * Em_Q — lulo-voice.js
  * Lulo's speech engine. Extracted as its own module in Phase 3.
  *
- * Two paths:
- *   1. VoxCPM2 backend (LuloVoice.endpoint) — Lulo's real voice. See voice-server/DEPLOY.md.
- *   2. Web Speech API fallback — used when no endpoint is set or the request fails.
+ * ── FROZEN, 2026-08-20 ──────────────────────────────────────────────────────
+ * Her voice is off. Not broken, not a bug to chase — switched off on purpose,
+ * because a GPU that bills by the second is not something this project can
+ * carry yet.
+ *
+ * What is off: every route to sound coming OUT of her. The VoxCPM2 backend,
+ * and the Web Speech fallback with it — a robot reading her lines is not the
+ * thing that was promised, and half a promise is worse than an honest no.
+ *
+ * What is untouched: everything going IN. The mic still listens, speech
+ * recognition still transcribes, you can still talk to her out loud and she
+ * still answers — in text. That was the part people actually used.
+ *
+ * The engine below is left whole rather than deleted. Every path is gated on
+ * FROZEN, so turning her back on is setting one flag to false and redeploying
+ * — there is nothing to rebuild and nothing to remember. When that day comes,
+ * check voice-server/DEPLOY.md is still accurate first.
+ *
+ * The two paths, for when it thaws:
+ *   1. VoxCPM2 backend (LuloVoice.endpoint) — Lulo's real voice.
+ *   2. Web Speech API fallback — used when no endpoint is set or it fails.
  *
  * Loaded BEFORE app.js. Nothing here depends on app.js.
  */
 
 // ─── LULO VOICE ENGINE ───────────────────────────────────────────────────────
 const LuloVoice = {
+    // ─── THE FREEZE ──────────────────────────────────────────────────────
+    // One flag. Set it to false and set `endpoint` back to the Worker URL
+    // below to give her a voice again; nothing else has to change.
+    //
+    // Everything that could make a sound or open a socket checks this first,
+    // rather than relying on call sites to behave. There are twenty-odd
+    // places in app.js that ask her to speak, and a freeze that depends on
+    // all of them being edited correctly is a freeze with holes in it.
+    FROZEN: true,
+
     enabled: false,
-    // TTS route on the existing Cloudflare Worker.
-    // The Worker proxies to RunPod and keeps the RunPod API key server-side.
-    // Set to null to fall back to Web Speech API.
-    endpoint: 'https://em1-prayer.kayuso2011.workers.dev/tts',
+
+    // TTS route on the existing Cloudflare Worker, which proxies to RunPod
+    // and keeps the RunPod API key server-side.
+    //
+    // Deliberately null while frozen, and not merely unused: this is the only
+    // address in the client that reaches a paid GPU, so emptying it means
+    // there is no URL left to call by accident — not from a stale timer, not
+    // from a code path nobody remembered. warmUp() and _prefetch() also
+    // return early on FROZEN, so it is stopped twice over.
+    //
+    // To restore: 'https://em1-prayer.kayuso2011.workers.dev/tts'
+    endpoint: null,
+
     currentAudio: null,
 
     // Lulo often says two things at once — a reaction bubble and then the verse.
@@ -58,6 +95,7 @@ const LuloVoice = {
     _unlockTries: 0,
 
     unlock() {
+        if (this.FROZEN) return
         if (this._unlocked || this._unlockTries >= 3) return
         // Never mid-sentence. This assigns src on the very element that is
         // playing, so unlocking while she talks cuts her off — and the error
@@ -82,6 +120,16 @@ const LuloVoice = {
     },
 
     load() {
+        if (this.FROZEN) {
+            // Off, and stays off across reloads. The stored preference is
+            // cleared rather than ignored, so someone who had her voice on
+            // before the freeze does not carry a setting that now lies about
+            // what the app does.
+            this.enabled = false
+            localStorage.removeItem('luloVoiceEnabled')
+            updateVoiceToggleUI()
+            return
+        }
         this.enabled = localStorage.getItem('luloVoiceEnabled') === 'true'
         updateVoiceToggleUI()
         // Any first touch will do — the point is only that it is a gesture.
@@ -91,6 +139,10 @@ const LuloVoice = {
     },
 
     toggle() {
+        // While frozen there is nothing to toggle. The speaker pill opens the
+        // appeal instead — see showVoiceAppeal() in app.js — so this should
+        // not be reached, but a stray caller must not switch her back on.
+        if (this.FROZEN) return false
         this.enabled = !this.enabled
         localStorage.setItem('luloVoiceEnabled', String(this.enabled))
         if (!this.enabled) this.stop()
@@ -122,7 +174,7 @@ const LuloVoice = {
     _warmedAt: 0,
 
     warmUp() {
-        if (!this.endpoint) return
+        if (this.FROZEN || !this.endpoint) return
         // Workers idle out after a few minutes, so re-warming is worth it, but
         // not on every toggle in a row.
         if (Date.now() - this._warmedAt < 120000) return
@@ -147,6 +199,10 @@ const LuloVoice = {
     _GREETING: 'audio/lulo-greeting.wav',
 
     _greet() {
+        // Her greeting is a file rather than a generated line, so it costs no
+        // GPU — but it is still her voice, and playing it while the app is
+        // asking for help to give her one would be a strange thing to hear.
+        if (this.FROZEN) return
         const name = localStorage.getItem('luloUserName') || 'friend'
         const el = this._el()
         let settled = false
@@ -292,6 +348,9 @@ const LuloVoice = {
     },
 
     speak(text, tone) {
+        // Two gates rather than one. `enabled` is what a user toggles and
+        // could in principle be set from anywhere; FROZEN is the decision.
+        if (this.FROZEN) return
         if (!this.enabled) return
         if (!text) return
         const clean = this._clean(text)
@@ -317,6 +376,7 @@ const LuloVoice = {
     // her generating a paragraph she may never reach if the user interrupts,
     // on a GPU billed by the second.
     _prefetch(item = this._queue[0]) {
+        if (this.FROZEN) return
         if (!item || item.audio) return
         item.audio = fetch(this.endpoint, {
             method: 'POST',
@@ -503,6 +563,11 @@ const LuloVoice = {
 
     _fallback(text, onDone, tone) {
         const done = onDone || (() => {})
+        // The robot voice is frozen too. It costs nothing to run, which makes
+        // it tempting to leave on — but it is not her, and shipping a
+        // stand-in while asking people to fund the real thing muddles what is
+        // actually being asked for.
+        if (this.FROZEN) { done(); return }
         if (!('speechSynthesis' in window)) { done(); return }
         const u = new SpeechSynthesisUtterance(text)
         const p = this._toneProsody[tone] || this._toneProsody.neutral
@@ -555,6 +620,15 @@ function updateVoiceToggleUI() {
     if (!btn) return
     // The button holds an inline SVG — the muted/speaking states are pure CSS,
     // so never write textContent here or the icon gets destroyed.
+    if (LuloVoice.FROZEN) {
+        // Muted, and it does not pretend otherwise. The pill keeps its slash
+        // and stops calling itself a toggle, because it no longer toggles
+        // anything — it opens the appeal.
+        btn.classList.remove('voice-active')
+        btn.classList.add('voice-frozen')
+        btn.title = 'Help Lulo speak'
+        return
+    }
     btn.classList.toggle('voice-active', LuloVoice.enabled)
     btn.title = LuloVoice.enabled ? 'Voice ON, tap to mute' : 'Voice OFF, tap to enable'
 }

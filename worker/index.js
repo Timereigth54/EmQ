@@ -3,6 +3,8 @@
  *
  * Two routes, two upstreams, two keys:
  *   POST /tts  → RunPod Serverless (VoxCPM2)      env.RUNPOD_API_KEY
+ *                FROZEN as of 2026-08-20 — returns 410 without calling
+ *                RunPod. See TTS_FROZEN below.
  *   POST /     → Anthropic Messages API           env.ANTHROPIC_API_KEY
  *
  * Both keys stay server-side; the app never sees either.
@@ -23,6 +25,10 @@
  * dashboard editor), and keep the two in step.
  */
 
+// One flag, read by the /tts route below. See the block there for why the
+// freeze is enforced on this side as well as in the app.
+const TTS_FROZEN = true
+
 export default {
     async fetch(request, env) {
         const url = new URL(request.url)
@@ -38,6 +44,26 @@ export default {
         }
 
         if (url.pathname === '/tts') {
+            // ─── FROZEN, 2026-08-20 ──────────────────────────────────────
+            // Her voice is off, and this is the half of the freeze that
+            // actually guarantees it. The client no longer holds this URL,
+            // but a browser running a cached copy of the old app still does —
+            // and that copy would call straight through to a GPU that bills
+            // by the second. So the gate is here, in front of the only code
+            // path that spends money, rather than only in the client where a
+            // stale cache can walk around it.
+            //
+            // 410 rather than 404: the route existed and was withdrawn, which
+            // is exactly what a cached client should be told.
+            //
+            // To restore: delete this block, and set FROZEN=false and the
+            // endpoint back in lulo-voice.js. Nothing else changed.
+            if (TTS_FROZEN) {
+                return new Response(
+                    JSON.stringify({ error: 'tts_frozen', detail: "Lulo’s voice is switched off." }),
+                    { status: 410, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+                )
+            }
             try {
                 // `tone` decides how Lulo says the line, `voice` and `seed`
                 // are the audition overrides. These used to be dropped here:

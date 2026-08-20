@@ -279,7 +279,7 @@
     <!-- TOP BAR -->
     <div id="top-bar">
         <!-- LEFT: voice toggle -->
-        <div class="top-pill top-pill-circle" id="sound-btn" onclick="toggleSound()" title="Voice OFF, tap to enable">
+        <div class="top-pill top-pill-circle" id="sound-btn" onclick="showVoiceAppeal()" title="Help Lulo speak">
             <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
                 <path d="M4 9.5h3.2L12 5.2v13.6L7.2 14.5H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"
                       fill="currentColor"/>
@@ -341,6 +341,14 @@
              nothing on screen reads as broken, so this says what is happening.
              aria-live so it is announced rather than only seen. -->
         <p id="lulo-wait-note" aria-live="polite"></p>
+
+        <!-- HELP LULO SPEAK — the quiet version of the appeal card. Sits under
+             the greeting, and fades out while the mic is open: someone talking
+             to her should have nothing on screen but her. -->
+        <p id="voice-appeal-line" onclick="showVoiceAppeal()" role="button" tabindex="0"
+           onkeypress="if(event.key==='Enter')showVoiceAppeal()">
+            We are giving Lulo a voice &mdash; <span>help make her better</span>
+        </p>
     </div>
 
     <!-- LULO FACE -->
@@ -573,6 +581,32 @@
             Turn on her voice
         </button>
         <button id="phase3-welcome-skip" onclick="dismissPhase3Welcome(true)">Not now</button>
+    </div>
+</div>
+
+<!-- HELP LULO SPEAK — where her voice toggle used to be. See the freeze
+     note at the top of lulo-voice.js for why. -->
+<div id="voice-appeal" style="display:none;" aria-modal="true" role="dialog" aria-labelledby="voice-appeal-title">
+    <div id="voice-appeal-card">
+        <img id="voice-appeal-lulo" src="images/lulo.png" alt="" aria-hidden="true"/>
+        <p id="voice-appeal-eyebrow">Help Lulo speak</p>
+        <h2 id="voice-appeal-title">We are giving Lulo a voice.</h2>
+        <p id="voice-appeal-body">
+            Her voice is off for now. Running it needs a GPU, and that costs more than this
+            project can carry yet — so rather than do it badly, we have switched it off until
+            we can do it properly.
+            <br><br>
+            Everything else works exactly as before. You can still talk to her out loud, the
+            mic still listens, and she still answers.
+            <br><br>
+            If you would like to help her speak, get in touch.
+        </p>
+        <a id="voice-appeal-btn"
+           href="mailto:kayuso2003@hotmail.com?subject=Help%20Lulo%20speak">
+            Help Lulo speak
+        </a>
+        <p id="voice-appeal-mail">kayuso2003@hotmail.com</p>
+        <button id="voice-appeal-close" onclick="closeVoiceAppeal()">Close</button>
     </div>
 </div>
 
