@@ -745,6 +745,104 @@ function setTheme(theme) {
     // on mix-blend-mode: screen and disappear against anything pale.
     const art = luloArt(theme)
 
+    // ─── THEME TOKENS AS CSS VARIABLES ───────────────────────────────────
+    // Everything below this line in setTheme() paints one element at a time
+    // with inline styles, which works only for elements it knows about. Any
+    // new screen has to be added here by hand, and when that is forgotten the
+    // failure is silent and looks fine on the theme the author was using —
+    // the study screen shipped with white-on-white text on both pale themes
+    // for exactly that reason.
+    //
+    // So: publish the palette once, and let new CSS read it. A stylesheet that
+    // says var(--sv-text) cannot be forgotten about, and it picks up any theme
+    // added later for free.
+    //
+    // `-rgb` variants are the same colours as "r,g,b" so CSS can build its own
+    // alphas — rgba(var(--sv-accent-rgb), 0.2) — without needing colour-mix(),
+    // which is too new to rely on across the phones this runs on.
+    const hexToRgb = hex => {
+        const h = String(hex || '').trim().replace('#', '')
+        if (h.length !== 6) return null
+        const n = parseInt(h, 16)
+        return Number.isNaN(n) ? null : `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`
+    }
+    // ─── AN ACCENT YOU CAN READ ──────────────────────────────────────────
+    // `accent` is a decorative colour, chosen to look right as a glow, a
+    // border or a fill. It is not chosen to be legible as text, and on the
+    // pale themes it flatly is not: soft's #e8a0a0 on a white card measures
+    // 1.8:1, which is not dim, it is gone. The Greek word in the study sheet
+    // was painted in it.
+    //
+    // So there are two accent tokens. --sv-accent stays exactly as the theme
+    // author picked it, for anything that is not text. --sv-accent-ink is the
+    // same hue walked toward the page's ink until it clears 4.5:1 against the
+    // card behind it, and that is what words are written in.
+    //
+    // Computed rather than hand-picked so a theme added later cannot
+    // reintroduce this by being pale in a way nobody tested.
+    const _rgb = hexToRgb(t.accent)
+    const _lum = ([r, g, b]) => {
+        const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+    }
+    const _contrast = (a, b) => {
+        const [l1, l2] = [_lum(a), _lum(b)]
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
+    }
+    let accentInk = t.accent
+    if (_rgb) {
+        // What the text actually sits on: the pale themes' cards are all but
+        // white, the dark ones all but black.
+        const ground = isLight ? [255, 255, 255] : [16, 16, 34]
+        // Walk toward the ink, not toward grey — mixing to grey desaturates
+        // the accent into something that no longer reads as the theme.
+        const ink = isLight ? [0, 0, 0] : [255, 255, 255]
+        let c = _rgb.split(',').map(Number)
+        // Target 6 rather than the 4.5 that actually matters. The grounds
+        // above are approximations -- the real cards are translucent over a
+        // warm gradient, and the appeal card is a shade darker again, so
+        // measured contrast lands under anything computed against flat white.
+        // The headroom absorbs that. Measured across all four themes and
+        // eighteen elements after each change; 5.2 still left one button at
+        // 4.46.
+        for (let step = 0; step < 24 && _contrast(c, ground) < 6; step++) {
+            c = c.map((v, i) => Math.round(v + (ink[i] - v) * 0.12))
+        }
+        accentInk = `rgb(${c.join(',')})`
+    }
+
+    const rootStyle = document.documentElement.style
+    const tokens = {
+        '--sv-accent-ink': accentInk,
+        '--sv-text': t.text,
+        '--sv-muted': t.textMuted,
+        '--sv-accent': t.accent,
+        '--sv-accent-rgb': hexToRgb(t.accent) || (isLight ? '30,122,90' : '0,212,255'),
+        '--sv-card-bg': t.glassCardBg,
+        '--sv-card-border': t.glassCardBorder,
+        '--sv-card-text': t.glassCardText,
+        '--sv-screen-bg': t.glassScreenBg,
+        '--sv-input-bg': t.inputBg,
+        '--sv-input-border': t.inputBorder,
+        '--sv-input-text': t.inputText,
+        // A scrim has to darken a dark theme and darken a pale one too, or the
+        // card behind it stops reading as "in front".
+        '--sv-scrim': isLight ? 'rgba(20,34,40,0.42)' : 'rgba(5,5,16,0.72)',
+        // Hairlines and hovers. Mid-grey reads on both grounds, which a white
+        // or black one never does.
+        '--sv-hairline': isLight ? 'rgba(23,50,60,0.14)' : 'rgba(255,255,255,0.10)',
+        '--sv-hover': isLight ? 'rgba(23,50,60,0.05)' : 'rgba(255,255,255,0.05)',
+        // The caution stripe. Amber on dark, a deeper ochre on pale — the same
+        // amber on cream is nearly invisible.
+        '--sv-warn': isLight ? 'rgba(150,95,10,0.95)' : 'rgba(255,190,90,0.7)',
+        '--sv-warn-bg': isLight ? 'rgba(200,140,30,0.10)' : 'rgba(255,190,90,0.08)',
+    }
+    for (const [k, v] of Object.entries(tokens)) {
+        if (v) rootStyle.setProperty(k, v)
+    }
+    // For the few rules that need to know, rather than just needing a colour.
+    document.body.classList.toggle('theme-pale', isLight)
+
     // BODY
     // The dark theme's galaxy background lives in styles.css. Setting the
     // `background` shorthand here would wipe its background-image, so for dark
@@ -2357,7 +2455,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             if (el) el.classList.add('sw-active')
 
             const panel = document.getElementById('study-word')
-            const accent = localStorage.getItem('luloTheme') === 'light' ? '#1E7A5A' : '#00d4ff'
+            // Read from the published token rather than re-deriving it here.
+            // This used to test `theme === 'light'`, which is true for one of
+            // the two pale themes — `soft` got the dark-theme accent.
+            const accent = getComputedStyle(document.documentElement)
+                .getPropertyValue('--sv-accent-ink').trim() || '#00d4ff'
 
             // The hand-written note and caution, looked up by Strong's number.
             // Present for 27 of the 61 words in lulo-lexicon.js and absent for

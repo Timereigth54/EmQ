@@ -2718,9 +2718,9 @@
    on both grounds. */
 .study-input {
     flex: 1;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: inherit;
+    background: var(--sv-input-bg, rgba(255,255,255,0.06));
+    border: 1px solid var(--sv-input-border, rgba(255,255,255,0.15));
+    color: var(--sv-input-text, inherit);
     padding: 12px 18px;
     border-radius: 50px;
     font-size: 0.9rem;
@@ -2729,9 +2729,9 @@
     min-width: 0;
 }
 .study-go {
-    background: rgba(0,212,255,0.12);
-    border: 1px solid rgba(0,212,255,0.45);
-    color: inherit;
+    background: rgba(var(--sv-accent-rgb, 0,212,255), 0.12);
+    border: 1px solid rgba(var(--sv-accent-rgb, 0,212,255), 0.5);
+    color: var(--sv-accent-ink, inherit);
     padding: 12px 20px;
     border-radius: 50px;
     font-size: 0.85rem;
@@ -2746,6 +2746,7 @@
     min-height: 16px;
     line-height: 1.6;
 }
+body.theme-pale .study-status { opacity: 0.75; }
 
 #study-passage { font-size: 0.95rem; padding: 4px 2px; }
 
@@ -2753,11 +2754,12 @@
     font-size: 0.72rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    opacity: 0.4;
+    opacity: 0.45;
     padding: 4px 0 14px;
     margin-bottom: 8px;
-    border-bottom: 1px solid rgba(127,127,127,0.18);
+    border-bottom: 1px solid var(--sv-hairline, rgba(127,127,127,0.18));
 }
+body.theme-pale .study-head { opacity: 0.68; }
 
 /* One row per verse: the number in its own narrow column, the text in the
    other. Continuous prose made the chapter unreadable — nothing to scan
@@ -2771,17 +2773,19 @@
     line-height: 1.95;
     scroll-margin-top: 90px;
 }
-.study-verse + .study-verse { border-top: 1px solid rgba(127,127,127,0.10); }
-.study-verse:hover { background: rgba(127,127,127,0.06); }
+.study-verse + .study-verse { border-top: 1px solid var(--sv-hairline, rgba(127,127,127,0.10)); }
+.study-verse:hover { background: var(--sv-hover, rgba(127,127,127,0.06)); }
 
 .study-vnum {
     font-size: 0.7rem;
-    opacity: 0.35;
+    opacity: 0.42;
     user-select: none;
     text-align: right;
     padding-top: 4px;
     font-variant-numeric: tabular-nums;
 }
+/* A verse number you cannot find is a verse you cannot cite. */
+body.theme-pale .study-vnum { opacity: 0.62; }
 .study-vtext { min-width: 0; }
 
 /* A tagged word. The mark is deliberately quiet — a page where half the words
@@ -2797,11 +2801,17 @@
     border-radius: 3px;
     padding: 0 1px;
 }
-.sw:hover { background: rgba(0,212,255,0.12); box-shadow: inset 0 -1px 0 rgba(0,212,255,0.6); }
-.sw.sw-active {
-    background: rgba(0,212,255,0.2);
-    box-shadow: inset 0 -2px 0 rgba(0,212,255,0.85);
+.sw:hover {
+    background: rgba(var(--sv-accent-rgb, 0,212,255), 0.12);
+    box-shadow: inset 0 -1px 0 rgba(var(--sv-accent-rgb, 0,212,255), 0.6);
 }
+.sw.sw-active {
+    background: rgba(var(--sv-accent-rgb, 0,212,255), 0.2);
+    box-shadow: inset 0 -2px 0 rgba(var(--sv-accent-rgb, 0,212,255), 0.85);
+}
+/* The pale themes' accents are light greens and pinks, so the same alpha that
+   reads as a highlight on the galaxy barely shows on cream. */
+body.theme-pale .sw.sw-active { background: rgba(var(--sv-accent-rgb, 30,122,90), 0.3); }
 
 /* The word panel. Facts in a definition list, prose in labelled blocks —
    the two are different kinds of thing and ran together as one paragraph. */
@@ -2825,8 +2835,10 @@
     backdrop-filter: blur(26px);
     box-shadow: 0 -10px 40px rgba(0,0,0,0.45);
     padding-bottom: 26px;
+    color: var(--sv-card-text, inherit);
 }
 #study-word .sw-close {
+    color: var(--sv-text, inherit);
     position: absolute;
     top: 10px;
     right: 14px;
@@ -2868,6 +2880,7 @@
     font-size: 0.78rem;
 }
 #study-word .sw-rows dt { opacity: 0.45; white-space: nowrap; }
+body.theme-pale #study-word .sw-rows dt { opacity: 0.72; }
 #study-word .sw-rows dd { margin: 0; }
 
 #study-word .sw-label {
@@ -2878,20 +2891,21 @@
     opacity: 0.45;
     margin-bottom: 5px;
 }
+body.theme-pale #study-word .sw-label { opacity: 0.7; }
 #study-word .sw-block {
     font-size: 0.85rem;
     line-height: 1.75;
     margin-top: 14px;
     padding-top: 12px;
-    border-top: 1px solid rgba(127,127,127,0.14);
+    border-top: 1px solid var(--sv-hairline, rgba(127,127,127,0.14));
 }
 #study-word .sw-caution {
     font-size: 0.84rem;
     line-height: 1.75;
     margin-top: 14px;
     padding: 11px 13px;
-    border-left: 2px solid rgba(255,190,90,0.7);
-    background: rgba(255,190,90,0.08);
+    border-left: 2px solid var(--sv-warn, rgba(255,190,90,0.7));
+    background: var(--sv-warn-bg, rgba(255,190,90,0.08));
     border-radius: 0 10px 10px 0;
 }
 #study-word .sw-caution .sw-label { opacity: 0.75; }
@@ -2917,6 +2931,9 @@
     opacity: 0.9;
 }
 #voice-appeal-line:hover { opacity: 0.72; }
+/* Dark ink at 42% on cream is fainter than white at 42% on the galaxy. */
+body.theme-pale #voice-appeal-line { opacity: 0.62; }
+body.theme-pale #voice-appeal-line:hover { opacity: 0.88; }
 
 /* Out of the way while she is being spoken to. An ask for money over the top
    of someone opening their mouth to pray is the wrong thing at the wrong
@@ -2941,7 +2958,7 @@ body.mic-live #voice-appeal-line {
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: rgba(5,5,16,0.72);
+    background: var(--sv-scrim, rgba(5,5,16,0.72));
     backdrop-filter: blur(14px);
 }
 #voice-appeal-card {
@@ -2952,9 +2969,10 @@ body.mic-live #voice-appeal-line {
     text-align: center;
     padding: 28px 24px 22px;
     border-radius: 26px;
-    background: rgba(18,18,40,0.97);
-    border: 1px solid rgba(255,255,255,0.10);
-    box-shadow: 0 18px 60px rgba(0,0,0,0.5);
+    background: var(--sv-screen-bg, rgba(18,18,40,0.97));
+    border: 1px solid var(--sv-card-border, rgba(255,255,255,0.10));
+    box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+    color: var(--sv-text, inherit);
 }
 #voice-appeal-lulo {
     width: 74px;
@@ -2966,19 +2984,20 @@ body.mic-live #voice-appeal-line {
     font-size: 0.64rem;
     letter-spacing: 2.2px;
     text-transform: uppercase;
-    color: rgba(0,212,255,0.75);
+    color: var(--sv-accent-ink, rgba(0,212,255,0.75));
     margin-bottom: 8px;
 }
 #voice-appeal-title {
     font-size: 1.2rem;
     font-weight: 600;
-    color: white;
+    color: var(--sv-text, white);
     margin-bottom: 14px;
 }
 #voice-appeal-body {
     font-size: 0.85rem;
     line-height: 1.8;
-    color: rgba(255,255,255,0.72);
+    color: var(--sv-text, rgba(255,255,255,0.72));
+    opacity: 0.82;
     text-align: left;
     margin-bottom: 20px;
 }
@@ -2987,18 +3006,33 @@ body.mic-live #voice-appeal-line {
     width: 100%;
     padding: 13px 20px;
     border-radius: 50px;
-    background: rgba(0,220,110,0.16);
-    border: 1px solid rgba(0,220,110,0.5);
-    color: rgba(190,255,220,0.96);
+    background: rgba(var(--sv-accent-rgb, 0,220,110), 0.14);
+    border: 1px solid rgba(var(--sv-accent-rgb, 0,220,110), 0.5);
+    color: var(--sv-accent-ink, rgba(190,255,220,0.96));
     font-size: 0.9rem;
     font-family: 'Inter', sans-serif;
     text-decoration: none;
     cursor: pointer;
 }
-#voice-appeal-btn:hover { background: rgba(0,220,110,0.26); }
+#voice-appeal-btn:hover { background: rgba(var(--sv-accent-rgb, 0,220,110), 0.26); }
+
+/* On the pale themes both buttons were accent-coloured text on an
+   accent-tinted fill, which is the same hue twice and measures around 4:1
+   however dark the text is walked. The fill is what has to give: nearly white,
+   so the ink has the card to work against, with the accent kept in the border
+   where it still reads as the theme. */
+body.theme-pale .study-go,
+body.theme-pale #voice-appeal-btn {
+    background: rgba(var(--sv-accent-rgb, 30,122,90), 0.05);
+}
+body.theme-pale .study-go:hover,
+body.theme-pale #voice-appeal-btn:hover {
+    background: rgba(var(--sv-accent-rgb, 30,122,90), 0.12);
+}
 #voice-appeal-mail {
     font-size: 0.72rem;
-    color: rgba(255,255,255,0.35);
+    color: var(--sv-text, rgba(255,255,255,0.35));
+    opacity: 0.6;
     margin-top: 10px;
     word-break: break-all;
 }
@@ -3006,10 +3040,11 @@ body.mic-live #voice-appeal-line {
     margin-top: 14px;
     background: none;
     border: none;
-    color: rgba(255,255,255,0.4);
+    color: var(--sv-text, rgba(255,255,255,0.4));
+    opacity: 0.65;
     font-size: 0.8rem;
     font-family: 'Inter', sans-serif;
     cursor: pointer;
     padding: 6px;
 }
-#voice-appeal-close:hover { color: rgba(255,255,255,0.7); }
+#voice-appeal-close:hover { color: var(--sv-text, rgba(255,255,255,0.7)); }
