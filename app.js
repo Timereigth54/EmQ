@@ -3966,8 +3966,46 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 return
             }
 
+            // ─── GETTING OUT OF THE DATE FLOW ────────────────────────────
+            // `awaitingDate` used to be a trap. Anything that did not parse as
+            // a date got the same sentence back and left the stage set, so the
+            // next message got it too — forever. Nothing cleared it, there was
+            // no attempt limit, and because the branch returns early it also
+            // swallowed everything else you might want to say. Someone
+            // answering "What are you talking about?" was told, three times,
+            // that their question was not a date.
+            function wantsOutOfDateCapture(t) {
+                const l = String(t).toLowerCase().trim()
+                // Saying no, in the ways people actually say it.
+                if (/\b(never ?mind|nevermind|forget it|forget about it|cancel|stop|skip|not now|later|no thanks|no thank you|leave it|drop it)\b/.test(l)) return true
+                // Not answering — asking. Someone who replies with a question
+                // has lost the thread, and repeating the prompt will not find
+                // it for them.
+                if (l.endsWith('?')) return true
+                if (/\b(what (are|do) you (talking|mean)|what date|date of what|which date|i don'?t (know|understand)|huh)\b/.test(l)) return true
+                return false
+            }
+
+            function endDateCapture() {
+                for (const k of ['luloDateCaptureStage', 'luloDateCapture', 'luloDateCaptureDate',
+                                 'luloDateRawText', 'luloDateLabel', 'luloDateAttempts']) {
+                    localStorage.removeItem(k)
+                }
+            }
+
             // DATE CAPTURE FLOW
-            const dateCaptureStage = localStorage.getItem('luloDateCaptureStage')
+            let dateCaptureStage = localStorage.getItem('luloDateCaptureStage')
+
+            // Let go of the stage BEFORE the handlers see it, so the message
+            // falls through to her normal reply and she answers what was
+            // actually said, with the whole conversation in front of her. A
+            // canned line here is what made this feel broken.
+            if (dateCaptureStage === 'awaitingDate'
+                && !parseStoredDate(text)
+                && wantsOutOfDateCapture(text)) {
+                endDateCapture()
+                dateCaptureStage = null
+            }
 
             if (dateCaptureStage === 'awaitingConfirmation') {
                 const lower = text.toLowerCase()
@@ -3987,10 +4025,24 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
                 // Validate before accepting — make sure this is actually a date
                 const parsedCheck = parseStoredDate(text)
                 if (!parsedCheck) {
-                    addToChatHistory('lulo', `Hmm, I don't think I caught a date in that 💙 Could you tell me the date again? Something like "March 14" or "the 22nd of June" works well.`)
-                    return // Stay in this same stage, don't accept the bad input
+                    const attempts = (parseInt(localStorage.getItem('luloDateAttempts') || '0', 10) || 0) + 1
+                    // Two tries. If she cannot read it by then the problem is
+                    // the question, not the person answering it, and asking a
+                    // third time is badgering.
+                    if (attempts >= 2) {
+                        endDateCapture()
+                        addToChatHistory('lulo', `I'm not reading that properly, and I don't want to keep asking 💙 Let's leave it — tell me any time and I'll write it down.`)
+                        return
+                    }
+                    localStorage.setItem('luloDateAttempts', String(attempts))
+                    // Name the thing being asked about. The old line never did,
+                    // which is exactly why "Date of what?" happened.
+                    const whatFor = localStorage.getItem('luloDateLabel') || 'that date'
+                    addToChatHistory('lulo', `Sorry — I meant the date of ${whatFor} 💙 Something like "March 14" or "the 22nd of June". Or say never mind and we'll drop it.`)
+                    return
                 }
 
+                localStorage.removeItem('luloDateAttempts')
                 localStorage.setItem('luloDateCaptureDate', text)
                 
                 const presetLabel = localStorage.getItem('luloDateLabel')
@@ -7998,6 +8050,20 @@ function initApp() {
 
     // The study level persists, so its entrance has to come back with it.
     refreshStudyMenuEntry()
+
+    // A half-finished date capture must not survive a reload. It is a
+    // mid-conversation state — "what's the date?" makes sense in the beat
+    // after she asked, and makes none at all when it is the first thing you
+    // meet on opening the app tomorrow with no idea what she means.
+    //
+    // This also frees anyone already stuck: the old awaitingDate branch had no
+    // exit, so a stage set days ago is still sitting in their localStorage
+    // swallowing every message they send.
+    for (const k of ['luloDateCaptureStage', 'luloDateCapture', 'luloDateCaptureDate',
+                     'luloDateRawText', 'luloDateLabel', 'luloDateAttempts',
+                     'luloDateAskFeelings']) {
+        localStorage.removeItem(k)
+    }
 
     // Voice made visible — the ring around the mic and the bars under Lulo.
     LuloWave.init()

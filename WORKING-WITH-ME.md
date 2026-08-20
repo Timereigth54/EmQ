@@ -60,6 +60,16 @@ has a comment explaining the reasoning, often including what went wrong
 before. Match that. It is the house style and it is genuinely load-bearing —
 several bugs were only diagnosable because a past comment recorded the trap.
 
+**Every conversational stage needs an exit.** app.js has several stage
+machines held in localStorage — date capture, tongues, prayer, trivia. One of
+them (`awaitingDate`) had no way out: a non-matching reply got the same
+sentence back and left the stage set, and because the branch returns early it
+swallowed everything else the person tried to say. When adding or touching one
+of these, it needs all four: recognise a refusal, recognise a question (a reply
+ending in `?` is someone who has lost the thread, not an answer), cap the
+retries, and clear the stage on load so it cannot survive a reload and ambush
+someone tomorrow.
+
 **Safety rails are not features.** Scripture retrieval is always on, whether
 or not the study level is unlocked, because it is what stops Lulo answering
 from memory. Know which parts of a system are rails before gating anything.
