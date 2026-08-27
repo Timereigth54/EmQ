@@ -45,10 +45,12 @@
 // switch was that she not sound like a machine; saving 1.5 cents per thousand
 // characters is the wrong thing to optimise against that.
 //
-// Warm, unhurried, female voices in aura-2-en worth auditioning against
-// voice-server/test_v10.wav: luna, cora, ophelia, harmonia, athena, andromeda.
+// Chosen by ear, from all six of luna, cora, ophelia, harmonia, athena and
+// andromeda reading her greeting line back to back. That is the only way this
+// decision can be made — there is no parameter here that describes her, just a
+// name, so the name gets picked by listening rather than by reasoning about it.
 const TTS_MODEL = '@cf/deepgram/aura-2-en'
-const TTS_SPEAKER = 'luna'
+const TTS_SPEAKER = 'ophelia'
 
 // The kill switch, and the only one. It sits here rather than in the app for
 // the reason the freeze proved: a browser holding a cached copy of the client
