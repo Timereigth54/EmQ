@@ -1,5 +1,17 @@
 # Deploying Lulo's Voice Server
 
+> **Not the live path since 2026-08-27.** Lulo speaks through Workers AI
+> (Deepgram Aura) inside the existing Cloudflare Worker — no GPU, no cold start,
+> ~$0.03 per thousand characters, nothing at all while she is quiet. See the
+> `/tts` route in `worker/index.js`.
+>
+> This folder stays because Aura cannot clone a voice. Everything here — the
+> reference recording, the identity prompt, the tone table, the pinned build —
+> is the only path back to the voice Lulo was actually written for, and the app
+> still sends a `tone` with every line so that switching back is a deploy rather
+> than a rewrite. Nothing below has been re-verified since the freeze; treat the
+> RunPod steps as last known good, not as current.
+
 This folder is **not** served by the PWA. It lives in the repo so the backend and
 the frontend that calls it stay in one place.
 

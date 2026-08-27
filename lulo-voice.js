@@ -2,56 +2,46 @@
  * Em_Q — lulo-voice.js
  * Lulo's speech engine. Extracted as its own module in Phase 3.
  *
- * ── FROZEN, 2026-08-20 ──────────────────────────────────────────────────────
- * Her voice is off. Not broken, not a bug to chase — switched off on purpose,
- * because a GPU that bills by the second is not something this project can
- * carry yet.
+ * ── THAWED, 2026-08-27 ──────────────────────────────────────────────────────
+ * She speaks again. The freeze of 2026-08-20 was about a GPU billing by the
+ * second, not about the voice itself, and Workers AI removes the GPU: the
+ * Worker's /tts route now reaches Deepgram Aura, which costs three hundredths
+ * of a cent per thousand characters, starts instantly, and charges nothing at
+ * all while nobody is talking.
  *
- * What is off: every route to sound coming OUT of her. The VoxCPM2 backend,
- * and the Web Speech fallback with it — a robot reading her lines is not the
- * thing that was promised, and half a promise is worse than an honest no.
+ * The honest part, which the app says out loud rather than hiding: this is not
+ * the voice she was written for. That one was cloned from a recording and
+ * needs the GPU that could not be afforded. Aura has a fixed cast and no way
+ * to clone, so what you hear is a stand-in — a real, warm, unrobotic one, and
+ * still someone else. voice-server/ stays in the repo for the day the cloned
+ * voice comes back, and every tone this file chooses is still sent so that day
+ * costs a deploy rather than a rewrite.
  *
- * What is untouched: everything going IN. The mic still listens, speech
- * recognition still transcribes, you can still talk to her out loud and she
- * still answers — in text. That was the part people actually used.
- *
- * The engine below is left whole rather than deleted. Every path is gated on
- * FROZEN, so turning her back on is setting one flag to false and redeploying
- * — there is nothing to rebuild and nothing to remember. When that day comes,
- * check voice-server/DEPLOY.md is still accurate first.
- *
- * The two paths, for when it thaws:
- *   1. VoxCPM2 backend (LuloVoice.endpoint) — Lulo's real voice.
- *   2. Web Speech API fallback — used when no endpoint is set or it fails.
+ * The two paths:
+ *   1. Aura via the Worker (LuloVoice.endpoint) — what she speaks with.
+ *   2. Web Speech API fallback — the robot, and now genuinely a last resort:
+ *      no cold start left to time out on, so it is reached only when the
+ *      network or playback fails outright. A robot saying the line still beats
+ *      silence, but it should be rare enough to be a bug report.
  *
  * Loaded BEFORE app.js. Nothing here depends on app.js.
  */
 
 // ─── LULO VOICE ENGINE ───────────────────────────────────────────────────────
 const LuloVoice = {
-    // ─── THE FREEZE ──────────────────────────────────────────────────────
-    // One flag. Set it to false and set `endpoint` back to the Worker URL
-    // below to give her a voice again; nothing else has to change.
-    //
-    // Everything that could make a sound or open a socket checks this first,
-    // rather than relying on call sites to behave. There are twenty-odd
-    // places in app.js that ask her to speak, and a freeze that depends on
-    // all of them being edited correctly is a freeze with holes in it.
-    FROZEN: true,
-
     enabled: false,
 
-    // TTS route on the existing Cloudflare Worker, which proxies to RunPod
-    // and keeps the RunPod API key server-side.
+    // TTS route on the existing Cloudflare Worker. Workers AI runs inside that
+    // same Worker, so this is one hop rather than the two it used to be, and
+    // there is no key on this side to keep out of the client because there is
+    // no third party left to hold one for.
     //
-    // Deliberately null while frozen, and not merely unused: this is the only
-    // address in the client that reaches a paid GPU, so emptying it means
-    // there is no URL left to call by accident — not from a stale timer, not
-    // from a code path nobody remembered. warmUp() and _prefetch() also
-    // return early on FROZEN, so it is stopped twice over.
-    //
-    // To restore: 'https://em1-prayer.kayuso2011.workers.dev/tts'
-    endpoint: null,
+    // The FROZEN flag that used to gate every path in this file is gone rather
+    // than set to false. A kill switch still exists, but it lives in the
+    // Worker — in front of the thing that spends money, where a stale cached
+    // copy of this app cannot walk around it. That was the argument for
+    // putting it there in the first place, and it did not stop being true.
+    endpoint: 'https://em1-prayer.kayuso2011.workers.dev/tts',
 
     currentAudio: null,
 
@@ -95,7 +85,6 @@ const LuloVoice = {
     _unlockTries: 0,
 
     unlock() {
-        if (this.FROZEN) return
         if (this._unlocked || this._unlockTries >= 3) return
         // Never mid-sentence. This assigns src on the very element that is
         // playing, so unlocking while she talks cuts her off — and the error
@@ -120,16 +109,11 @@ const LuloVoice = {
     },
 
     load() {
-        if (this.FROZEN) {
-            // Off, and stays off across reloads. The stored preference is
-            // cleared rather than ignored, so someone who had her voice on
-            // before the freeze does not carry a setting that now lies about
-            // what the app does.
-            this.enabled = false
-            localStorage.removeItem('luloVoiceEnabled')
-            updateVoiceToggleUI()
-            return
-        }
+        // Anyone who had her voice on before the freeze had that preference
+        // cleared, not remembered — so she starts muted for everyone and the
+        // first thing they do about it is a deliberate tap. Which is the right
+        // way round for a voice that is new news: it announces itself once (see
+        // the welcome card in app.js) and then waits to be asked.
         this.enabled = localStorage.getItem('luloVoiceEnabled') === 'true'
         updateVoiceToggleUI()
         // Any first touch will do — the point is only that it is a gesture.
@@ -139,10 +123,6 @@ const LuloVoice = {
     },
 
     toggle() {
-        // While frozen there is nothing to toggle. The speaker pill opens the
-        // appeal instead — see showVoiceAppeal() in app.js — so this should
-        // not be reached, but a stray caller must not switch her back on.
-        if (this.FROZEN) return false
         this.enabled = !this.enabled
         localStorage.setItem('luloVoiceEnabled', String(this.enabled))
         if (!this.enabled) this.stop()
@@ -151,70 +131,32 @@ const LuloVoice = {
             // A real tap, and she is about to need the permission iOS only
             // grants during one.
             this.unlock()
-            // Wake the GPU now rather than when you first speak to her. The
-            // greeting itself must not do this job: routed through the queue
-            // it would arrive a cold start late *and* hold up whatever you
-            // said in the meantime, so you would wait out a stale hello
-            // before hearing the answer you actually wanted.
-            this.warmUp()
             this._greet()
         }
         return this.enabled
     },
 
-    // ─── WAKING THE GPU EARLY ────────────────────────────────────────────
-    // Turning her voice on is a promise that she is about to speak, so it is
-    // the right moment to start a worker booting. A cold start is around 45
-    // seconds and the wait is unavoidable — but it can be spent while you are
-    // still choosing what to say instead of after you have said it.
+    // ─── THE FIRST THING SHE SAYS ────────────────────────────────────────
+    // Turning her voice on is a promise, and this is it being kept in the same
+    // second it is made. So it goes through the ordinary path — same endpoint,
+    // same voice, same queue as every other line — because a greeting that
+    // arrived by some other route would be the one line she speaks that proves
+    // nothing about the rest.
     //
-    // Deliberately not queued and the audio is thrown away. The point is the
-    // boot, not the sound; queueing it would put a stale greeting in front of
-    // your first real sentence.
-    _warmedAt: 0,
-
-    warmUp() {
-        if (this.FROZEN || !this.endpoint) return
-        // Workers idle out after a few minutes, so re-warming is worth it, but
-        // not on every toggle in a row.
-        if (Date.now() - this._warmedAt < 120000) return
-        this._warmedAt = Date.now()
-        fetch(this.endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            // Same empty voice as a real line — see _prefetch. A warm-up that
-            // took a different path through the server would be warming
-            // something other than what she actually uses.
-            body: JSON.stringify({ text: 'Hello.', language: 'en', tone: 'neutral', voice: '' })
-        }).catch(() => { this._warmedAt = 0 })   // let the next toggle retry
-    },
-
-    // Her greeting comes from a file shipped with the app: instant, the same
-    // every time, works with no signal, and costs no GPU. Generating it on
-    // demand would make the first thing she ever says the slowest thing she
-    // ever says.
+    // It used to be a file: audio/lulo-greeting.wav, chosen because a
+    // recording is instant and costs no GPU. Both true, and it never worked.
+    // The file was never actually shipped — it is still sitting commented out
+    // in sw.js — so el.onerror fired every time and every greeting fell
+    // through to the Web Speech fallback. The first thing anyone ever heard
+    // from Lulo was a robot reading her line, immediately after she promised
+    // to speak to them.
     //
-    // Falls back to the system voice only if the file is missing, which is
-    // still better than a minute of silence.
-    _GREETING: 'audio/lulo-greeting.wav',
-
+    // The reasoning behind the file went with the GPU anyway. This is one
+    // short sentence: it generates in well under a second and costs a small
+    // fraction of a cent.
     _greet() {
-        // Her greeting is a file rather than a generated line, so it costs no
-        // GPU — but it is still her voice, and playing it while the app is
-        // asking for help to give her one would be a strange thing to hear.
-        if (this.FROZEN) return
         const name = localStorage.getItem('luloUserName') || 'friend'
-        const el = this._el()
-        let settled = false
-        const toRobot = () => {
-            if (settled) return
-            settled = true
-            this._fallback(`Voice is on, ${name}. I'll speak to you from now on.`)
-        }
-        el.onerror = toRobot
-        el.onended = null
-        el.src = this._GREETING
-        el.play().then(() => { settled = true }).catch(toRobot)
+        this.speak(`Voice is on, ${name}. I'll speak to you from now on.`, 'happy')
     },
 
     // ─── HOW A MOOD IS SPOKEN ────────────────────────────────────────────
@@ -348,9 +290,6 @@ const LuloVoice = {
     },
 
     speak(text, tone) {
-        // Two gates rather than one. `enabled` is what a user toggles and
-        // could in principle be set from anywhere; FROZEN is the decision.
-        if (this.FROZEN) return
         if (!this.enabled) return
         if (!text) return
         const clean = this._clean(text)
@@ -373,31 +312,25 @@ const LuloVoice = {
 
     // Begin the network request for a line without waiting for its turn.
     // Defaults to the next one up: one line ahead only, because two would have
-    // her generating a paragraph she may never reach if the user interrupts,
-    // on a GPU billed by the second.
+    // her generating a paragraph she may never reach if the user interrupts —
+    // which now costs characters rather than GPU seconds, but is still paid
+    // for and still thrown away.
     _prefetch(item = this._queue[0]) {
-        if (this.FROZEN) return
         if (!item || item.audio) return
         item.audio = fetch(this.endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // ─── voice: '' — DO NOT REMOVE WITHOUT READING THIS ──────────
-            // The voice server describes her in a parenthetical before her
-            // line, which VoxCPM reads as an instruction only while it is
-            // inventing a speaker. Since she has been pinned to a reference
-            // recording it is cloning instead, and the description stops
-            // being an instruction and gets spoken: every line arrived with
-            // "with a soothing and caring tone" read out in front of it.
+            // `tone` is sent and currently lands nowhere: Aura reads its
+            // delivery out of the text and has no tone parameter. It is kept
+            // because the mapping that produces it (toneForMood, above) is the
+            // considered part, and it is what the cloned voice will want back
+            // the day it can be afforded. Sending a field the server ignores
+            // costs nothing; rebuilding this from memory later would not.
             //
-            // An explicit empty string means "no description at all", which
-            // the server honours over its own default. That is the whole fix,
-            // applied from this side so it needs no image rebuild.
-            //
-            // main.py makes the same choice server-side once rebuilt, and the
-            // two agree: an empty voice there produces this exact prompt. So
-            // this stays correct either way, and stops mattering the day the
-            // new image is deployed.
-            body: JSON.stringify({ text: item.text, language: 'en', tone: item.tone, voice: '' })
+            // `voice: ''` and `language` went with RunPod. The first was a
+            // VoxCPM workaround for a description being read aloud instead of
+            // obeyed, and the second was never read by anything.
+            body: JSON.stringify({ text: item.text, tone: item.tone })
         }).then(res => {
             if (!res.ok) throw new Error('TTS ' + res.status)
             return res.blob()
@@ -563,11 +496,6 @@ const LuloVoice = {
 
     _fallback(text, onDone, tone) {
         const done = onDone || (() => {})
-        // The robot voice is frozen too. It costs nothing to run, which makes
-        // it tempting to leave on — but it is not her, and shipping a
-        // stand-in while asking people to fund the real thing muddles what is
-        // actually being asked for.
-        if (this.FROZEN) { done(); return }
         if (!('speechSynthesis' in window)) { done(); return }
         const u = new SpeechSynthesisUtterance(text)
         const p = this._toneProsody[tone] || this._toneProsody.neutral
@@ -620,15 +548,11 @@ function updateVoiceToggleUI() {
     if (!btn) return
     // The button holds an inline SVG — the muted/speaking states are pure CSS,
     // so never write textContent here or the icon gets destroyed.
-    if (LuloVoice.FROZEN) {
-        // Muted, and it does not pretend otherwise. The pill keeps its slash
-        // and stops calling itself a toggle, because it no longer toggles
-        // anything — it opens the appeal.
-        btn.classList.remove('voice-active')
-        btn.classList.add('voice-frozen')
-        btn.title = 'Help Lulo speak'
-        return
-    }
+    //
+    // voice-frozen is cleared rather than assumed absent: a returning user is
+    // running this file against a page the service worker may still be serving
+    // from cache, and a pill left dimmed would say muted on a voice that works.
+    btn.classList.remove('voice-frozen')
     btn.classList.toggle('voice-active', LuloVoice.enabled)
     btn.title = LuloVoice.enabled ? 'Voice ON, tap to mute' : 'Voice OFF, tap to enable'
 }

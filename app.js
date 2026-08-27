@@ -3856,12 +3856,17 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             updateStreakBadge()
             updateVoiceToggleUI()
 
-            // Phase 3 welcome — "Lulo can speak now", shown once. Suppressed
-            // while her voice is frozen: it announces a feature that is off
-            // and its button turns on a voice that will not arrive. The markup
-            // and CSS stay put for when she can speak again.
-            if (!localStorage.getItem('luloPhase3WelcomeSeen')
-                && !(typeof LuloVoice !== 'undefined' && LuloVoice.FROZEN)) {
+            // The welcome card, shown once. It announced Phase 3's new voice,
+            // then spent the freeze suppressed, because a card advertising a
+            // feature that is switched off is just a lie with a button on it.
+            //
+            // It announces her voice coming back now, and the key it checks
+            // changed with it. Everyone who used the app before the freeze has
+            // luloPhase3WelcomeSeen set, and they are exactly who this is news
+            // for: the voice they were told about, then lost, works again —
+            // and the reason it was lost is gone rather than paid for. An
+            // announcement nobody who was here can see is not an announcement.
+            if (!localStorage.getItem('luloVoiceBackSeen')) {
                 setTimeout(() => showPhase3Welcome(), 800)
             }
 
@@ -7156,14 +7161,6 @@ const LuloSound = {
 // Phase 3: the top-left pill now toggles Lulo's *voice*. The Web Audio tone
 // system (LuloSound) is separate and stays on — LuloVoice is additive.
 function toggleSound() {
-    // While her voice is frozen the pill opens the appeal instead of toggling
-    // anything. Anything else that still calls this — a keyboard shortcut, an
-    // onboarding step — lands here and gets the appeal too, rather than
-    // silently flipping a setting that does nothing.
-    if (typeof LuloVoice !== 'undefined' && LuloVoice.FROZEN) {
-        showVoiceAppeal()
-        return
-    }
     const on = LuloVoice.toggle() // updateVoiceToggleUI() handles the icon state
     if (on) LuloSound.response()
 
@@ -7716,9 +7713,9 @@ function dismissPhase3Welcome(skip = false) {
         el.style.transition = 'opacity 0.3s ease'
         setTimeout(() => { el.style.display = 'none' }, 300)
     }
-    localStorage.setItem('luloPhase3WelcomeSeen', '1')
+    localStorage.setItem('luloVoiceBackSeen', '1')
 
-    if (!skip && !LuloVoice.FROZEN && !LuloVoice.enabled) toggleSound()
+    if (!skip && !LuloVoice.enabled) toggleSound()
 }
 
 // Reads a token published by setTheme(). Cards built as HTML strings cannot
@@ -7734,9 +7731,14 @@ function sv(name, fallback) {
     return v || fallback
 }
 
-// ─── HELP LULO SPEAK ────────────────────────────────────────────────────────
-// Her voice is frozen (see the note at the top of lulo-voice.js). The speaker
-// pill opens this instead of toggling a setting that no longer does anything.
+// ─── ABOUT HER VOICE ────────────────────────────────────────────────────────
+// She speaks with a stand-in — see the note at the top of lulo-voice.js. This
+// card is where that gets said plainly, for anyone who wants to know.
+//
+// It is opened from one quiet line under the greeting, and no longer from the
+// speaker pill: the pill went back to being a toggle the moment she could
+// speak again, and a control that opens an appeal instead of doing its job is
+// a control asking for money at the exact moment you wanted something else.
 //
 // Deliberately a mailto and nothing else. No payment form, no account details,
 // no third-party donation widget — just a way to reach a person. Anything more

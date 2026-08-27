@@ -1,13 +1,20 @@
 /*
  * Em_Q — Cloudflare Worker (em1-prayer.kayuso2011.workers.dev)
  *
- * Two routes, two upstreams, two keys:
- *   POST /tts  → RunPod Serverless (VoxCPM2)      env.RUNPOD_API_KEY
- *                FROZEN as of 2026-08-20 — returns 410 without calling
- *                RunPod. See TTS_FROZEN below.
+ * Two routes, two upstreams, one key:
+ *   POST /tts  → Workers AI (Deepgram Aura)       env.AI binding
+ *                Was RunPod Serverless (VoxCPM2), frozen 2026-08-20 for
+ *                cost, thawed 2026-08-27 onto Workers AI. See /tts below.
  *   POST /     → Anthropic Messages API           env.ANTHROPIC_API_KEY
  *
- * Both keys stay server-side; the app never sees either.
+ * The Anthropic key stays server-side; the app never sees it. RUNPOD_API_KEY
+ * is no longer read by anything here and can be deleted from the secrets.
+ *
+ * /tts needs the Workers AI binding. It is not a secret and not in this file —
+ * add it in the dashboard (Settings → Bindings → Workers AI, variable name
+ * AI), or as `[ai] binding = "AI"` in wrangler.toml. Without it env.AI is
+ * undefined and every line comes back a 500, which reaches the app as the
+ * robot voice rather than as an error anyone sees.
  *
  * The secret names above are exact, and Cloudflare will not warn you if one
  * is wrong. The binding was named CLAUDE_API_KEY for a while: env lookups for
@@ -25,9 +32,31 @@
  * dashboard editor), and keep the two in step.
  */
 
-// One flag, read by the /tts route below. See the block there for why the
-// freeze is enforced on this side as well as in the app.
-const TTS_FROZEN = true
+// ─── WHO SHE SOUNDS LIKE ────────────────────────────────────────────────────
+// Aura has a fixed cast and no cloning, so choosing her voice is choosing a
+// name off this list rather than describing one. Both are overridable per
+// request — auditioning a different Lulo should cost a request body, not a
+// deploy — but the default is what every user actually hears, so it is the
+// only one that matters.
+//
+// aura-2-en over aura-1: twice the price per character ($0.030 vs $0.015 per
+// 1k) and still small enough not to feature in this project's costs, for a
+// voice that carries a sentence noticeably better. The whole point of the
+// switch was that she not sound like a machine; saving 1.5 cents per thousand
+// characters is the wrong thing to optimise against that.
+//
+// Warm, unhurried, female voices in aura-2-en worth auditioning against
+// voice-server/test_v10.wav: luna, cora, ophelia, harmonia, athena, andromeda.
+const TTS_MODEL = '@cf/deepgram/aura-2-en'
+const TTS_SPEAKER = 'luna'
+
+// The kill switch, and the only one. It sits here rather than in the app for
+// the reason the freeze proved: a browser holding a cached copy of the client
+// still has this URL, so a switch that only lives client-side is one a stale
+// cache walks straight around. Set it to false and every line falls back to
+// the robot voice — worse, and not silent, which is the right failure for
+// something being switched off to stop a bill rather than to hide a bug.
+const TTS_ENABLED = true
 
 export default {
     async fetch(request, env) {
@@ -44,118 +73,72 @@ export default {
         }
 
         if (url.pathname === '/tts') {
-            // ─── FROZEN, 2026-08-20 ──────────────────────────────────────
-            // Her voice is off, and this is the half of the freeze that
-            // actually guarantees it. The client no longer holds this URL,
-            // but a browser running a cached copy of the old app still does —
-            // and that copy would call straight through to a GPU that bills
-            // by the second. So the gate is here, in front of the only code
-            // path that spends money, rather than only in the client where a
-            // stale cache can walk around it.
+            // ─── HER VOICE, BACK ON, 2026-08-27 ──────────────────────────
+            // This used to be a RunPod call. Everything that made that
+            // expensive is gone: no GPU to rent, no 45-second cold start, no
+            // meter running while nobody is speaking. Workers AI bills per
+            // character of text, so an idle app costs nothing and a busy one
+            // costs what it actually said.
             //
-            // 410 rather than 404: the route existed and was withdrawn, which
-            // is exactly what a cached client should be told.
-            //
-            // To restore: delete this block, and set FROZEN=false and the
-            // endpoint back in lulo-voice.js. Nothing else changed.
-            if (TTS_FROZEN) {
+            // What was given up is real, and the app says so rather than
+            // hiding it: Aura has a fixed cast and no cloning, so this is not
+            // the voice built from lulo_reference.wav. It is a stand-in — a
+            // good one, and not hers. voice-server/ stays in the repo for the
+            // day the cloned voice can be afforded again.
+            if (!TTS_ENABLED) {
                 return new Response(
-                    JSON.stringify({ error: 'tts_frozen', detail: "Lulo’s voice is switched off." }),
-                    { status: 410, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+                    JSON.stringify({ error: 'tts_disabled' }),
+                    { status: 503, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
                 )
             }
             try {
-                // `tone` decides how Lulo says the line, `voice` and `seed`
-                // are the audition overrides. These used to be dropped here:
-                // the handler destructured `text` alone and rebuilt the job as
-                // { input: { text } }, so anything else the app sent was
-                // silently discarded and every line came out in her resting
-                // voice no matter what was asked for.
-                const { text, tone, voice, seed } = await request.json()
+                // `speaker` and `model` are audition overrides; the app sends
+                // neither. `tone` is still sent — the client goes on choosing
+                // one per line — and is deliberately ignored here: Aura takes
+                // its delivery from the text itself and has no tone parameter
+                // to hand it to. Tearing that mapping out client-side would
+                // only mean rebuilding it the day the cloned voice returns,
+                // so it stays wired and lands nowhere.
+                const { text, speaker, model } = await request.json()
                 if (!text) return new Response('No text', { status: 400 })
 
-                // Forwarded only when present, so the voice server's own
-                // defaults stay in charge of anything the caller didn't set.
-                const input = { text }
-                if (tone !== undefined) input.tone = tone
-                if (voice !== undefined) input.voice = voice
-                if (seed !== undefined) input.seed = seed
+                // A ceiling, because this route is open and billed by the
+                // character. The app splits her into sentences long before
+                // she gets here, so anything near this did not come from it.
+                if (text.length > 1000) {
+                    return new Response(JSON.stringify({ error: 'Too long' }), {
+                        status: 413,
+                        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+                    })
+                }
 
-                // /runsync holds the connection open and returns the result
-                // inline. /run + polling meant every line waited for the next
-                // poll tick before anyone noticed it was ready — dead time
-                // added to a job that had already finished, on top of a
-                // generation that only takes about a second.
-                //
-                // It falls back to a job id when the work outlasts its window,
-                // which is what a cold start does, so the polling loop below
-                // is still needed — just no longer on the common path.
-                const submitRes = await fetch('https://api.runpod.ai/v2/bibe8ou3zkmbrz/runsync', {
-                    method: 'POST',
+                // No `encoding` is passed. The binding documents MPEG as what
+                // it hands back, and mp3 carries container rules of its own
+                // that a wrong guess turns into a 400 on every line she
+                // speaks. Taking the documented default keeps that impossible.
+                const out = await env.AI.run(
+                    model || TTS_MODEL,
+                    { text, speaker: speaker || TTS_SPEAKER },
+                    { returnRawResponse: true }
+                )
+
+                // returnRawResponse gives back a Response; without it the
+                // binding resolves to the ReadableStream itself. Handling both
+                // means a change in that default cannot silence her.
+                const body = out instanceof Response ? out.body : out
+
+                // Streamed straight through. The RunPod path had to base64
+                // decode a whole WAV inside the Worker — the hand-rolled loop
+                // that replaced Uint8Array.from() after it started killing
+                // requests on CPU — and none of that exists any more. The
+                // audio arrives as bytes and leaves as bytes, so the first of
+                // them reach the phone while the rest are still being made.
+                return new Response(body, {
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${env.RUNPOD_API_KEY}`,
-                    },
-                    body: JSON.stringify({ input })
-                })
-                const sync = await submitRes.json()
-
-                // RunPod hands the audio back as base64 in a JSON body, so it
-                // has to be decoded here before it can be played.
-                //
-                // This was Uint8Array.from(atob(s), c => c.charCodeAt(0)),
-                // which invokes a callback once per byte — around 750,000
-                // calls for six seconds of 48kHz audio. A Worker gets a small
-                // CPU allowance per request and exceeding it kills the worker
-                // mid-response, which reaches the caller as a connection reset
-                // rather than as an error. That matches what we measured:
-                // requests that FAILED came back cleanly and quickly, while
-                // every request that actually produced audio died on the way
-                // home, the more audio the more reliably.
-                //
-                // A plain loop over the string does the identical work with no
-                // per-byte call, which is far cheaper for the same result.
-                const asAudio = out => {
-                    if (!out?.audio) return null
-                    const bin = atob(out.audio)
-                    const bytes = new Uint8Array(bin.length)
-                    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-                    return new Response(bytes, {
-                        headers: { 'Content-Type': 'audio/wav', 'Access-Control-Allow-Origin': '*' }
-                    })
-                }
-
-                if (sync.status === 'COMPLETED') {
-                    const r = asAudio(sync.output)
-                    if (r) return r
-                    return new Response(JSON.stringify({ error: 'No audio', detail: sync.output }), { status: 502 })
-                }
-                if (sync.status === 'FAILED') {
-                    return new Response(JSON.stringify({ error: 'Job failed', detail: sync }), { status: 502 })
-                }
-
-                const id = sync.id
-                if (!id) return new Response(JSON.stringify({ error: 'No job ID', detail: sync }), { status: 502 })
-
-                // Only reached when the work outlasted /runsync's window, which
-                // in practice means a cold start. Short ticks near the front:
-                // a worker that has just finished booting is about to answer,
-                // and a flat 5s tick spent most of its time waiting on a job
-                // that was already done.
-                for (let i = 0; i < 40; i++) {
-                    await new Promise(r => setTimeout(r, i < 10 ? 1000 : 3000))
-                    const pollRes = await fetch(`https://api.runpod.ai/v2/bibe8ou3zkmbrz/status/${id}`, {
-                        headers: { 'Authorization': `Bearer ${env.RUNPOD_API_KEY}` }
-                    })
-                    const data = await pollRes.json()
-                    if (data.status === 'COMPLETED') {
-                        const r = asAudio(data.output)
-                        if (r) return r
-                        return new Response(JSON.stringify({ error: 'No audio' }), { status: 502 })
+                        'Content-Type': 'audio/mpeg',
+                        'Access-Control-Allow-Origin': '*',
                     }
-                    if (data.status === 'FAILED') return new Response(JSON.stringify({ error: 'Job failed', detail: data }), { status: 502 })
-                }
-                return new Response(JSON.stringify({ error: 'Timeout' }), { status: 504 })
+                })
             } catch (err) {
                 return new Response(JSON.stringify({ error: err.message }), {
                     status: 500,

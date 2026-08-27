@@ -2920,10 +2920,14 @@ body.theme-pale #study-word .sw-label { opacity: 0.7; }
 }
 #study-word .sw-caution .sw-label { opacity: 0.75; }
 
-/* ─── HELP LULO SPEAK ────────────────────────────────────────────────────────
-   Her voice is frozen; see the note at the top of lulo-voice.js. This is the
-   quiet ask that lives on the home screen, and the card behind the speaker
-   pill is the long version. */
+/* ─── ABOUT HER VOICE ────────────────────────────────────────────────────────
+   She speaks with a stand-in; see the note at the top of lulo-voice.js. This
+   is the one quiet line about it on the home screen, and the card it opens is
+   the long version.
+
+   It stays at this weight deliberately. It is carrying news people will want
+   (she speaks again) and an ask most of them will not act on, and the only way
+   to do both without nagging is to be small enough to skip. */
 
 #voice-appeal-line {
     margin-top: 18px;
@@ -2953,13 +2957,7 @@ body.mic-live #voice-appeal-line {
     pointer-events: none;
 }
 
-/* The speaker pill no longer toggles anything, so it should not look like a
-   live control — but it must still read as tappable, because it opens the
-   appeal. Dimmed, slash showing, full strength under a finger. */
-#sound-btn.voice-frozen { opacity: 0.5; }
-#sound-btn.voice-frozen:hover { opacity: 0.85; }
-
-/* ─── THE APPEAL CARD ─────────────────────────────────────────────────────── */
+/* ─── THE CARD ───────────────────────────────────────────────────────────── */
 #voice-appeal {
     display: none;
     position: fixed;

@@ -35,7 +35,7 @@
         font-src https://fonts.gstatic.com;
         img-src 'self' data:;
         media-src 'self' blob: data:;
-        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://*.google-analytics.com https://www.gstatic.com https://*.proxy.runpod.net;
+        connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://firestore.googleapis.com https://em1-prayer.kayuso2011.workers.dev https://*.google-analytics.com https://www.gstatic.com;
         frame-ancestors 'none';
     ">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -279,7 +279,7 @@
     <!-- TOP BAR -->
     <div id="top-bar">
         <!-- LEFT: voice toggle -->
-        <div class="top-pill top-pill-circle" id="sound-btn" onclick="showVoiceAppeal()" title="Help Lulo speak">
+        <div class="top-pill top-pill-circle" id="sound-btn" onclick="toggleSound()" title="Voice OFF, tap to enable">
             <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
                 <path d="M4 9.5h3.2L12 5.2v13.6L7.2 14.5H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"
                       fill="currentColor"/>
@@ -342,12 +342,17 @@
              aria-live so it is announced rather than only seen. -->
         <p id="lulo-wait-note" aria-live="polite"></p>
 
-        <!-- HELP LULO SPEAK — the quiet version of the appeal card. Sits under
-             the greeting, and fades out while the mic is open: someone talking
-             to her should have nothing on screen but her. -->
+        <!-- ABOUT HER VOICE — the quiet version of the card. Sits under the
+             greeting, and fades out while the mic is open: someone talking to
+             her should have nothing on screen but her.
+
+             It does two jobs in one line, and the order matters. First it says
+             she speaks again, because that is news and most people will never
+             open the card to find out. Only then does it ask, and only as far
+             as a line of text can ask. -->
         <p id="voice-appeal-line" onclick="showVoiceAppeal()" role="button" tabindex="0"
            onkeypress="if(event.key==='Enter')showVoiceAppeal()">
-            We are giving Lulo a voice &mdash; <span>help make her better</span>
+            Lulo has a voice again &mdash; <span>help us make it hers</span>
         </p>
     </div>
 
@@ -567,10 +572,11 @@
 <div id="phase3-welcome" style="display:none;" aria-modal="true" role="dialog" aria-labelledby="phase3-welcome-title">
     <div id="phase3-welcome-card">
         <img id="phase3-welcome-lulo" src="images/lulo.png" alt="" aria-hidden="true"/>
-        <p id="phase3-welcome-eyebrow">Something new</p>
-        <h2 id="phase3-welcome-title">Lulo can speak now.</h2>
+        <p id="phase3-welcome-eyebrow">Her voice is back</p>
+        <h2 id="phase3-welcome-title">Lulo can speak again.</h2>
         <p id="phase3-welcome-body">
-            Turn her voice on and she'll read every reply aloud, in her own voice.
+            Turn her voice on and she'll say every reply out loud &mdash; a real voice,
+            warm and unhurried. Not a robot reading text at you.
         </p>
         <ul id="phase3-welcome-list">
             <li><span class="pw-key">Speaker</span><span>Top left. Turns her voice on and off.</span></li>
@@ -584,26 +590,27 @@
     </div>
 </div>
 
-<!-- HELP LULO SPEAK — where her voice toggle used to be. See the freeze
-     note at the top of lulo-voice.js for why. -->
+<!-- ABOUT HER VOICE — opened from the quiet line under the greeting, never
+     from the speaker pill. See the note at the top of lulo-voice.js. -->
 <div id="voice-appeal" style="display:none;" aria-modal="true" role="dialog" aria-labelledby="voice-appeal-title">
     <div id="voice-appeal-card">
         <img id="voice-appeal-lulo" src="images/lulo.png" alt="" aria-hidden="true"/>
-        <p id="voice-appeal-eyebrow">Help Lulo speak</p>
-        <h2 id="voice-appeal-title">We are giving Lulo a voice.</h2>
+        <p id="voice-appeal-eyebrow">About her voice</p>
+        <h2 id="voice-appeal-title">This one is on loan.</h2>
         <p id="voice-appeal-body">
-            Her voice is off for now. Running it needs a GPU, and that costs more than this
-            project can carry yet — so rather than do it badly, we have switched it off until
-            we can do it properly.
+            Lulo speaks with a borrowed voice. It is a good one — warm, natural, and a long
+            way from the robot she used to fall back on — but it is not the voice she was
+            written for.
             <br><br>
-            Everything else works exactly as before. You can still talk to her out loud, the
-            mic still listens, and she still answers.
+            Hers was built from a recording, and running that needs a GPU. It costs more than
+            this project can carry, so she borrows this one until that changes.
             <br><br>
-            If you would like to help her speak, get in touch.
+            Nothing is switched off in the meantime. She speaks, she listens, she answers. If
+            you would like to help her get her own voice back, there is an address below.
         </p>
         <a id="voice-appeal-btn"
-           href="mailto:kayuso2003@hotmail.com?subject=Help%20Lulo%20speak">
-            Help Lulo speak
+           href="mailto:kayuso2003@hotmail.com?subject=About%20Lulo%27s%20voice">
+            Get in touch
         </a>
         <p id="voice-appeal-mail">kayuso2003@hotmail.com</p>
         <button id="voice-appeal-close" onclick="closeVoiceAppeal()">Close</button>
