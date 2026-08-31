@@ -176,7 +176,7 @@
         <div id="journal-journey-content">
             <div class="glass-card">
                 <h3>💙 Lulo's Weekly Reflection</h3>
-                <p id="journal-suggestion" style="color:rgba(255,255,255,0.7);font-size:0.88rem;line-height:1.7;"></p>
+                <p id="journal-suggestion" style="color:var(--sv-card-text);font-size:var(--fs-body);line-height:1.65;"></p>
             </div>
             <div class="stats-grid" id="journal-summary"></div>
             <p class="section-label">Recent Entries</p>
@@ -704,11 +704,15 @@
         </div>
     </div>
     <div id="text-input-row">
+        <!-- maxlength matches LULO_MAX_INPUT_CHARS in app.js. It only
+             constrains typing, not a transcript assigned from the microphone —
+             but at 2000 it would have let someone speak a message they could
+             not then edit. -->
         <textarea id="lulo-input"
             placeholder="Tell Lulo how you're feeling..."
             autocomplete="off"
             rows="1"
-            maxlength="2000"
+            maxlength="6000"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();luloListen()}"
             oninput="autoGrowInput(this);updateCharCounter(this)"></textarea>
         <button id="send-btn" onclick="luloListen()">→</button>

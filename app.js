@@ -52,8 +52,45 @@ let _micTurnStarted = 0
 //
 // This is the one number here to tune by feel. Longer if it clips the end of
 // sentences, shorter if the wait still drags.
-const MIC_SILENCE_MS = 1200     // a pause this long reads as "finished"
-const MIC_MAX_TURN_MS = 90000   // hard ceiling on one listening turn
+// ── AND WHY IT IS NOT ONE NUMBER ANY MORE ───────────────────────────────────
+// 1200ms is right for an answer and wrong for a story. Someone saying "yes,
+// please" is finished the moment they stop. Someone three minutes into telling
+// you about their father is not — and they will pause for longer than that to
+// find the next sentence, which is exactly the moment being cut off does the
+// most damage. Asked whether a life story could be told here, the honest
+// answer was no: the first breath over 1.2s ended it.
+//
+// Raising the number for everybody would pay for that with dead air on every
+// short exchange, which is the very thing coming down from 2500ms bought. So
+// the window grows with the turn instead. It starts exactly where it was, and
+// widens only once someone has said enough that a pause plausibly means "still
+// thinking" rather than "done".
+//
+// Counted in words, not seconds: seconds measure the microphone being open,
+// words measure somebody actually talking.
+const MIC_SILENCE_MS = 1200        // a short answer is over when it stops
+const MIC_SILENCE_LONG_MS = 3200   // someone mid-story gets room to breathe
+const MIC_LONG_WORDS_FROM = 25     // where the widening starts
+const MIC_LONG_WORDS_FULL = 80     // and where it is fully open
+
+// Hard ceiling on one listening turn. Was 90 seconds, which capped a story at
+// a minute and a half whatever the pause window did. Five minutes is what was
+// actually asked for, and it deliberately sits *below* what one message may
+// carry (see LULO_MAX_INPUT_CHARS) so a long turn always ends because it ran
+// long, never because it was about to be refused.
+const MIC_MAX_TURN_MS = 300000
+
+// ─── THE LAST PLACE A LONG TURN COULD STILL DIE ─────────────────────────────
+// This was 2000, which is roughly two minutes of speech. A five minute turn
+// would have been heard in full, transcribed in full, handed to luloListen —
+// and bounced there with "that's quite a lot", the listening fixed and the
+// words thrown away at the final step. Six thousand is comfortably past the
+// five minutes the ceiling above allows, so the two limits cannot disagree.
+//
+// It is still a cap: the route is open and this is what stops a paste bomb.
+// The number that matters is that it is no longer smaller than the thing the
+// app is now built to hear.
+const LULO_MAX_INPUT_CHARS = 6000
 
 // ─── TALKING OVER HER ───────────────────────────────────────────────────────
 // The microphone used to open only once she had completely finished, which
@@ -99,11 +136,32 @@ function _looksLikeEcho(heard) {
     return hits / got.length >= 0.6
 }
 
+// How much silence this particular turn has earned. See the note above the
+// constants: a short answer keeps the old 1200ms, a long one is given up to
+// 3200ms to think in.
+//
+// `live` is the interim text — the words currently being said, which the
+// recogniser has not finalised yet and so are not in _micSessionText. Without
+// it the count runs a phrase behind the person speaking, and the window widens
+// a sentence later than it should.
+function _micSilenceWindow(live = '') {
+    const words = (_micHeard + ' ' + _micSessionText + ' ' + live)
+        .trim().split(/\s+/).filter(Boolean).length
+    if (words <= MIC_LONG_WORDS_FROM) return MIC_SILENCE_MS
+    // A ramp rather than a step. A cliff at word twenty-five would mean the
+    // same length of pause ends the turn or doesn't depending on a word
+    // nobody knew they were counting, and the same person would find it
+    // behaving differently on two tellings of the same story.
+    const span = MIC_LONG_WORDS_FULL - MIC_LONG_WORDS_FROM
+    const t = Math.min(1, (words - MIC_LONG_WORDS_FROM) / span)
+    return Math.round(MIC_SILENCE_MS + (MIC_SILENCE_LONG_MS - MIC_SILENCE_MS) * t)
+}
+
 // Restart the "have they stopped?" countdown. Called on every result and every
 // pause, so it only expires after real silence.
-function _micArmSilence() {
+function _micArmSilence(live = '') {
     clearTimeout(_micSilenceTimer)
-    _micSilenceTimer = setTimeout(_micFinalise, MIC_SILENCE_MS)
+    _micSilenceTimer = setTimeout(_micFinalise, _micSilenceWindow(live))
 }
 
 // The turn is over: stop listening and send everything heard.
@@ -567,7 +625,9 @@ function setTheme(theme) {
             cardBg: 'rgba(255,255,255,0.04)',
             cardBorder: 'rgba(255,255,255,0.08)',
             text: 'rgba(255,255,255,0.9)',
-            textMuted: 'rgba(255,255,255,0.35)',
+            // 0.35 white on the galaxy is 2.7:1. Muted has to mean quieter
+            // than the text beside it, not quieter than the threshold.
+            textMuted: 'rgba(255,255,255,0.52)',   // 5.1:1
             accent: '#00d4ff',
             gold: '#00d4ff',
             inputBg: 'rgba(255,255,255,0.05)',
@@ -614,7 +674,11 @@ function setTheme(theme) {
             cardBg: 'rgba(255,255,255,0.88)',
             cardBorder: 'rgba(23,50,60,0.10)',
             text: '#17323C',
-            textMuted: '#5C7480',
+            // 4.3:1 against this theme's own page, which is under the line for
+            // body text. Every muted string in the app reads through this one
+            // value — the greeting's question, the deck labels, the swipe
+            // hint — so it was one number holding a dozen elements just short.
+            textMuted: '#4A6270',       // 5.6:1
             accent: '#1E7A5A',
             gold: '#D9A441',
             inputBg: 'rgba(255,255,255,0.94)',
@@ -629,17 +693,30 @@ function setTheme(theme) {
             activeSlotBorder: 'rgba(30,122,90,0.42)',
             activeSlotGlow: 'rgba(30,122,90,0.12)',
             activeSlotLine: 'rgba(30,122,90,0.62)',
-            emotionLabel: '#5C7480',
+            emotionLabel: '#4A6270',
             emotionLabelActive: '#1E7A5A',
             bottomBar: 'linear-gradient(to top, #E3EEF2 55%, transparent)',
             scrollbar: 'rgba(30,122,90,0.35)',
             appName: '#17323C',
-            chatBubbleUserBg: 'linear-gradient(135deg, rgba(217,164,65,0.26), rgba(194,84,46,0.12))',
-            chatBubbleUserBorder: 'rgba(194,133,60,0.40)',
-            chatBubbleUserText: '#4A3312',
-            chatBubbleLuloBg: 'rgba(255,255,255,0.96)',
-            chatBubbleLuloBorder: 'rgba(30,122,90,0.20)',
-            chatBubbleLuloText: '#17323C',
+            // ─── THE TWO VOICES, ON A PALE GROUND ────────────────────
+            // These were alpha washes — 26% gold laid over a translucent card
+            // laid over a background that is five stacked radial gradients.
+            // What you actually saw depended on where in the room the bubble
+            // happened to be, and most of the time it came out a dirty tan.
+            // Opaque now: a colour that is decided here is a colour you get.
+            //
+            // Gold for the person, emerald for Lulo — the same two lights the
+            // rest of the throne room is lit by, and far enough apart that a
+            // glance tells you whose line it is.
+            chatBubbleUserBg: '#F8EAD0',
+            chatBubbleUserBorder: 'rgba(176,124,40,0.38)',
+            chatBubbleUserText: '#4A3312',       // 9.97:1 on the sand
+            chatBubbleLuloBg: '#FFFFFF',
+            chatBubbleLuloBorder: 'rgba(23,50,60,0.12)',
+            chatBubbleLuloText: '#17323C',       // 13.48:1 on white
+            // Timestamps live inside the bubble, so each side needs its own.
+            chatMetaUser: '#7A5224',             // 5.33:1 on the sand
+            chatMetaLulo: '#5C7480',             // 4.92:1 on white
             scriptureFont: "'Spectral', Georgia, serif",
             glassScreenBg: 'rgba(238,246,247,0.985)',
             glassCardBg: 'rgba(255,255,255,0.90)',
@@ -656,7 +733,10 @@ function setTheme(theme) {
             cardBg: 'rgba(255,255,255,0.8)',
             cardBorder: 'rgba(255,180,180,0.2)',
             text: '#4a3535',
-            textMuted: '#b09090',
+            // #b09090 on soft's near-white page measured 2.8:1 — the worst
+            // muted value of the four themes and the one nobody had checked,
+            // because soft looks gentle rather than broken.
+            textMuted: '#7A5C5C',       // 5.7:1
             accent: '#e8a0a0',
             gold: '#e8a0a0',
             inputBg: 'rgba(255,255,255,0.8)',
@@ -671,17 +751,22 @@ function setTheme(theme) {
             activeSlotBorder: 'rgba(232,160,160,0.4)',
             activeSlotGlow: 'rgba(232,160,160,0.1)',
             activeSlotLine: 'rgba(232,160,160,0.6)',
-            emotionLabel: '#b09090',
+            emotionLabel: '#7A5C5C',
             emotionLabelActive: '#e8a0a0',
             bottomBar: 'linear-gradient(to top,#fff8f8 60%,transparent)',
             scrollbar: '#e8a0a0',
             appName: '#b09090',
-            chatBubbleUserBg: 'rgba(232,160,160,0.15)',
-            chatBubbleUserBorder: 'rgba(232,160,160,0.35)',
-            chatBubbleUserText: '#4a3535',
-            chatBubbleLuloBg: 'rgba(255,255,255,0.8)',
-            chatBubbleLuloBorder: 'rgba(255,180,180,0.2)',
-            chatBubbleLuloText: '#5a4040',
+            // Same treatment as light, in soft's own rose. Opaque for the same
+            // reason: an alpha wash over a translucent card is a colour nobody
+            // chose.
+            chatBubbleUserBg: '#FADEDE',
+            chatBubbleUserBorder: 'rgba(200,130,130,0.42)',
+            chatBubbleUserText: '#4a3535',       // 8.95:1 on the rose
+            chatBubbleLuloBg: '#FFFFFF',
+            chatBubbleLuloBorder: 'rgba(74,53,53,0.14)',
+            chatBubbleLuloText: '#4a3535',       // 9.9:1 on white
+            chatMetaUser: '#7A5252',             // 5.25:1 on the rose
+            chatMetaLulo: '#6E5555',
             scriptureFont: "'Spectral', Georgia, serif",
             glassScreenBg: 'rgba(255,248,248,0.98)',
             glassCardBg: 'rgba(255,255,255,0.8)',
@@ -699,7 +784,9 @@ function setTheme(theme) {
             cardBg: 'rgba(255,255,255,0.04)',
             cardBorder: 'rgba(255,255,255,0.08)',
             text: 'rgba(255,255,255,0.9)',
-            textMuted: 'rgba(255,255,255,0.35)',
+            // 0.35 white on the galaxy is 2.7:1. Muted has to mean quieter
+            // than the text beside it, not quieter than the threshold.
+            textMuted: 'rgba(255,255,255,0.52)',   // 5.1:1
             accent: '#00d4ff',
             gold: '#00d4ff',
             inputBg: 'rgba(255,255,255,0.05)',
@@ -811,9 +898,24 @@ function setTheme(theme) {
         accentInk = `rgb(${c.join(',')})`
     }
 
+    // ─── THE PAPER THE PALE CHAT IS PRINTED ON ───────────────────────────
+    // Lulo's bubble is white, so the room behind it cannot also be white or
+    // there is nothing for the card to stand on. A shade under the theme's own
+    // screen ground, falling off slightly toward the bottom of the thread, is
+    // enough lift without turning into a second colour.
+    const palePaper = {
+        light: 'linear-gradient(180deg, #F3F8F9 0%, #E2ECF0 100%)',
+        soft:  'linear-gradient(180deg, #FFF7F7 0%, #FAE8E8 100%)',
+    }[theme] || t.glassScreenBg
+
     const rootStyle = document.documentElement.style
     const tokens = {
         '--sv-accent-ink': accentInk,
+        // The keyboard focus ring (styles.css, :focus-visible). It has to be
+        // visible against the theme's own ground rather than against a guess,
+        // so it is the accent walked to readable ink on the pale themes and
+        // the accent itself on the dark ones, where it already carries.
+        '--sv-focus': isLight ? accentInk : t.accent,
         '--sv-text': t.text,
         '--sv-muted': t.textMuted,
         '--sv-accent': t.accent,
@@ -882,9 +984,27 @@ function setTheme(theme) {
         luloInput.style.setProperty('--placeholder-color', t.inputPlaceholder)
     }
 
-    // SEND BUTTON
+    // ─── SEND BUTTON ────────────────────────────────────────────────────
+    // The arrow was a fixed pale colour on a fill each theme chooses for
+    // itself, and two of the four choose something pale: dark's #00d4ff put
+    // the glyph at 1.8:1 on its own button, soft's #e8a0a0 at 2.1:1. A white
+    // arrow is only right where the fill is dark enough to carry one.
+    //
+    // So the glyph is measured against the fill rather than assumed. Same
+    // helpers as the accent walk above — this is the identical mistake made on
+    // a different element, and it wants the identical answer.
     const sendBtn = document.getElementById('send-btn')
-    if (sendBtn) sendBtn.style.background = t.sendBtn
+    if (sendBtn) {
+        sendBtn.style.background = t.sendBtn
+        const fillHex = String(t.sendBtn).match(/#[0-9a-fA-F]{6}/)
+        const fill = fillHex ? (hexToRgb(fillHex[0]) || '').split(',').map(Number) : null
+        // Deep neutral rather than pure black — black on a saturated fill
+        // reads as a hole punched in the button.
+        sendBtn.style.color = (fill && fill.length === 3 && _contrast([255, 255, 255], fill) < 4.5)
+            ? '#0B1A22'
+            : '#ffffff'
+        sendBtn.style.borderColor = 'transparent'
+    }
 
     // The voice traces are drawn to canvas, so they can't inherit a colour —
     // hand them the theme's accent as raw channels.
@@ -1039,10 +1159,9 @@ function setTheme(theme) {
            against: brighter on the pale themes, where a screen-blended ghost
            at 46% would vanish entirely. */
         #lulo-presence.presence-on { opacity: ${isLight ? 0.24 : 0.3} !important; }
-        /* Text mode keeps its dark ground in every theme — its chrome is
-           written for one, and a pale overlay leaves the header invisible.
-           So the watermark is read against dark whatever the theme is. */
-        #text-mode-lulo { opacity: 0.13 !important; }
+        /* Text mode's watermark is set with the rest of that room, in the
+           pale/dark branch further down — it now depends on which ground it
+           is standing on. */
         #carousel-wrapper::after {
             background: radial-gradient(ellipse,
                 ${isLight ? 'rgba(30,122,90,0.14)' : 'rgba(0,255,120,0.16)'} 0%,
@@ -1061,54 +1180,97 @@ function setTheme(theme) {
             border-color: ${t.chatBubbleUserBorder} !important;
             color: ${t.chatBubbleUserText} !important;
             /* Kept identical to .chat-bubble-lulo below — the two sides of the
-               thread should only ever differ by side, tail and hue. */
+               thread should only ever differ by side, tail and hue.
+               Size is deliberately NOT set here any more. It was 0.82rem on
+               the pale themes, which is 13.1px, in a bubble sitting under a
+               16px input box — and this !important was what made the
+               stylesheet's own size unreachable. --fs-body owns it now, in one
+               place, at the size a sentence is meant to be read at. */
             font-weight: ${isLight ? '500' : '400'} !important;
-            font-size: ${isLight ? '0.82rem' : '0.86rem'} !important;
-            line-height: 1.65 !important;
+            line-height: 1.6 !important;
             letter-spacing: 0.1px !important;
         }
         ${isLight ? `
-        /* ─── THE PALE THEMES INSIDE A DARK ROOM ──────────────────────────
-           Text mode keeps a dark ground whatever the theme is — the same
-           reason its watermark blends as it would on the galaxy. Every colour
-           the pale themes choose is picked for their own pale page, so each
-           one arrives in here as dark ink on a dark ground and disappears.
-           Anything in this overlay that carries text has to be lit for the
-           room it is actually standing in, not the one its theme describes.
+        /* ─── THE PALE THEMES GET A PALE ROOM ─────────────────────────────
+           This overlay used to keep a dark ground in every theme, because its
+           chrome had only ever been written for one. So every colour the pale
+           themes chose arrived in here as dark ink on a dark ground and had to
+           be swapped, one element at a time, for the dark theme's — and what
+           came out the other side was a black room with a single white card
+           standing in it. That, and not any one value, was what was wrong with
+           the colour of the light chat.
 
-           Measured rather than eyeballed: the input was at 1.33:1 against
-           this ground and the timestamps at 1.22:1, where 4.5:1 is the
-           readable threshold for body text.
+           It is a pale room now, and everything in it is lit for the ground it
+           is actually standing on. The swaps below are all in the same
+           direction for once, which is the sign the room and its contents
+           finally agree.
 
-           Lulo's own bubble is the one thing left alone — hers is a
-           near-opaque light card rather than a wash, so it brings its own
-           background and reads fine. */
-        #text-mode-chat .chat-bubble-user {
-            background: ${themes.dark.chatBubbleUserBg} !important;
-            border-color: ${themes.dark.chatBubbleUserBorder} !important;
-            color: ${themes.dark.chatBubbleUserText} !important;
+           Every pairing here was measured against the surface behind it, not
+           eyeballed: the bubbles are opaque (see the theme objects above), so
+           for once "measured" means something fixed rather than whatever the
+           background gradient happened to be doing underneath. */
+        #text-mode-overlay {
+            background: ${palePaper} !important;
         }
-        /* What you are typing. Was the theme's near-black ink on the dark
-           input well — you could not see your own words as you wrote them. */
-        #text-mode-overlay #lulo-input {
-            color: ${themes.dark.inputText} !important;
-            --placeholder-color: ${themes.dark.inputPlaceholder};
+        #text-mode-header { border-bottom-color: rgba(var(--sv-accent-rgb),0.16) !important; }
+        #text-mode-title  { color: ${t.text} !important; }
+        /* The way out of the screen, so it is not allowed to be a hint.
+           textMuted lands around 4.4:1 on this paper; the text colour at 80%
+           clears it and still sits behind the title. */
+        #text-mode-close  { color: ${t.text} !important; opacity: 0.8 !important; }
+        #text-mode-close:hover, #text-mode-close:active {
+            opacity: 1 !important;
+            background: rgba(23,50,60,0.06) !important;
         }
+        #char-counter { color: ${t.textMuted} !important; }
+        /* ─── THE FIELD YOU TYPE INTO ─────────────────────────────────
+           The row and the field were both taking the theme's inputBg, which
+           on a pale theme is very nearly white — so a white field sat on a
+           white bar behind a border of 12% white, and there was no visible
+           box to type into at all. The bar takes a tint and the field keeps
+           the white, so the field is the thing that reads as the well. */
         #text-mode-overlay #text-input-row {
-            background: ${themes.dark.inputBg} !important;
-            border-color: ${themes.dark.inputBorder} !important;
+            background: ${isLight ? 'rgba(255,255,255,0.55)' : t.inputBg} !important;
+            border-color: ${t.inputBorder} !important;
+        }
+        #text-mode-overlay #lulo-input {
+            background: #ffffff !important;
+            border-color: rgba(var(--sv-accent-rgb),0.28) !important;
+            color: ${t.inputText} !important;
+            --placeholder-color: ${t.inputPlaceholder};
+        }
+        /* The fill and the glyph are set on the element itself (see SEND
+           BUTTON above, which measures one against the other in every theme).
+           All this adds is the lift it needs to read as raised off pale
+           paper — on a dark ground the button already stands out by being the
+           only bright thing on the row. */
+        #text-mode-overlay #send-btn {
+            box-shadow: 0 2px 10px rgba(var(--sv-accent-rgb),0.32) !important;
+        }
+        /* Her watermark blends \`screen\` for the galaxy, which builds toward
+           white — on a pale ground that is an invisible ghost. */
+        #text-mode-lulo {
+            mix-blend-mode: multiply !important;
+            opacity: 0.07 !important;
+            filter: blur(1px) !important;
         }
         /* The timestamp sits inside the bubble, not under it, so which ground
-           it has to survive depends on whose line it is — and after the rule
-           above those two grounds are opposites. Lulo's is her near-opaque
-           light card, where the theme's own dark ink is already right and
-           lighting it would erase it. Only the user's moved, because only the
-           user's bubble moved: it was dark ink on a pale wash before, and is
-           dark ink on a dark bubble now. Wrong both times, for two different
-           reasons. */
-        #text-mode-chat .chat-bubble-user .chat-meta {
-            color: rgba(255,255,255,0.45) !important;
-        }` : ''}
+           it has to survive is whichever side's bubble it is in — and the two
+           sides are now a sand card and a white one. */
+        #text-mode-chat .chat-bubble-user .chat-meta,
+        .chat-bubble-user .chat-meta { color: ${t.chatMetaUser} !important; }
+        .chat-bubble-lulo .chat-meta { color: ${t.chatMetaLulo} !important; }
+        /* Lulo's card is white on a ground only a little darker than white, so
+           the lift has to come from the shadow rather than from the fill. */
+        #text-mode-chat .chat-bubble-lulo {
+            box-shadow: inset 2px 0 0 ${t.accent}, 0 2px 12px rgba(23,50,60,0.10) !important;
+        }
+        #text-mode-chat .chat-bubble-user {
+            box-shadow: inset -3px 0 0 ${t.gold}, 0 2px 12px rgba(23,50,60,0.10) !important;
+        }` : `
+        /* Text mode is the dark theme's own room, so its watermark blends as
+           it does on the galaxy. */
+        #text-mode-lulo { opacity: 0.13 !important; }`}
         /* MOOD CARD DECK — themed */
         #carousel-wrapper::before {
             background: ${t.carouselBg} !important;
@@ -1187,10 +1349,19 @@ function setTheme(theme) {
         /* Chrome that was only ever written for the dark theme. Without these
            the greeting, the swipe hint and the top pills stay white-on-white. */
         #welcome-message { color: ${isLight ? t.text : 'white'} !important; }
-        #welcome-subtext { color: ${t.textMuted} !important; }
+        /* Its own ink rather than textMuted. The greeting sits directly under
+           the gold light at the top of the throne room, which is the darkest
+           ground any pale-theme text stands on — muted measured 4.2:1 there
+           while clearing 5.6:1 everywhere else it is used. One element in a
+           harder spot needs one value, not a darker muted for the whole app. */
+        #welcome-subtext { color: ${isLight ? '#3E5866' : 'rgba(255,255,255,0.66)'} !important; }
         #carousel-label { color: ${t.textMuted} !important; }
-        .hint-label { color: ${isLight ? 'rgba(23,50,60,0.55)' : 'rgba(255,255,255,0.32)'} !important; }
-        .hint-arrow { color: ${isLight ? 'rgba(30,122,90,0.55)' : 'rgba(0,212,255,0.38)'} !important; }
+        /* The one instruction on the home screen that tells you the mic slides
+           sideways to become a keyboard. It was 3.2:1 on the pale themes and
+           2.7:1 on the dark ones — a hint nobody can read is a feature nobody
+           finds. The arrows go with it; they are the affordance, not decoration. */
+        .hint-label { color: ${isLight ? 'rgba(23,50,60,0.82)' : 'rgba(255,255,255,0.74)'} !important; }
+        .hint-arrow { color: ${isLight ? accentInk : 'rgba(120,230,255,0.85)'} !important; }
         .top-pill {
             background: ${isLight ? 'rgba(255,255,255,0.88)' : 'rgba(20,20,45,0.75)'} !important;
             border-color: ${t.cardBorder} !important;
@@ -1240,19 +1411,26 @@ function setTheme(theme) {
             opacity: 1 !important;
         }
 
-        /* CHAT TIMESTAMPS */
+        /* CHAT TIMESTAMPS
+           The pale value here was rgba(61,53,80,·) — a violet left over from a
+           palette this app has not used for some time, and at 40-50% alpha it
+           measured 2.1:1 inside the bubble it labels. The per-side values in
+           the pale-room block above replace it; these are the dark themes'. */
         .chat-meta {
-            color: ${isLight ? 'rgba(61,53,80,0.5)' : 'rgba(255,255,255,0.25)'} !important;
+            /* 0.42 measured 3.96:1 inside the user's blue bubble — the
+               brightest ground a timestamp sits on in the dark themes. */
+            color: ${isLight ? t.chatMetaLulo : 'rgba(255,255,255,0.58)'} !important;
         }
         .lulo-meta {
-            color: ${isLight ? 'rgba(61,53,80,0.4)' : 'rgba(100,255,200,0.3)'} !important;
+            color: ${isLight ? t.chatMetaLulo : 'rgba(140,255,215,0.5)'} !important;
         }
 
-        /* LULO BUBBLE FONT — thicker in light theme */
+        /* LULO BUBBLE — heavier on the pale themes, where her serif is set on
+           white and a Regular reads thin. Size belongs to --fs-body; see the
+           note on .chat-bubble-user above. */
         .chat-bubble-lulo {
             font-weight: ${isLight ? '500' : '400'} !important;
-            font-size: ${isLight ? '0.82rem' : '0.86rem'} !important;
-            line-height: 1.65 !important;
+            line-height: 1.6 !important;
             letter-spacing: 0.1px !important;
         }
 
@@ -1324,8 +1502,12 @@ function setTheme(theme) {
 
     const themeLabel = document.getElementById('theme-panel-label')
     const themeSublabel = document.getElementById('theme-panel-sublabel')
-    if (themeLabel) themeLabel.style.color = isLight ? 'rgba(61,53,80,0.45)' : 'rgba(255,255,255,0.3)'
-    if (themeSublabel) themeSublabel.style.color = isLight ? 'rgba(61,53,80,0.3)' : 'rgba(255,255,255,0.2)'
+    // The same rgba(61,53,80,·) violet that was on the chat timestamps — a
+    // colour from a palette this app stopped using, at alphas that put it
+    // around 1.6:1 on the panel it labels. Muted is a step down from the text
+    // beside it, not a step past the point of being text.
+    if (themeLabel) themeLabel.style.color = t.textMuted
+    if (themeSublabel) themeSublabel.style.color = isLight ? 'rgba(23,50,60,0.62)' : 'rgba(255,255,255,0.45)'
 
     // Update active theme circle
     document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'))
@@ -2092,7 +2274,11 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             // Build entries HTML
             let entriesHTML = ''
             if (entries.length === 0) {
-                entriesHTML = `<p style="color: var(--sv-text); opacity: 0.6; text-align: center; font-size: 0.9rem; padding: 20px;">Your journey starts the moment you click your first emotion.</p>`
+                // --sv-muted rather than --sv-text dimmed with opacity: the
+                // opacity was what made this 3.7:1. Muted is already the
+                // measured "quieter than the text beside it" value, so the
+                // sentence stays secondary without stopping being readable.
+                entriesHTML = `<p style="color: var(--sv-muted); text-align: center; font-size: var(--fs-sm); line-height: 1.6; padding: 20px;">Your journey starts the moment you click your first emotion.</p>`
             } else {
                 entriesHTML = entries.slice(0, 30).map((entry, i) => `
                     <div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:15px;padding:15px;margin-bottom:10px;cursor:pointer;" 
@@ -3930,8 +4116,17 @@ function setupRailSnap() { /* the ring's snap-back behaviour — card deck uses 
             const text = input.value.trim()
             if (!text) return
             // Hard cap on input length — prevents oversized payloads to the worker
-            if (text.length > 2000) {
-                addToChatHistory('lulo', `That's quite a lot! Could you share a bit at a time? I want to really hear you. 💙`)
+            if (text.length > LULO_MAX_INPUT_CHARS) {
+                // The words are not lost: they are still sitting in the input.
+                // But in voice mode that input is behind an overlay nobody is
+                // looking at, so without this the person has just spoken for
+                // six minutes and watched it disappear into a polite refusal.
+                // Open the room where they can see it is all still there, then
+                // say so — and grow the box, or it is six thousand characters
+                // in a one-line field.
+                if (!isTextModeOpen()) switchToTextMode()
+                autoGrowInput(input)
+                addToChatHistory('lulo', `That's a lot to hold at once, and I don't want to miss any of it. It's all still there in the box — send it to me in two goes? 💙`)
                 return
             }
             input.value = '' // Clear immediately — don't wait for response
@@ -7441,7 +7636,7 @@ function syncTextModeChat() {
 function updateCharCounter(textarea) {
     const counter = document.getElementById('char-counter')
     if (!counter) return
-    const remaining = 2000 - textarea.value.length
+    const remaining = LULO_MAX_INPUT_CHARS - textarea.value.length
     if (remaining <= 200) {
         counter.textContent = `${remaining} left`
         counter.classList.add('near-limit')
@@ -7626,7 +7821,11 @@ async function toggleVoiceInput({ barge = false } = {}) {
         // what makes a 1200ms window safe: it is reset several times a second
         // while someone is still speaking, so it can only expire on real
         // silence rather than on the pause before a phrase is finalised.
-        if (sessionText || interim) _micArmSilence()
+        //
+        // The interim is passed along rather than only used as a heartbeat —
+        // it is part of how much has been said, and how much has been said is
+        // what decides how long the next pause is allowed to be.
+        if (sessionText || interim) _micArmSilence(interim)
     }
 
     r.onerror = e => {

@@ -55,6 +55,59 @@
             --edge-tint: rgba(5,5,16,0.92);
             --room-depth: 820px;
             --scene-tilt: 0;
+
+            /* ─── TYPE SCALE ──────────────────────────────────────────
+               Thirty-odd separate font sizes had accumulated here, most of
+               them between 10px and 15px and none of them agreeing. That is
+               what "small and a bit amateur" actually looks like when you
+               take it apart: not one bad number, thirty ad-hoc ones.
+
+               So there is a scale, and a size is now picked off it rather
+               than invented. --fs-body is 16px because that is the readable
+               floor on a phone, and because the input box has always been
+               16px — bubbles set smaller than the field you type them into
+               was the tell that nobody had compared the two.
+
+               The two steps under --fs-sm are for labels, not sentences:
+               --fs-meta carries timestamps and counters, --fs-micro only
+               uppercase tracked-out chrome. Neither may hold a line of
+               prose. If a string is read as a sentence it gets --fs-body. */
+            --fs-micro: 0.6875rem;   /* 11px — uppercase, tracked, never prose */
+            --fs-meta:  0.75rem;     /* 12px — timestamps, counters, captions */
+            --fs-label: 0.8125rem;   /* 13px — control labels */
+            --fs-sm:    0.875rem;    /* 14px — secondary body */
+            --fs-body:  1rem;        /* 16px — anything read as a sentence */
+            --fs-lg:    1.125rem;    /* 18px */
+            --fs-xl:    1.375rem;    /* 22px */
+            --fs-2xl:   1.75rem;     /* 28px */
+
+            /* SPACING — one 4px base, so gaps line up across screens that
+               were each spaced by eye. */
+            --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+            --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+
+            /* RADII — pill for controls, the rest by surface size. */
+            --r-sm: 10px; --r-md: 14px; --r-lg: 20px; --r-pill: 999px;
+
+            /* MOTION — one easing, three speeds. A single duration for
+               everything is what makes an interface feel mechanical. */
+            --dur-fast: 140ms;
+            --dur: 220ms;
+            --dur-slow: 380ms;
+            --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
+        /* ─── KEYBOARD FOCUS ──────────────────────────────────────────────
+           There was no focus style anywhere in this file except on two
+           elements, which means every other control was reachable by keyboard
+           and invisible once reached. :where() carries no specificity, so this
+           sets a floor without ever outranking a considered rule.
+
+           --sv-focus is published by setTheme(); the fallback is only for the
+           moment before the first theme is applied. */
+        :where(button, a, input, textarea, select, [tabindex], [role="button"]):focus-visible {
+            outline: 2px solid var(--sv-focus, #6ce9ff);
+            outline-offset: 2px;
         }
 
         /* DEEP SPACE GALAXY — dark theme default.
@@ -351,12 +404,15 @@
             font-family: 'Inter', sans-serif;
             white-space: pre-line;
         }
+        /* The question the whole screen is built to ask, set at 12.8px in
+           Light 300 at 40% white — 3.1:1. It is a question, so it gets body
+           weight and a size you read rather than infer. */
         #welcome-subtext {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.4);
+            font-size: var(--fs-sm);
+            color: rgba(255,255,255,0.62);
             line-height: 1.5;
             font-family: 'Inter', sans-serif;
-            font-weight: 300;
+            font-weight: 400;
             white-space: pre-line;
         }
 
@@ -833,11 +889,11 @@
             line-height: 16px;
             margin-bottom: 6px;
             text-align: center;
-            font-size: 0.68rem;
+            font-size: var(--fs-meta);
             font-weight: 600;
-            letter-spacing: 2px;
+            letter-spacing: 1.6px;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.32);
+            color: rgba(255,255,255,0.55);
             font-family: 'Inter', sans-serif;
             pointer-events: none;
         }
@@ -1026,12 +1082,16 @@
             transition: transform 0.12s ease;
         }
         .mood-card .card-label {
-            font-size: 0.62rem;
-            color: rgba(255,255,255,0.72);
+            font-size: var(--fs-micro);
+            color: rgba(255,255,255,0.85);
             font-weight: 500;
             text-align: center;
             font-family: 'Inter', sans-serif;
-            letter-spacing: 0.2px;
+            /* The tracking is what pays for the extra pixel of size:
+               "Unappreciated" is thirteen characters inside a 76px card, and
+               growing the card would drag the deck's scroll maths with it. */
+            letter-spacing: 0;
+            max-width: 100%;
             /* Too far to read is too far to label */
             opacity: calc(1.08 - var(--a) * 1.25);
         }
@@ -1396,6 +1456,15 @@
             box-shadow: inset 0 2px 6px rgba(0,0,0,0.75), inset 0 -1px 0 rgba(255,255,255,0.06);
             pointer-events: none;
         }
+        body.theme-pale #mic-btn::before {
+            background: radial-gradient(circle at 42% 34%, #ffffff 0%, #dbe6ee 74%);
+            box-shadow: inset 0 2px 7px rgba(23,50,60,0.18), inset 0 -1px 0 rgba(255,255,255,0.95);
+        }
+        /* The capsule and stem are drawn with a gradient that tops out at
+           #ffe9a8 — invisible on a white well. Darkening the whole glyph is
+           one filter rather than four overridden gradient stops. */
+        body.theme-pale #mic-icon svg { filter: saturate(1.15) brightness(0.72); }
+
         /* THE MIC AND ITS RING
            The dock exists only to give the ring something to be centred on —
            the ring has to overhang the button on every side, and the button
@@ -1448,8 +1517,8 @@
             -webkit-tap-highlight-color: transparent;
         }
         .hint-label {
-            font-size: 0.82rem;
-            color: rgba(255,255,255,0.55);
+            font-size: var(--fs-label);
+            color: rgba(255,255,255,0.75);
             letter-spacing: 0.2px;
             font-family: 'Inter', sans-serif;
         }
@@ -1461,7 +1530,7 @@
         }
         .hint-arrow {
             font-size: 0.9rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.7);
             line-height: 1;
         }
         .hint-bar {
@@ -1546,24 +1615,31 @@
             padding: 16px 20px 10px;
             border-bottom: 1px solid rgba(255,255,255,0.07);
         }
+        /* Was 12.8px at 40% white — 3.8:1, and a 30px tall tap target on a
+           screen you leave through. Both fixed here; 44px is the floor a
+           thumb needs. */
         #text-mode-close {
-            background: none; border: none; color: rgba(255,255,255,0.4);
-            font-size: 0.8rem; cursor: pointer; padding: 6px 10px; font-family: 'Inter', sans-serif;
-            border-radius: 20px; transition: all 0.2s ease;
+            background: none; border: none; color: rgba(255,255,255,0.72);
+            font-size: var(--fs-label); cursor: pointer; padding: 10px 12px;
+            min-height: 44px; display: inline-flex; align-items: center; gap: 6px;
+            font-family: 'Inter', sans-serif;
+            border-radius: var(--r-lg); transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
             -webkit-tap-highlight-color: transparent;
         }
         #text-mode-close:hover { color: white; background: rgba(255,255,255,0.08); }
-        #text-mode-title { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.6); letter-spacing: 1px; }
-        #char-counter { font-size: 0.68rem; color: rgba(255,255,255,0.25); font-family: 'Inter', sans-serif; min-width: 40px; text-align: right; }
+        #text-mode-title { font-size: var(--fs-sm); font-weight: 600; color: rgba(255,255,255,0.82); letter-spacing: 0.6px; }
+        #char-counter { font-size: var(--fs-meta); color: rgba(255,255,255,0.5); font-family: 'Inter', sans-serif; min-width: 44px; text-align: right; }
         #char-counter.near-limit { color: rgba(255, 160, 60, 0.8); }
 
         #text-mode-chat {
             flex: 1;
             overflow-y: auto;
-            padding: 16px 20px;
+            /* Extra at the foot so the newest message is not welded to the
+               input row — the thread should look like it continues under it. */
+            padding: 16px 20px 22px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: var(--sp-3);
         }
         #text-input-row {
             display: flex;
@@ -1591,18 +1667,26 @@
             overflow-wrap: break-word;
             min-width: 0;
         }
+        /* setTheme() has published --placeholder-color on this element since
+           the theme tokens went in, and nothing has ever read it — so the
+           placeholder stayed 25% white in every theme, which on the pale ones
+           is white on white. The prompt that tells a first-time user what this
+           box is for has been invisible on two of the four themes. */
         #lulo-input::placeholder {
-            color: rgba(255,255,255,0.25);
+            color: var(--placeholder-color, rgba(255,255,255,0.25));
         }
+        /* The arrow measured 2.7:1 against its own well. Brighter glyph, and
+           a fill with enough body under it to hold the glyph up. 44px because
+           it is the one control on this screen that sends. */
         #send-btn {
-            width: 42px; height: 42px; border-radius: 50%;
-            background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.35);
-            color: rgba(0,212,255,0.9); font-size: 1.1rem; cursor: pointer;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(0,212,255,0.20); border: 1px solid rgba(0,212,255,0.5);
+            color: #9df0ff; font-size: 1.1rem; cursor: pointer;
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
             transition: all 0.2s ease;
             -webkit-tap-highlight-color: transparent;
         }
-        #send-btn:hover { background: rgba(0,212,255,0.22); }
+        #send-btn:hover { background: rgba(0,212,255,0.32); }
 
         /* STARFIELD — CSS only, so it costs no request and survives the CSP's
            img-src 'self'. Three layers at different sizes read as depth. */
@@ -1707,7 +1791,7 @@
         }
 
         .screen-subtitle {
-            font-size: 0.8rem;
+            font-size: var(--fs-sm);
             color: var(--sv-text, rgba(255,255,255,0.55));
             text-align: center;
             margin-bottom: 20px;
@@ -2177,8 +2261,8 @@
             #lulo-face::after { width: 96px; height: 18px; bottom: -10px; }
 
             #welcome-message { font-size: 0.95rem; line-height: 1.25; }
-            #welcome-subtext { font-size: 0.72rem; }
-            #carousel-label  { height: 13px; line-height: 13px; margin-bottom: 4px; font-size: 0.6rem; }
+            #welcome-subtext { font-size: var(--fs-label); }
+            #carousel-label  { height: 14px; line-height: 14px; margin-bottom: 4px; font-size: var(--fs-micro); }
 
             /* The mic bar drops out of the centre and sits under the rail, in
                the right column only, so it stops covering the deck. */
@@ -2226,11 +2310,11 @@
         #chat-toggle {
             width: 100%;
             background: transparent;
-            border: 1px solid rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.22);
-            padding: 9px 16px;
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.6);
+            padding: 12px 16px;
             border-radius: 50px;
-            font-size: 0.7rem;
+            font-size: var(--fs-micro);
             cursor: pointer;
             font-family: 'Inter', sans-serif;
             letter-spacing: 1.5px;
@@ -2274,7 +2358,7 @@
            on the left. */
         .chat-bubble-user {
             align-self: flex-end;
-            max-width: 78%;
+            max-width: 84%;
             word-wrap: break-word;
             overflow-wrap: break-word;
             /* Deliberately further from Lulo's than a tint apart — this is a
@@ -2283,8 +2367,8 @@
             background: linear-gradient(135deg, rgba(70,120,255,0.20), rgba(0,190,255,0.10));
             border: 1px solid rgba(90,150,255,0.34);
             border-radius: 16px 16px 4px 16px;
-            padding: 10px 14px;
-            font-size: 0.86rem;
+            padding: 11px 15px;
+            font-size: var(--fs-body);
             color: rgba(226,238,255,0.96);
             font-family: 'Inter', sans-serif;
             font-weight: 400;
@@ -2299,7 +2383,7 @@
            just need to read as lit, warm and expensive. */
         .chat-bubble-lulo {
             align-self: flex-start;
-            max-width: 78%;
+            max-width: 84%;
             /* Same wrapping rules as the user's bubble — without these a long
                unbroken string (a URL, a scripture reference run together)
                blows the bubble past its max-width. */
@@ -2308,8 +2392,8 @@
             background: linear-gradient(135deg, rgba(255,255,255,0.075), rgba(120,255,190,0.035));
             border: 1px solid rgba(160,255,215,0.18);
             border-radius: 16px 16px 16px 4px;
-            padding: 10px 14px;
-            font-size: 0.86rem;
+            padding: 11px 15px;
+            font-size: var(--fs-body);
             color: rgba(228,246,237,0.95);
             font-family: 'Inter', sans-serif;
             font-weight: 400;
@@ -2324,12 +2408,17 @@
             box-shadow: inset 2px 0 0 rgba(0,255,140,0.5), 0 2px 14px rgba(0,0,0,0.28);
         }
 
+        /* 9.6px at 16% white was not a quiet timestamp, it was an absent
+           one — it measured 2.1:1 on the ground it sits on. Twelve pixels and
+           a colour you can actually see; it still recedes, because everything
+           around it went up too. */
         .chat-meta {
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.16);
-            margin-top: 4px;
+            font-size: var(--fs-meta);
+            color: rgba(255,255,255,0.42);
+            margin-top: 5px;
+            letter-spacing: 0.2px;
         }
-        .chat-meta.lulo-meta { color: rgba(190,235,215,0.32); letter-spacing: 0.3px; }
+        .chat-meta.lulo-meta { color: rgba(190,235,215,0.5); letter-spacing: 0.3px; }
 
         /* TYPING INDICATOR */
         #typing-indicator-text {
@@ -2929,25 +3018,33 @@ body.theme-pale #study-word .sw-label { opacity: 0.7; }
    (she speaks again) and an ask most of them will not act on, and the only way
    to do both without nagging is to be small enough to skip. */
 
+/* Quiet, but not below the line. It carries role="button" and a link, and
+   at 11.8px / 42% it measured 3.4:1 — a control nobody can read is not
+   discreet, it is broken. Twelve pixels and enough opacity to clear 4.5:1,
+   which still leaves it the faintest thing on the screen by some way. */
 #voice-appeal-line {
     margin-top: 18px;
-    font-size: 0.74rem;
+    font-size: var(--fs-meta);
     line-height: 1.7;
     text-align: center;
-    opacity: 0.42;
+    opacity: 0.62;
     cursor: pointer;
     transition: opacity 0.45s ease;
     user-select: none;
 }
+/* The link half of the line, and the only part of it you can act on — so it
+   is the part that must not be dimmed further. The 0.9 here multiplied with
+   the parent's own opacity and put the clickable words below the words
+   around them. */
 #voice-appeal-line span {
     text-decoration: underline;
     text-underline-offset: 3px;
-    opacity: 0.9;
+    font-weight: 500;
 }
-#voice-appeal-line:hover { opacity: 0.72; }
-/* Dark ink at 42% on cream is fainter than white at 42% on the galaxy. */
-body.theme-pale #voice-appeal-line { opacity: 0.62; }
-body.theme-pale #voice-appeal-line:hover { opacity: 0.88; }
+#voice-appeal-line:hover { opacity: 0.85; }
+/* Dark ink on cream is fainter than the same alpha of white on the galaxy. */
+body.theme-pale #voice-appeal-line { opacity: 0.8; }
+body.theme-pale #voice-appeal-line:hover { opacity: 1; }
 
 /* Out of the way while she is being spoken to. An ask for money over the top
    of someone opening their mouth to pray is the wrong thing at the wrong
@@ -2955,6 +3052,50 @@ body.theme-pale #voice-appeal-line:hover { opacity: 0.88; }
 body.mic-live #voice-appeal-line {
     opacity: 0;
     pointer-events: none;
+}
+
+
+/* ─── THE MORE MENU ──────────────────────────────────────────────────────────
+   Every colour in this panel is written inline in index.html, which is the one
+   shape of element setTheme() cannot reach: it paints by selector, and an
+   inline style outranks anything it writes into the stylesheet. So the menu
+   stayed a dark glass slab with 75% white text on all four themes, including
+   the two pale ones — the same failure text mode had, in the one place nobody
+   opened while checking the pale themes.
+
+   Beating an inline style needs !important, which is why every line here
+   carries one. The values are the --sv-* tokens, so the menu follows any theme
+   added later without being touched again.
+
+   The items were also 13.6px. They are the app's top-level navigation; they get
+   the same size as any other list of destinations, and 44px of height each. */
+#more-menu {
+    background: var(--sv-card-bg) !important;
+    border: 1px solid var(--sv-hairline) !important;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.20) !important;
+    padding: var(--sp-2) !important;
+    width: 218px !important;
+}
+#more-menu > div {
+    color: var(--sv-text) !important;
+    font-size: var(--fs-sm) !important;
+    min-height: 44px;
+    padding: var(--sp-2) var(--sp-3) !important;
+    border-radius: var(--r-md) !important;
+    transition: background var(--dur-fast) var(--ease);
+}
+#more-menu > div:hover,
+#more-menu > div:active {
+    background: var(--sv-hover) !important;
+}
+
+/* The sync panel is the same story — a fixed panel with rgba(15,15,35,0.95)
+   written into its markup. #theme-panel is deliberately not here: setTheme()
+   already paints that one inline, and an !important rule would take it back
+   off the theme it just picked. */
+#sync-panel {
+    background: var(--sv-card-bg) !important;
+    border-color: var(--sv-hairline) !important;
 }
 
 /* ─── THE CARD ───────────────────────────────────────────────────────────── */
