@@ -38,6 +38,8 @@ let _micSilenceTimer = null     // fires when the pause is long enough to be an 
 let _micFinalising = false      // true once we have decided the turn is over
 let _micUserStopped = false     // true when they tapped the mic to stop
 let _micTurnStarted = 0
+let _micArmedAt = 0             // when the silence countdown was last restarted
+let _micPauseResumes = 0        // times they have stopped and started again
 // ─── HOW LONG A PAUSE HAS TO BE ─────────────────────────────────────────────
 // This was 2500ms, and it was 2500ms for a good reason: results only arrived
 // when the recogniser finalised, which it does at every natural pause, so a
@@ -68,10 +70,90 @@ let _micTurnStarted = 0
 //
 // Counted in words, not seconds: seconds measure the microphone being open,
 // words measure somebody actually talking.
-const MIC_SILENCE_MS = 1200        // a short answer is over when it stops
-const MIC_SILENCE_LONG_MS = 3200   // someone mid-story gets room to breathe
-const MIC_LONG_WORDS_FROM = 25     // where the widening starts
+// ── WHAT THE FIELD ACTUALLY DOES ────────────────────────────────────────────
+// Checked against how the current voice systems solve this, because it is the
+// single thing that decides whether talking to her feels like talking to
+// somebody. They have all reached the same conclusion and it is not a better
+// number: it is that silence alone cannot tell "finished" from "thinking".
+// OpenAI's Realtime API exposes it as `semantic_vad`, AssemblyAI as semantic
+// endpointing, LiveKit and Pipecat ship trained end-of-turn models. LiveKit's
+// is text-first — it reads only the words, no audio — which is the one of
+// these shapes reproducible here, because the Web Speech API hands over a
+// transcript and never a waveform.
+//
+// The signals they all name: filler tokens ("um", "uh") before a pause mean
+// still composing; a trailing conjunction or preposition means the sentence is
+// not over; repeated stop-start means a halting speaker who needs more room.
+// And the fallback every one of them keeps — an "incomplete" verdict extends
+// the wait, it does not wait forever.
+//
+// So: silence is the floor, the words decide the ceiling.
+//
+// The floor stays at 1200ms deliberately. Nothing here can make somebody wait
+// LESS than they did before this change; every branch either holds at 1200 or
+// asks for more. That is the safe direction for the one feature where getting
+// it wrong means cutting off someone who is crying.
+const MIC_SILENCE_MS = 1200        // the floor. Nobody waits less than this
+const MIC_SILENCE_LONG_MS = 2200   // long turn, and the tail says nothing
+const MIC_SILENCE_OPEN_MS = 3000   // the tail says they are plainly mid-thought
+const MIC_LONG_WORDS_FROM = 25     // where the neutral widening starts
 const MIC_LONG_WORDS_FULL = 80     // and where it is fully open
+
+// Re-arming the countdown this long after the last arm means silence actually
+// fell and then they started talking again — which is the "repeated stops and
+// restarts" signal, and the cue for dynamic endpointing: someone who has
+// already paused twice mid-turn is a halting speaker, and the pause after
+// their next sentence should not be read as the end.
+const MIC_RESUME_GAP_MS = 700
+
+// ─── THE WORDS THAT MEAN "I HAVE NOT FINISHED" ──────────────────────────────
+// A sentence cannot end on any of these. Ending a turn here is the thing that
+// makes an assistant feel like it is racing you, and it is what a trained
+// end-of-turn model spends most of its weights learning.
+const MIC_OPEN_TAIL = new Set([
+    // hesitation — the strongest signal there is, and the one plain
+    // transcription throws away
+    'um', 'uh', 'uhm', 'erm', 'er', 'ehm', 'hmm', 'mmm', 'ah', 'ahh',
+    // conjunctions and clause openers
+    'and', 'but', 'or', 'so', 'because', 'cause', 'cos', 'since', 'although',
+    'though', 'while', 'whilst', 'if', 'unless', 'until', 'when', 'whenever',
+    'whereas', 'that', 'which', 'who', 'whom', 'whose', 'than', 'then',
+    'plus', 'also', 'however', 'therefore',
+    // articles, determiners, possessives
+    'the', 'a', 'an', 'my', 'your', 'his', 'her', 'its', 'our', 'their',
+    'this', 'these', 'those', 'some', 'any', 'every', 'each',
+    // prepositions
+    'of', 'to', 'for', 'with', 'without', 'at', 'in', 'into', 'on', 'onto',
+    'from', 'by', 'about', 'over', 'under', 'through', 'between', 'against',
+    'as', 'near', 'towards', 'toward',
+    // auxiliaries, modals, copulas
+    'is', 'was', 'are', 'were', 'am', 'be', 'been', 'being', 'have', 'has',
+    'had', 'do', 'does', 'did', 'will', 'would', 'shall', 'should', 'can',
+    'could', 'may', 'might', 'must', 'gonna', 'wanna', 'going',
+    // a bare subject pronoun is mid-sentence. "you" and "me" are deliberately
+    // absent — "thank you" and "it's not you, it's me" both end on one.
+    'i', 'he', 'she', 'they', 'we',
+])
+
+// ─── AND THE WORDS THAT MEAN "YES, THAT WAS THE WHOLE THING" ────────────────
+// Only trusted on a short turn: "no" ending four words is an answer, "no"
+// ending a paragraph is somebody still going. This is what lets a one-word
+// reply stay as quick as it has always been while a story gets room.
+const MIC_SHORT_ANSWER = new Set([
+    'yes', 'yeah', 'yep', 'yup', 'no', 'nope', 'nah', 'ok', 'okay', 'sure',
+    'please', 'thanks', 'amen', 'right', 'exactly', 'nothing', 'never',
+    'always', 'maybe', 'definitely', 'absolutely',
+])
+
+// Said at the end of a long answer, these mean it is finished — and they beat
+// the long-turn widening, so somebody who signs off after three minutes is not
+// then left waiting. This is the same idea as the `eagerness` dial the
+// Realtime API exposes, decided per turn rather than per session.
+const MIC_CLOSING_PHRASES = [
+    "that's it", 'thats it', "that's all", 'thats all', "that's everything",
+    'thats everything', "i'm done", 'im done', 'thank you', "that's why",
+    'thats why', 'the end', "that's the thing", 'thats the thing',
+]
 
 // Hard ceiling on one listening turn. Was 90 seconds, which capped a story at
 // a minute and a half whatever the pause window did. Five minutes is what was
@@ -136,30 +218,69 @@ function _looksLikeEcho(heard) {
     return hits / got.length >= 0.6
 }
 
-// How much silence this particular turn has earned. See the note above the
-// constants: a short answer keeps the old 1200ms, a long one is given up to
-// 3200ms to think in.
+// Turn text into comparable words: lowercase, punctuation gone, apostrophes
+// kept because "that's" and "thats" are the same closing phrase and Chrome
+// will hand over either.
+function _micWordsOf(text) {
+    return String(text).toLowerCase()
+        .replace(/[^a-z0-9'\s]/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean)
+}
+
+// How much silence this particular turn has earned.
 //
-// `live` is the interim text — the words currently being said, which the
-// recogniser has not finalised yet and so are not in _micSessionText. Without
-// it the count runs a phrase behind the person speaking, and the window widens
-// a sentence later than it should.
+// `live` is the interim text — the words being said right now, which the
+// recogniser has not finalised and so are not yet in _micSessionText. Without
+// it every judgement here runs a phrase behind the person speaking.
 function _micSilenceWindow(live = '') {
-    const words = (_micHeard + ' ' + _micSessionText + ' ' + live)
-        .trim().split(/\s+/).filter(Boolean).length
-    if (words <= MIC_LONG_WORDS_FROM) return MIC_SILENCE_MS
-    // A ramp rather than a step. A cliff at word twenty-five would mean the
-    // same length of pause ends the turn or doesn't depending on a word
-    // nobody knew they were counting, and the same person would find it
-    // behaving differently on two tellings of the same story.
+    const words = _micWordsOf(_micHeard + ' ' + _micSessionText + ' ' + live)
+    if (!words.length) return MIC_SILENCE_MS
+
+    const last = words[words.length - 1]
+    const tail2 = words.slice(-2).join(' ')
+    const tail3 = words.slice(-3).join(' ')
+
+    // 1. Signed off. Beats everything below, including the long-turn widening:
+    //    somebody who has just said "and that's it" should not be made to wait
+    //    the longest of all because they talked for three minutes first.
+    if (MIC_CLOSING_PHRASES.includes(tail2) || MIC_CLOSING_PHRASES.includes(tail3)) {
+        return MIC_SILENCE_MS
+    }
+    // 2. A short, complete answer. "Yes." is over the moment it stops, and it
+    //    always has been — this branch is what keeps that true.
+    if (words.length <= 4 && MIC_SHORT_ANSWER.has(last)) return MIC_SILENCE_MS
+
+    // 3. Plainly mid-thought: the sentence cannot end on this word, or they
+    //    have already stopped and restarted twice and are clearly finding it
+    //    hard to get out.
+    if (MIC_OPEN_TAIL.has(last) || _micPauseResumes >= 2) return MIC_SILENCE_OPEN_MS
+
+    // 4. Nothing either way. Length is the only thing left to go on, and it is
+    //    a real signal: a pause twenty words in is more likely to be a breath
+    //    than a pause after four.
+    //
+    //    A ramp rather than a step — a cliff at word twenty-five would mean
+    //    the same pause ends the turn or doesn't depending on a word nobody
+    //    knew they were counting, and the same person would find it behaving
+    //    differently on two tellings of the same story.
+    if (words.length <= MIC_LONG_WORDS_FROM) return MIC_SILENCE_MS
     const span = MIC_LONG_WORDS_FULL - MIC_LONG_WORDS_FROM
-    const t = Math.min(1, (words - MIC_LONG_WORDS_FROM) / span)
+    const t = Math.min(1, (words.length - MIC_LONG_WORDS_FROM) / span)
     return Math.round(MIC_SILENCE_MS + (MIC_SILENCE_LONG_MS - MIC_SILENCE_MS) * t)
 }
 
 // Restart the "have they stopped?" countdown. Called on every result and every
 // pause, so it only expires after real silence.
 function _micArmSilence(live = '') {
+    const now = Date.now()
+    // While somebody is talking this is re-armed several times a second. A
+    // long gap between two arms therefore means the opposite: silence fell,
+    // the countdown ran part-way down, and then they started again. Counting
+    // those is how the window learns that this particular person, in this
+    // particular turn, talks in pieces.
+    if (_micArmedAt && now - _micArmedAt > MIC_RESUME_GAP_MS) _micPauseResumes++
+    _micArmedAt = now
     clearTimeout(_micSilenceTimer)
     _micSilenceTimer = setTimeout(_micFinalise, _micSilenceWindow(live))
 }
@@ -7715,6 +7836,10 @@ async function toggleVoiceInput({ barge = false } = {}) {
     _micUserStopped = false
     _micBargeMode = barge
     _micTurnStarted = Date.now()
+    // Per turn, not per session: how haltingly someone told the last story
+    // says nothing about how they will tell the next one.
+    _micArmedAt = 0
+    _micPauseResumes = 0
 
     r.onstart = () => {
         isVoiceInputActive = true
@@ -7881,6 +8006,8 @@ function stopVoiceInput() {
     _micTimeout = null
     clearTimeout(_micSilenceTimer)
     _micSilenceTimer = null
+    _micArmedAt = 0
+    _micPauseResumes = 0
     isVoiceInputActive = false
     _micBargeMode = false
     document.getElementById('mic-btn')?.classList.remove('listening')

@@ -1,4 +1,4 @@
-const CACHE = 'emq-v50'
+const CACHE = 'emq-v51'
 
 // App shell — served NETWORK-first, see the fetch handler below. The cache is
 // the offline fallback, not the source, so a deploy is live on the next launch
