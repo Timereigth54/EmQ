@@ -2635,6 +2635,19 @@
         }
 
         /* ─── NOTIFICATION TRAY ───────────────────────────────────── */
+        /* ─── NOTIFICATION TRAY ───────────────────────────────────────
+           Every colour in here was a hardcoded dark-theme value, so the tray
+           arrived on the two pale themes as a near-black slab standing on
+           cream — the third panel found with this exact fault, after the more
+           menu and the sync panel. It is on tokens now, which is the only
+           version of this fix that also covers a theme added later.
+
+           --sv-screen-bg rather than --sv-card-bg: this thing floats over the
+           room with nothing behind it, so it has to bring its own ground.
+
+           The type was the other half of it. What a notification actually
+           carries is a verse — the reason to open the tray at all — and it was
+           set at 12.5px in 45% white with a 9.9px timestamp under it. */
         #notif-tray {
             position: fixed;
             top: 68px;
@@ -2648,33 +2661,45 @@
             padding: 16px;
             z-index: 9999;
             backdrop-filter: blur(24px);
-            background: rgba(12, 12, 32, 0.96);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+            background: var(--sv-screen-bg);
+            border: 1px solid var(--sv-hairline);
+            box-shadow: 0 14px 48px rgba(0,0,0,0.28);
         }
         #notif-tray-header {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 12px; padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
+            border-bottom: 1px solid var(--sv-hairline);
         }
-        #notif-tray-title { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 1.5px; text-transform: uppercase; }
-        #notif-mark-read { background: none; border: none; color: rgba(0,212,255,0.6); font-size: 0.72rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+        #notif-tray-title { font-size: var(--fs-micro); font-weight: 700; color: var(--sv-muted); letter-spacing: 1.5px; text-transform: uppercase; }
+        /* A button, so it gets a thumb-sized target and ink it can be read in
+           rather than the decorative accent. */
+        #notif-mark-read {
+            background: none; border: none; color: var(--sv-accent-ink);
+            font-size: var(--fs-label); cursor: pointer; font-family: 'Inter', sans-serif;
+            min-height: 44px; padding: 0 4px;
+            -webkit-tap-highlight-color: transparent;
+        }
         .notif-item {
             padding: 12px 14px;
-            border-radius: 14px;
-            margin-bottom: 8px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: var(--r-md);
+            margin-bottom: var(--sp-2);
+            background: var(--sv-hover);
+            border: 1px solid var(--sv-hairline);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
         }
-        .notif-item:hover { background: rgba(255,255,255,0.07); }
-        .notif-item.unread { border-color: rgba(0,212,255,0.2); background: rgba(0,212,255,0.04); }
-        .notif-item-title { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
-        .notif-item-body { font-size: 0.78rem; color: rgba(255,255,255,0.45); line-height: 1.55; font-style: italic; }
-        .notif-item-ref { font-size: 0.68rem; color: rgba(0,212,255,0.6); margin-top: 4px; letter-spacing: 0.5px; }
-        .notif-item-time { font-size: 0.62rem; color: rgba(255,255,255,0.2); margin-top: 6px; }
-        .notif-empty { text-align: center; color: rgba(255,255,255,0.2); font-size: 0.8rem; padding: 24px 0; font-family: 'Inter', sans-serif; }
+        .notif-item:hover { background: rgba(var(--sv-accent-rgb), 0.07); }
+        .notif-item.unread {
+            border-color: rgba(var(--sv-accent-rgb), 0.38);
+            background: rgba(var(--sv-accent-rgb), 0.06);
+        }
+        .notif-item-title { font-size: var(--fs-label); font-weight: 600; color: var(--sv-text); margin-bottom: 4px; }
+        /* The verse. It is the content of the whole tray, so it is set as
+           something to read rather than as a caption on something else. */
+        .notif-item-body { font-size: var(--fs-sm); color: var(--sv-text); line-height: 1.6; font-style: italic; }
+        .notif-item-ref { font-size: var(--fs-meta); color: var(--sv-accent-ink); margin-top: 6px; letter-spacing: 0.5px; font-weight: 500; }
+        .notif-item-time { font-size: var(--fs-meta); color: var(--sv-muted); margin-top: 6px; }
+        .notif-empty { text-align: center; color: var(--sv-muted); font-size: var(--fs-sm); padding: 24px 0; font-family: 'Inter', sans-serif; }
 
         /* ─── CHAT ERROR RETRY ────────────────────────────────────── */
         .chat-retry { text-align: center; margin: 4px 0 12px; }
@@ -3070,7 +3095,7 @@ body.mic-live #voice-appeal-line {
    The items were also 13.6px. They are the app's top-level navigation; they get
    the same size as any other list of destinations, and 44px of height each. */
 #more-menu {
-    background: var(--sv-card-bg) !important;
+    background: var(--sv-screen-bg) !important;
     border: 1px solid var(--sv-hairline) !important;
     box-shadow: 0 14px 40px rgba(0,0,0,0.20) !important;
     padding: var(--sp-2) !important;
@@ -3094,7 +3119,7 @@ body.mic-live #voice-appeal-line {
    already paints that one inline, and an !important rule would take it back
    off the theme it just picked. */
 #sync-panel {
-    background: var(--sv-card-bg) !important;
+    background: var(--sv-screen-bg) !important;
     border-color: var(--sv-hairline) !important;
 }
 

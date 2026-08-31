@@ -38,8 +38,9 @@ let _micSilenceTimer = null     // fires when the pause is long enough to be an 
 let _micFinalising = false      // true once we have decided the turn is over
 let _micUserStopped = false     // true when they tapped the mic to stop
 let _micTurnStarted = 0
-let _micArmedAt = 0             // when the silence countdown was last restarted
+let _micArmedAt = 0             // when new words last arrived
 let _micPauseResumes = 0        // times they have stopped and started again
+let _micLastArmWords = 0        // word count at the last genuine re-arm
 // ─── HOW LONG A PAUSE HAS TO BE ─────────────────────────────────────────────
 // This was 2500ms, and it was 2500ms for a good reason: results only arrived
 // when the recogniser finalised, which it does at every natural pause, so a
@@ -273,14 +274,35 @@ function _micSilenceWindow(live = '') {
 // Restart the "have they stopped?" countdown. Called on every result and every
 // pause, so it only expires after real silence.
 function _micArmSilence(live = '') {
+    // ─── THE COUNTDOWN MEASURES NEW WORDS, NOT EVENTS ────────────────────
+    // This is what broke her. The recogniser goes on firing onresult with a
+    // result it has already delivered, and it revises interim text without
+    // anyone having said anything more — so "an event arrived" is not the same
+    // as "they are still talking". Restarting the countdown on every event
+    // meant a turn could be held open indefinitely by a recogniser repeating
+    // itself, and the mic would sit there listening to a finished sentence
+    // forever while Lulo said nothing at all.
+    //
+    // It survived at a flat 1200ms because the repeats came slower than that.
+    // Widening the window to 3000ms turned a race that was being won into one
+    // that was always lost: every repeat both reset the clock AND, by counting
+    // as a resume, made the clock longer. Six repeats, zero requests sent.
+    //
+    // So the gate is word count, and growth specifically. A repeat adds no
+    // words. A revision that swaps a word for another adds no words either,
+    // and no new speech happened in that case either.
+    const wordsNow = _micWordsOf(_micHeard + ' ' + _micSessionText + ' ' + live).length
+    if (wordsNow <= _micLastArmWords && _micSilenceTimer) return
+
     const now = Date.now()
-    // While somebody is talking this is re-armed several times a second. A
-    // long gap between two arms therefore means the opposite: silence fell,
-    // the countdown ran part-way down, and then they started again. Counting
-    // those is how the window learns that this particular person, in this
-    // particular turn, talks in pieces.
+    // A long gap since the last time NEW words arrived means silence fell, the
+    // countdown ran part-way down, and then they started again. Counting those
+    // is how the window learns that this person, in this turn, talks in
+    // pieces. It has to sit below the growth gate above, or a recogniser
+    // repeating itself reads as somebody hesitating.
     if (_micArmedAt && now - _micArmedAt > MIC_RESUME_GAP_MS) _micPauseResumes++
     _micArmedAt = now
+    _micLastArmWords = wordsNow
     clearTimeout(_micSilenceTimer)
     _micSilenceTimer = setTimeout(_micFinalise, _micSilenceWindow(live))
 }
@@ -7840,6 +7862,7 @@ async function toggleVoiceInput({ barge = false } = {}) {
     // says nothing about how they will tell the next one.
     _micArmedAt = 0
     _micPauseResumes = 0
+    _micLastArmWords = 0
 
     r.onstart = () => {
         isVoiceInputActive = true
@@ -8008,6 +8031,7 @@ function stopVoiceInput() {
     _micSilenceTimer = null
     _micArmedAt = 0
     _micPauseResumes = 0
+    _micLastArmWords = 0
     isVoiceInputActive = false
     _micBargeMode = false
     document.getElementById('mic-btn')?.classList.remove('listening')
