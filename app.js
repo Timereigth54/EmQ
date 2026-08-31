@@ -41,6 +41,93 @@ let _micTurnStarted = 0
 let _micArmedAt = 0             // when new words last arrived
 let _micPauseResumes = 0        // times they have stopped and started again
 let _micLastArmWords = 0        // word count at the last genuine re-arm
+let _micSessions = 0            // recogniser sessions inside this one turn
+
+// iOS is a different machine for this feature and has to be asked differently.
+// iPadOS reports itself as a Mac, hence the touch-point check.
+const _isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+// ─── BEING ABLE TO SEE WHAT THE MICROPHONE DID ──────────────────────────────
+// The mic worked on the machine this was written on and not on the phone it
+// was written for, and there was no way to find out why: every failure path
+// ended in silence, and a phone has no console to open. That is the actual
+// problem — not any one bug, but that a bug here is invisible to the only
+// person who can reproduce it.
+//
+// So the lifecycle is recorded, always, into a small ring buffer. It costs
+// nothing when nobody looks. Add ?micdebug=1 to the URL and it draws itself on
+// screen, which is the one way to read it on a phone.
+const _micLogBuf = []
+const MIC_DEBUG = (() => {
+    try {
+        if (new URLSearchParams(location.search).get('micdebug') === '1') {
+            localStorage.setItem('luloMicDebug', '1')
+        }
+        return localStorage.getItem('luloMicDebug') === '1'
+    } catch { return false }
+})()
+
+function micLog(msg) {
+    const t = new Date().toLocaleTimeString('en-GB', { hour12: false })
+    _micLogBuf.push(`${t}  ${msg}`)
+    while (_micLogBuf.length > 60) _micLogBuf.shift()
+    if (MIC_DEBUG) _micDebugDraw()
+}
+
+// Readable from a desktop console when a phone is not the thing being chased.
+function luloMicDiag() { return _micLogBuf.join('\n') }
+
+function _micDebugDraw() {
+    let box = document.getElementById('mic-debug')
+    if (!box) {
+        box = document.createElement('div')
+        box.id = 'mic-debug'
+        // Styled here rather than in styles.css on purpose: this is a
+        // diagnostic, and it should not leave anything behind in the
+        // stylesheet once it has done its job.
+        box.style.cssText = [
+            'position:fixed', 'left:8px', 'right:8px', 'bottom:8px', 'z-index:99999',
+            'max-height:38vh', 'overflow:auto', 'padding:10px 12px',
+            'background:rgba(6,8,20,0.94)', 'color:#8ef0c8', 'border-radius:12px',
+            'font:11px/1.5 ui-monospace,Menlo,Consolas,monospace',
+            'white-space:pre-wrap', 'border:1px solid rgba(140,255,200,0.28)',
+        ].join(';')
+        // Tapping it copies the whole log, which is how it gets off the phone
+        // and into a message.
+        box.onclick = () => {
+            const text = _micLogBuf.join('\n')
+            navigator.clipboard?.writeText(text).then(
+                () => { box.style.borderColor = '#8ef0c8' },
+                () => {}
+            )
+        }
+        document.body.appendChild(box)
+    }
+    // The header goes into every copy, because "it doesn't work on my phone"
+    // is unanswerable without knowing which phone and what it supports.
+    const head = [
+        `iOS=${_isIOS} SR=${!!(window.SpeechRecognition || window.webkitSpeechRecognition)}`,
+        `secure=${window.isSecureContext} gUM=${!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)}`,
+        navigator.userAgent.slice(0, 96),
+    ].join('\n')
+    box.textContent = 'MIC LOG — tap to copy\n' + head + '\n----------\n' +
+        _micLogBuf.slice(-16).join('\n')
+    box.scrollTop = box.scrollHeight
+}
+
+// The mic opened, stayed open, and never heard a thing. Saying so is the whole
+// point: a companion that silently does nothing when you speak to it is worse
+// than one that admits it cannot hear you.
+function _micReportDeafness(code) {
+    micLog(`reported deafness${code ? ' (' + code + ')' : ''}`)
+    if (typeof addToChatHistory !== 'function') return
+    addToChatHistory('lulo',
+        "I couldn't hear anything just then — my microphone didn't pick up. " +
+        "Could you check I'm allowed to use it, or type to me instead? 💙",
+        { silent: true })
+    if (typeof switchToTextMode === 'function' && !isTextModeOpen()) switchToTextMode()
+}
 // ─── HOW LONG A PAUSE HAS TO BE ─────────────────────────────────────────────
 // This was 2500ms, and it was 2500ms for a good reason: results only arrived
 // when the recogniser finalised, which it does at every natural pause, so a
@@ -311,6 +398,7 @@ function _micArmSilence(live = '') {
 function _micFinalise() {
     if (_micFinalising) return
     _micFinalising = true
+    micLog(`finalise: "${(_micHeard + ' ' + _micSessionText).trim().slice(0, 48)}"`)
     clearTimeout(_micSilenceTimer)
     _micSilenceTimer = null
 
@@ -7809,6 +7897,7 @@ async function primeMicPermission() {
 // rather than to take a turn. Everything it hears in that state is treated as
 // suspect until it proves it is not her own voice echoing back.
 async function toggleVoiceInput({ barge = false } = {}) {
+    micLog(`tap (active=${isVoiceInputActive}, barge=${barge})`)
     if (isVoiceInputActive) {
         // The mic is open while she talks now, so a tap during her answer
         // lands here rather than opening anything. It means "stop, I want to
@@ -7830,15 +7919,39 @@ async function toggleVoiceInput({ barge = false } = {}) {
         return
     }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) { switchToTextMode(); return }
+    if (!SR) { micLog('no SpeechRecognition in this browser'); switchToTextMode(); return }
 
-    // continuous keeps the session alive for long utterances.
-    // Without it, mobile Chrome hard-cuts the session after ~20s.
-
-    // Establish permission once so Chrome stops asking on every tap
+    // ─── THE TAP HAS TO REACH start() ────────────────────────────────────
+    // Safari requires start() to be called from inside the gesture that asked
+    // for it. There was an `await` sitting between the two — and not a cheap
+    // one: primeMicPermission() opens getUserMedia, which on a first run puts
+    // a permission sheet on screen. By the time it resolved, the tap was long
+    // spent and iOS had every reason to refuse.
+    //
+    // Worse than the timing: that call takes the microphone and immediately
+    // hands it back, and iOS runs speech recognition and getUserMedia through
+    // the same audio session. So the one step meant to smooth this over was
+    // reaching into the audio session milliseconds before recognition tried to
+    // claim it. On a phone. Which is where the microphone did not work.
+    //
+    // It was only ever a workaround for Chrome asking on every tap. Safari
+    // handles its own speech permission and does not need it, so iOS skips it
+    // entirely and opens the recogniser inside the gesture. An async function
+    // runs synchronously up to its first await, and there is now no await on
+    // this path — so the tap is still live when start() is called.
+    if (_isIOS || localStorage.getItem('luloMicPermGranted') === '1') {
+        micLog(_isIOS ? 'open: sync (iOS, no getUserMedia)' : 'open: sync (permission known)')
+        _openRecogniser(SR, barge)
+        return
+    }
     const permitted = await primeMicPermission()
+    micLog(`permission: ${permitted ? 'granted' : 'DENIED'}`)
     if (!permitted) { switchToTextMode(); return }
+    _openRecogniser(SR, barge)
+}
 
+// Everything from here down runs inside the tap on the paths that need it.
+function _openRecogniser(SR, barge) {
     const r = new SR()
     r.lang = 'en-US'
     // Interim results are what let the silence window come down from 2500ms to
@@ -7863,8 +7976,10 @@ async function toggleVoiceInput({ barge = false } = {}) {
     _micArmedAt = 0
     _micPauseResumes = 0
     _micLastArmWords = 0
+    _micSessions = 0
 
     r.onstart = () => {
+        micLog(`start (session ${_micSessions + 1}${_micBargeMode ? ', barge' : ''})`)
         isVoiceInputActive = true
         document.getElementById('mic-btn')?.classList.add('listening')
         // Fades the "help Lulo speak" line out of the way — CSS owns the
@@ -7876,23 +7991,43 @@ async function toggleVoiceInput({ barge = false } = {}) {
         // *because* she is talking, and stopping her here would silence her
         // the instant she began.
         if (!_micBargeMode) LuloVoice.stop()
-        // "No-speech" guard: if the mic opens and nothing is ever said, close
-        // after 10s. Only on a genuinely silent turn — once she has heard
-        // anything, silence is handled by the grace period instead, or a pause
-        // in a long sentence would trip this and close the mic.
+        // ─── THE GUARD IS PER TURN, NOT PER SESSION ─────────────────────
+        // If the mic opens and nothing is ever said, close after 10s. Only on
+        // a genuinely silent turn — once she has heard anything, silence is
+        // handled by the grace period instead, or a pause in a long sentence
+        // would trip this and close the mic.
+        //
+        // It used to clear and re-arm on every onstart, and that is why the
+        // microphone worked on a computer and not on a phone. Desktop Chrome
+        // honours `continuous`, so one turn is one session and the guard was
+        // armed once. Android does not honour it: the session ends after each
+        // utterance and onend starts a new one, so onstart fires again and
+        // pushed the deadline forward. On a phone that cannot capture audio
+        // that is an infinite loop — the mic reads as live, nothing ever
+        // arrives, and no timeout ever fires because the timeout keeps being
+        // moved. Silent, permanent, and invisible on the machine it was
+        // written on.
+        //
+        // Armed once and left alone. `_micTimeout` is nulled by
+        // stopVoiceInput() and by onspeechstart, so "already armed" is the
+        // right question to ask.
         //
         // Not while she is speaking: an answer can run well past 10s and the
         // listener is not silent, they are listening. The timer is armed when
         // she finishes instead, in onDrainComplete.
-        if (!_micHeard && !_micBargeMode) {
-            clearTimeout(_micTimeout)
+        if (!_micHeard && !_micBargeMode && !_micTimeout) {
             _micTimeout = setTimeout(() => {
-                if (!_micHeard && !_micSessionText) stopVoiceInput()
+                micLog('give up: 10s, nothing heard')
+                if (!_micHeard && !_micSessionText) {
+                    stopVoiceInput()
+                    _micReportDeafness()
+                }
             }, 10000)
         }
     }
 
     r.onspeechstart = () => {
+        micLog('speechstart')
         // In barge mode "a voice" is usually hers, arriving back through the
         // speaker. Nothing may react to it until the transcript has been read
         // and cleared as genuinely someone else — see onresult.
@@ -7907,6 +8042,7 @@ async function toggleVoiceInput({ barge = false } = {}) {
     }
 
     r.onspeechend = () => {
+        micLog('speechend')
         // Arming the countdown here while she is talking would end a turn the
         // user never started, and send an empty transcript on her own voice.
         if (_micBargeMode) return
@@ -7965,6 +8101,7 @@ async function toggleVoiceInput({ barge = false } = {}) {
         // sessions on its own during a long utterance, so the text carried
         // across restarts lives in _micHeard and this is only the tail.
         _micSessionText = sessionText
+        if (sessionText) micLog(`result: "${sessionText.slice(0, 40)}"`)
         // Interim text restarts the countdown as well as final text. That is
         // what makes a 1200ms window safe: it is reset several times a second
         // while someone is still speaking, so it can only expire on real
@@ -7977,7 +8114,8 @@ async function toggleVoiceInput({ barge = false } = {}) {
     }
 
     r.onerror = e => {
-        if (e.error === 'not-allowed') {
+        micLog(`error: ${e.error}`)
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
             localStorage.removeItem('luloMicPermGranted')
             stopVoiceInput()
             switchToTextMode()
@@ -7987,10 +8125,19 @@ async function toggleVoiceInput({ barge = false } = {}) {
         // session simply ended between words. Send what we have if there is
         // anything; otherwise let onend decide whether to keep listening.
         if (e.error === 'no-speech' || e.error === 'aborted') return
+        // Everything else — 'audio-capture' when the device will not hand over
+        // the microphone, 'network' when the recogniser cannot reach its own
+        // service. These used to end the turn in complete silence, which is
+        // most of why "the mic does not work on my phone" had nowhere to go.
+        // If nothing has been heard, the turn produced nothing and the person
+        // deserves to be told rather than left tapping.
+        const nothingHeard = !_micHeard && !_micSessionText
         _micFinalise()
+        if (nothingHeard) _micReportDeafness(e.error)
     }
 
     r.onend = () => {
+        micLog(`end (session ${_micSessions}, heard ${_micWordsOf(_micHeard + ' ' + _micSessionText).length}w)`)
         // Bank whatever this session heard before its results are discarded.
         if (_micSessionText) {
             _micHeard = (_micHeard + ' ' + _micSessionText).trim()
@@ -8008,17 +8155,40 @@ async function toggleVoiceInput({ barge = false } = {}) {
         // take the chance to interrupt away.
         if (_micBargeMode) _micTurnStarted = Date.now()
         else if (Date.now() - _micTurnStarted > MIC_MAX_TURN_MS) { _micFinalise(); return }
-        try {
-            r.start()
-        } catch {
-            _micFinalise()
-        }
+
+        // ─── DO NOT RESTART IN A HOT LOOP ───────────────────────────────
+        // A phone that cannot open the microphone ends the session as fast as
+        // it is started, so this handler is the top of a spin that can run
+        // hundreds of times a second. The 10s guard above now ends it, but ten
+        // seconds of that is still ten seconds of a device being hammered.
+        //
+        // A session that heard nothing gets a breath before the next attempt;
+        // one that heard something restarts immediately, because that is
+        // somebody mid-sentence and Android ends a session at every utterance.
+        _micSessions++
+        const heardAnything = !!_micHeard
+        setTimeout(() => {
+            // The turn may have ended while this was waiting.
+            if (currentRecognition !== r || _micFinalising || _micUserStopped) return
+            try {
+                r.start()
+                micLog(`restart (session ${_micSessions})`)
+            } catch (err) {
+                micLog(`restart failed: ${err?.name || err}`)
+                _micFinalise()
+            }
+        }, heardAnything ? 0 : 220)
     }
 
     try {
         r.start()
         currentRecognition = r
-    } catch {
+        _micSessions = 1
+    } catch (err) {
+        // Safari throws here when the gesture has expired, which is exactly
+        // the failure the branch above exists to prevent — so if this line
+        // ever appears in the log, that is what it means.
+        micLog(`start() threw: ${err?.name || err}`)
         stopVoiceInput()
         switchToTextMode()
     }
@@ -8032,6 +8202,7 @@ function stopVoiceInput() {
     _micArmedAt = 0
     _micPauseResumes = 0
     _micLastArmWords = 0
+    _micSessions = 0
     isVoiceInputActive = false
     _micBargeMode = false
     document.getElementById('mic-btn')?.classList.remove('listening')
